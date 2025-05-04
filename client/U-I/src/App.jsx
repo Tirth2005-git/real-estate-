@@ -8,6 +8,7 @@ import Header from "./components/Header.jsx";
 import { Provider } from "react-redux";
 import { store, persistor } from "./redux/store.jsx";
 import { PersistGate } from "redux-persist/integration/react";
+import PvtRoute from "./components/PrivateRoute.jsx";
 import "./index.css";
 function App() {
   return (
@@ -21,7 +22,9 @@ function App() {
               <Route path="/about" element={<About />}></Route>
               <Route path="/sign-in" element={<Signin />}></Route>
               <Route path="/sign-up" element={<Signup />}></Route>
-              <Route path="/profile" element={<Profile />}></Route>
+              <Route element={<PvtRoute></PvtRoute>}>
+                <Route path="/profile" element={<Profile />}></Route>
+              </Route>
             </Routes>
           </BrowserRouter>
         </PersistGate>

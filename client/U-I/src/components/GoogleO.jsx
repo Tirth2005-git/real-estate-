@@ -28,6 +28,8 @@ function GoogleO() {
         return dispatch(failure(data.message));
       }
       dispatch(succcess(data.user));
+     
+      
       navigate("/");
     } catch (err) {
       console.log(err.message);

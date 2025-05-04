@@ -1,6 +1,10 @@
 import { FaSearch } from "react-icons/fa";
 import { NavLink } from "react-router-dom";
+import { useSelector } from "react-redux";
 function Header() {
+  const { currentuser } = useSelector((state) => state.user);
+
+  
   return (
     <>
       <header className="bg-gray-100 flex flex-wrap p-3 justify-between mx-auto shadow-md items-center">
@@ -36,9 +40,17 @@ function Header() {
           <li>
             <NavLink
               className="hidden sm:inline hover:underline text-gray-700"
-              to="/sign-in"
+              to="/profile"
             >
-              SignIn
+              {currentuser ? (
+                <img
+                  src={currentuser.pfp}
+                  alt="Pfp"
+                  className="h-7 w-7 rounded-full inline "
+                />
+              ) : (
+                "Signin"
+              )}
             </NavLink>
           </li>
         </ul>

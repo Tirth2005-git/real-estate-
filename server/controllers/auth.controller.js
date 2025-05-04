@@ -6,10 +6,12 @@ import jwt from "jsonwebtoken";
 export async function signUp(req, res, next) {
   const { username, email, password } = req.body;
   const hashedpassword = bcrypt.hashSync(password, 10);
-  const newUser = new User({ username, email, password: hashedpassword });
+  let newUser = new User({ username, email, password: hashedpassword });
   try {
     await newUser.save();
-    res.status(201).json({ message: "signed up !!!", success: true });
+    newUser = newUser.toObject();
+    delete newUser.password;
+    res.status(201).json({ success: true, user: newUser });
   } catch (err) {
     next(ErrorHandler(500, err.message));
   }
@@ -37,20 +39,27 @@ export async function signIn(req, res, next) {
       })
       .json({ success: true, user: validuser });
   } catch (err) {
-    next(err);
+    console.log(err.message);
+
+    next(ErrorHandler(500, err.message));
   }
 }
 
 export async function google(req, res, next) {
   try {
     const { email, pfp, name } = req.body;
+   
+
     let user = await User.findOne({ email });
+
     if (user) {
+      const token = jwt.sign({ userid: user._id }, process.env.SECRET, {
+        expiresIn: "1h",
+      });
+
       user = user.toObject();
       delete user.password;
-      const token = jwt.sign({ userid: user._id }, process.env.SECRET, {
-        expiresIn: "1hr",
-      });
+
       res
         .status(201)
         .cookie("acces_token", token, {
@@ -58,29 +67,32 @@ export async function google(req, res, next) {
         })
         .json({ success: true, user });
     } else {
-      let newpass = randpass();
+      const newpass = randpass();
       let newuser = new User({
         username: name,
         email,
         password: bcrypt.hashSync(newpass, 10),
         pfp,
       });
-      newuser.save();
+
+      await newuser.save();
+
       const token = jwt.sign({ userid: newuser._id }, process.env.SECRET, {
-        expiresIn: "1hr",
+        expiresIn: "1h",
       });
-      console.log(randpass);
+
+      newuser = newuser.toObject();
+      delete newuser.password;
 
       res
         .status(201)
         .cookie("acces_token", token, {
           httpOnly: true,
         })
-        .json({ success: true, user: { ...newuser} });
+        .json({ success: true, user: newuser });
     }
   } catch (err) {
     console.log(err.message);
-
-    next(ErrorHandler(err));
+    next(ErrorHandler(500, err.message));
   }
 }
