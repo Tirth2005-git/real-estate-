@@ -7,6 +7,7 @@ import {
   deleteerror,
   deletesuccess,
 } from "../redux/userslice.jsx";
+import { Link } from "react-router-dom";
 
 function Profile() {
   const fileref = useRef();
@@ -196,6 +197,12 @@ function Profile() {
               <p className="text-white">Update</p>
             )}
           </button>
+          <Link to="/create-listing">
+            <button className="bg-green-800 rounded-lg w-72 p-2 mt-2 text-white hover:opacity-90">
+              Create Listing
+            </button>
+          </Link>
+
           <div className="w-72 mt-2 text-sm">
             {error ? (
               <p className="text-red-500 mb-1">{error}</p>

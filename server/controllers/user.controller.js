@@ -1,6 +1,7 @@
 import User from "../models/users.model.js";
 import { ErrorHandler } from "../utils/error.js";
 import bcrypt from "bcryptjs";
+import Listing from "../models/listing.model.js";
 
 export function test(req, res) {
   res.send("Hello !!!");
@@ -73,6 +74,17 @@ export async function signout(req, res, next) {
       .clearCookie("acces_token")
       .status(201)
       .json({ success: true, message: "signed out successfully" });
+  } catch (err) {
+    next(ErrorHandler(500, err.message));
+  }
+}
+export async function getUserListings(req, res, next) {
+  try {
+    if (req.params.id !== req.user.userid) {
+      return next(ErrorHandler(403, "can't get others's Listings !!"));
+    }
+    const userlistings = await Listing.find({ userref: req.params.id });
+    res.status(201).send({ success: true, userlistings });
   } catch (err) {
     next(ErrorHandler(500, err.message));
   }
