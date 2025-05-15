@@ -21,8 +21,15 @@ app.use(cookieParser());
 app.use(userroute);
 app.use(authroute);
 app.use(listingrouter);
-app.use(filerouter)
+app.use(filerouter);
 app.use((err, req, res, next) => {
+  if (err.code === "LIMIT_FILE_SIZE") {
+    return res.json({
+      statuscode: 401,
+      success: false,
+      message: "File size should be less than or equals 2MB",
+    });
+  }
   const success = false;
   const errcode = err.statusCode || 500;
   const message = err.message || "Internal server error";

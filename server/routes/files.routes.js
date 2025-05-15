@@ -1,12 +1,18 @@
 import express from "express";
 import verifyToken from "../utils/verifyToken.js";
 import multer from "multer";
+import storage from "../utils/multure.js";
 import {
   pfpUpload,
   propertyImagesUpload,
 } from "../controllers/fileuplds.controller.js";
 const filerouter = express.Router();
-const upload = multer({ dest: "uploads/" });
+const upload = multer({
+  storage,
+  limits: {
+    fileSize: 2 * 1024 * 1024,
+  },
+});
 
 filerouter.post(
   "/api/pfp/upload",

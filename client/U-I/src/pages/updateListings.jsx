@@ -1,18 +1,52 @@
-import { useState, useEffect } from "react";
-import { useDispatch, useSelector } from "react-redux";
-import { NavLink } from "react-router-dom";
+import { useState, useEffect, useRef } from "react";
 import { setListing } from "../redux/listingslice.jsx";
-function CreateListing() {
+import { useDispatch } from "react-redux";
+import { useLocation } from "react-router-dom";
+import { useSelector } from "react-redux";
+function UpdateListing() {
+  const { currentuser } = useSelector((state) => state.user);
+  const { state: listing } = useLocation();
+  const {
+    title,
+    address,
+    description,
+    features,
+    listedBy,
+    specialOffer,
+    price,
+    propertyType,
+    listingType,
+  } = listing;
+
+  const fileref = useRef(0);
   const [formdata, setFormData] = useState({
-    images: [],
+    title,
+    description,
+    features,
+    price,
+    specialOffer,
+    status: "",
+    propertyType,
+    listingType,
+    state: address.state,
+    city: address.city,
+    zipcode: address.zipcode,
+    streetAddress: address.streetAddress,
+    name: listedBy.name,
+    email: listedBy.contact.email,
+    phone: listedBy.contact.phone,
+    newImages: [],
+    imagesToDel: [],
+    newimgURLs: [],
   });
   const dispatch = useDispatch();
-  const [fileup, setFile] = useState([]);
+
   const [ferror, setError] = useState();
-  const [Cerror, setCreateError] = useState();
+  const [updateerror, setUpdateError] = useState();
   const [uploading, setUploading] = useState("idile");
-  const [Cuploading, setCreateUploading] = useState("idile");
-  const { currentuser } = useSelector((state) => state.user);
+  const [update, setUpdating] = useState("idile");
+  const [oldImages, setOldImages] = useState(() => [...listing.images]);
+
   useEffect(() => {
     if (uploading === "success") {
       const timer = setTimeout(() => {
@@ -23,61 +57,56 @@ function CreateListing() {
   }, [uploading]);
 
   useEffect(() => {
-    if (Cuploading === "success") {
+    if (update === "success") {
       const timer = setTimeout(() => {
-        setCreateUploading("idle");
+        setUpdating("idle");
       }, 3000);
       return () => clearTimeout(timer);
     }
-  }, [uploading]);
+  }, [update]);
 
-  async function handleSubmit(e) {
+  async function handleUpdate(e) {
     try {
+      setUpdating("updating");
       e.preventDefault();
-      if (!formdata) {
-        return;
-      }
-      if (!formdata.status) {
-        formdata.status = "available";
-      }
-      setCreateUploading("uploading");
-      const res = await fetch(`/api/list/${currentuser._id}`, {
+      const { newImages, ...rest } = formdata;
+      const res = await fetch(`/api/update/listing/${currentuser._id}`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({
-          formdata: { ...formdata, userref: currentuser._id },
-        }),
+        body: JSON.stringify(rest),
       });
       const data = await res.json();
       if (data.success === false) {
-        setCreateUploading("idle");
-        setCreateError(data.message);
-        return;
+        setUpdating("idle");
+        setUpdateError(data.message);
       }
-      setCreateUploading("success");
-      setCreateError(null);
-      console.log(data.newlisting);
-
-      dispatch(setListing(data.newlisting));
+      setUpdating("success");
+      setUpdateError(null);
     } catch (err) {
-      setCreateUploading("success");
-      setCreateError(null);
+      setUpdateError(err.message);
+      console.log(err.message);
     }
   }
+
   async function handleUpload() {
     try {
       setUploading("uploading");
 
-      if (!fileup || fileup.length == 0 || fileup.length > 5) {
+      if (
+        oldImages.length + formdata.newImages.length > 5 ||
+        formdata.newImages.length == 0
+      ) {
         setUploading("idle");
         setError("Invalid file quantity");
         return;
       }
 
       const formData = new FormData();
-      fileup.forEach((file) => formData.append("property-pics", file));
+      formdata.newImages.forEach((file) =>
+        formData.append("property-pics", file)
+      );
 
       const res = await fetch("/api/mult/uploads", {
         method: "POST",
@@ -91,7 +120,7 @@ function CreateListing() {
         setError(data.message);
         return;
       }
-      setFormData({ ...formdata, images: data.uploadedurls });
+      setFormData({ ...formdata, newimgURLs: data.uploadedurls });
       setUploading("success");
       setError(null);
     } catch (err) {
@@ -99,30 +128,31 @@ function CreateListing() {
       setError(err.message);
     }
   }
-  function handleDelete(index) {
-    setFile(fileup.filter((image, i) => i != index));
+  function handleNewDelete(index) {
+    setFormData((prev) => ({
+      ...prev,
+      newImages: prev.newImages.filter((_, i) => i !== index),
+    }));
   }
-  const { listings } = useSelector((state) => state.listings);
+  function handleOldDelete(index) {
+    const imageToDelete = oldImages[index];
 
+    setFormData((prev) => ({
+      ...prev,
+      imagesToDel: [...prev.imagesToDel, imageToDelete.public_id],
+    }));
+
+    setOldImages((prev) => prev.filter((_, i) => i !== index));
+  }
   return (
     <>
       <h1 className="text-center text-black font-bold mt-4 sm:text-2xl">
-        Create Listing
+        Update Your Listing
       </h1>
-      {listings.length > 0 ? (
-        <p className="text-green-500 text-2xl font-bold flex justify-center mt-3">
-          View Your Existing Listings{" "}
-          <NavLink
-            to="/user-listings"
-            className="text-green-700 hover:underline ml-2"
-          >
-            Here
-          </NavLink>
-        </p>
-      ) : null}
+
       <form
         className="bg-gray-200 mx-auto flex p-5 justify-between gap-6 rounded-xl max-w-4xl mt-3"
-        onSubmit={handleSubmit}
+        onSubmit={handleUpdate}
       >
         <div className="w-1/2">
           <div className="flex flex-col gap-4 p-4  w-full">
@@ -132,10 +162,10 @@ function CreateListing() {
                 placeholder="Title"
                 id="title"
                 className="p-2 w-full bg-white text-black rounded-lg"
-                required
                 onChange={(e) =>
                   setFormData({ ...formdata, [e.target.id]: e.target.value })
                 }
+                defaultValue={title}
               />
             </div>
 
@@ -149,7 +179,7 @@ function CreateListing() {
                 id="listingType"
                 name="listing-type"
                 className="text-2xl mr-3"
-                required
+                checked={formdata.listingType === "rent"}
                 onChange={(e) =>
                   setFormData({ ...formdata, [e.target.id]: e.target.value })
                 }
@@ -161,7 +191,7 @@ function CreateListing() {
                 id="listingType"
                 name="listing-type"
                 className="text-2xl ml-3 mr-3"
-                required
+                checked={formdata.listingType === "sale"}
                 onChange={(e) =>
                   setFormData({ ...formdata, [e.target.id]: e.target.value })
                 }
@@ -185,7 +215,7 @@ function CreateListing() {
                       onChange={(e) =>
                         setFormData({
                           ...formdata,
-                          [e.target.id]: e.target.value,
+                          propertyType: e.target.value,
                         })
                       }
                       className="text-blue-600 focus:ring-blue-500"
@@ -202,7 +232,7 @@ function CreateListing() {
                 id="description"
                 placeholder="Enter description of property"
                 className="p-2 w-full h-40 bg-white text-black rounded-lg resize-none"
-                required
+                defaultValue={description}
                 onChange={(e) =>
                   setFormData({ ...formdata, [e.target.id]: e.target.value })
                 }
@@ -219,7 +249,7 @@ function CreateListing() {
                     type="number"
                     id="price"
                     className="p-2 bg-white text-black rounded-lg  "
-                    required
+                    defaultValue={price}
                     onChange={(e) =>
                       setFormData({
                         ...formdata,
@@ -239,6 +269,7 @@ function CreateListing() {
                   <textarea
                     id="specialOffer"
                     className="p-2 bg-white text-black  h-32  rounded-lg resize-none"
+                    defaultValue={specialOffer && specialOffer}
                     onChange={(e) =>
                       setFormData({
                         ...formdata,
@@ -254,29 +285,36 @@ function CreateListing() {
                   placeholder="features"
                   className="p-2  bg-white text-black   h-36 w-44 rounded-lg resize-none"
                   id="features"
-                  required
+                  defaultValue={features}
                   onChange={(e) =>
                     setFormData({ ...formdata, [e.target.id]: e.target.value })
                   }
                 ></textarea>
               </div>
             </div>
-            <div className="w-full">
+            <div className="w-full flex gap-3">
               <label htmlFor="status" className="block text-black mb-1">
                 Status:
               </label>
-              <input
-                type="radio"
-                value="Available"
-                name="status"
-                className="text-2xl mr-3"
-                onChange={(e) =>
-                  setFormData({ ...formdata, [e.target.name]: e.target.value })
-                }
-                checked
-                required
-              />
-              Available
+              {["rented", "sold", "Under Negotiations"].map((type) => (
+                <label key={type} className="flex items-center space-x-2">
+                  <input
+                    type="radio"
+                    name="status"
+                    id="status"
+                    value={type}
+                    checked={formdata.status === type}
+                    onChange={(e) =>
+                      setFormData({
+                        ...formdata,
+                        status: e.target.value,
+                      })
+                    }
+                    className="text-blue-600 focus:ring-blue-500"
+                  />
+                  <span className="capitalize text-gray-700">{type}</span>
+                </label>
+              ))}
             </div>
           </div>
         </div>
@@ -291,7 +329,7 @@ function CreateListing() {
                   placeholder="State"
                   className="p-2 bg-white text-black rounded-lg"
                   id="state"
-                  required
+                  defaultValue={address.state}
                   onChange={(e) =>
                     setFormData({ ...formdata, [e.target.id]: e.target.value })
                   }
@@ -301,7 +339,7 @@ function CreateListing() {
                   placeholder="City"
                   className="p-2 bg-white text-black rounded-lg"
                   id="city"
-                  required
+                  defaultValue={address.city}
                   onChange={(e) =>
                     setFormData({ ...formdata, [e.target.id]: e.target.value })
                   }
@@ -311,7 +349,7 @@ function CreateListing() {
                   placeholder="Zipcode"
                   className="p-2 bg-white text-black rounded-lg"
                   id="zipcode"
-                  required
+                  defaultValue={address.zipcode}
                   onChange={(e) =>
                     setFormData({ ...formdata, [e.target.id]: e.target.value })
                   }
@@ -321,7 +359,7 @@ function CreateListing() {
                   placeholder="Street Address"
                   className="p-2 bg-white text-black rounded-lg col-span-2"
                   id="streetAddress"
-                  required
+                  defaultValue={address.streetAddress}
                   onChange={(e) =>
                     setFormData({ ...formdata, [e.target.id]: e.target.value })
                   }
@@ -335,7 +373,7 @@ function CreateListing() {
                 placeholder="name"
                 id="name"
                 className="p-2 w-full bg-white text-black rounded-lg"
-                required
+                defaultValue={listedBy.name}
                 onChange={(e) =>
                   setFormData({ ...formdata, [e.target.id]: e.target.value })
                 }
@@ -345,7 +383,7 @@ function CreateListing() {
                 placeholder="email"
                 id="email"
                 className="p-2 w-full bg-white text-black rounded-lg"
-                required
+                defaultValue={listedBy.contact.email}
                 onChange={(e) =>
                   setFormData({ ...formdata, [e.target.id]: e.target.value })
                 }
@@ -355,7 +393,7 @@ function CreateListing() {
                 placeholder="phone"
                 id="phone"
                 className="p-2 w-full bg-white text-black rounded-lg"
-                required
+                defaultValue={listedBy.contact.phone}
                 onChange={(e) =>
                   setFormData({ ...formdata, [e.target.id]: e.target.value })
                 }
@@ -366,39 +404,48 @@ function CreateListing() {
                   <span className="text-slate-400 mr-1.5">Only 5 images</span>
                 </span>
               </label>
-              <div className="w-full max-w-md mx-auto p-6 bg-white rounded-2xl shadow-md">
-                <label
-                  htmlFor="images"
-                  className="block text-sm font-medium text-gray-700 mb-2"
-                >
-                  Upload an image
-                </label>
-
-                <div className="flex items-center gap-4">
-                  <input
-                    id="images"
-                    type="file"
-                    accept="image/*"
-                    className="block w-full text-sm text-gray-700 
-                              file:mr-4 file:py-2 file:px-4
-                             file:rounded-md file:border-0
-                             file:text-sm file:font-medium
-                             file:bg-gray-100 file:text-gray-700
-                             hover:file:bg-gray-200 transition duration-200 ease-in-out"
-                    onChange={(e) => setFile(Array.from(e.target.files))}
-                    multiple
-                    name="property-pics"
-                  />
-
-                  <button
-                    type="button"
-                    className="bg-blue-600 hover:bg-blue-700
-                     text-white text-sm font-semibold py-2 px-4 rounded-md transition duration-200"
-                    onClick={handleUpload}
+              <div className="w-full max-w-md mx-auto p-6 bg-white rounded-2xl shadow-md ">
+                <div className="flex justify-between">
+                  <label
+                    className="block text-sm font-medium text-gray-700 mb-2 hover:underline"
+                    onClick={() => fileref.current.click()}
                   >
-                    Upload
-                  </button>
+                    Upload an image
+                  </label>
+                  <p className="text-red-500">
+                    Images:
+                    <span className="ml-2">
+                      {oldImages.length + formdata.newImages.length}
+                    </span>
+                  </p>
+                  <div className="flex items-center gap-4">
+                    <input
+                      id="images"
+                      type="file"
+                      accept="image/*"
+                      className="hidden"
+                      onChange={(e) =>
+                        setFormData({
+                          ...formdata,
+                          newImages: Array.from(e.target.files),
+                        })
+                      }
+                      multiple
+                      name="property-pics"
+                      ref={fileref}
+                    />
+
+                    <button
+                      type="button"
+                      className="bg-blue-600 hover:bg-blue-700
+                     text-white text-sm font-semibold py-2 px-4 rounded-md transition duration-200"
+                      onClick={handleUpload}
+                    >
+                      Upload
+                    </button>
+                  </div>
                 </div>
+
                 {uploading === "uploading" ? (
                   <p className="text-yellow-500">Uploading...</p>
                 ) : ferror ? (
@@ -406,12 +453,12 @@ function CreateListing() {
                 ) : uploading === "success" ? (
                   <p className="text-green-400">✅ Upload successful</p>
                 ) : null}
-                {fileup && fileup.length > 0 && (
+                {formdata.newImages && formdata.newImages.length > 0 && (
                   <div className="flex flex-col gap-4 mt-4">
-                    {fileup.map((image, index) => (
+                    {formdata.newImages.map((image, index) => (
                       <div
                         key={index}
-                        className="flex  justify-between p-3 rounded-lg border border-gray-200 bg-white shadow-sm"
+                        className="flex justify-between p-3 rounded-lg border border-gray-200 bg-white shadow-sm"
                       >
                         <img
                           src={URL.createObjectURL(image)}
@@ -419,7 +466,26 @@ function CreateListing() {
                         ></img>
                         <button
                           type="button"
-                          onClick={() => handleDelete(index)}
+                          onClick={() => handleNewDelete(index)}
+                          className="mt-1 text-red-500 text-xs font-semibold hover:text-red-600 transition"
+                        >
+                          DELETE
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+                {oldImages && oldImages.length > 0 && (
+                  <div className="flex flex-col gap-4 mt-4">
+                    {oldImages.map((image, index) => (
+                      <div
+                        key={index}
+                        className="flex justify-between p-3 rounded-lg border border-gray-200 bg-white shadow-sm"
+                      >
+                        <img src={image.imageurl} className="w-12 h-12"></img>
+                        <button
+                          type="button"
+                          onClick={() => handleOldDelete(index)}
                           className="mt-1 text-red-500 text-xs font-semibold hover:text-red-600 transition"
                         >
                           DELETE
@@ -435,15 +501,15 @@ function CreateListing() {
                   type="submit"
                   className="bg-green-800 rounded-lg w-72 p-2 mt-2 text-white hover:opacity-90 transition-transform duration-150 active:scale-110"
                 >
-                  Submit
+                  Update
                 </button>
-                {Cuploading === "uploading" ? (
-                  <p className="text-green-400">Creating</p>
-                ) : Cuploading === "success" ? (
-                  <p className="text-green-500">Uploaded</p>
+                {update === "updating" ? (
+                  <p className="text-green-400">Updating</p>
+                ) : update === "success" ? (
+                  <p className="text-green-500">Updated</p>
                 ) : null}
 
-                {Cerror && <p className="text-red-500">{Cerror}</p>}
+                {updateerror && <p className="text-red-500">{updateerror}</p>}
               </div>
             </div>
           </div>
@@ -452,4 +518,4 @@ function CreateListing() {
     </>
   );
 }
-export default CreateListing;
+export default UpdateListing;

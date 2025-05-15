@@ -4,7 +4,7 @@ import { useSelector } from "react-redux";
 function Header() {
   const { currentuser } = useSelector((state) => state.user);
 
-  
+  const { listings } = useSelector((state) => state.listings);
   return (
     <>
       <header className="bg-gray-100 flex flex-wrap p-3 justify-between mx-auto shadow-md items-center">
@@ -20,10 +20,30 @@ function Header() {
           ></input>
           <FaSearch className="text-gray-700"></FaSearch>
         </form>
-        <ul className="flex gap-5">
+        <ul className="flex gap-6">
+          {currentuser ? (
+            <li>
+              <NavLink
+                className="hidden sm:inline hover:underline text-lg text-gray-700"
+                to="/create-listing"
+              >
+                CreateListing
+              </NavLink>
+            </li>
+          ) : null}
+          {currentuser ? (
+            <li>
+              <NavLink
+                className="hidden sm:inline hover:underline text-lg text-gray-700"
+                to="/user-listings"
+              >
+                YourListings
+              </NavLink>
+            </li>
+          ) : null}
           <li>
             <NavLink
-              className="hidden sm:inline hover:underline text-gray-700"
+              className="hidden sm:inline hover:underline text-lg text-gray-700"
               to="/"
             >
               Home
@@ -31,7 +51,7 @@ function Header() {
           </li>
           <li>
             <NavLink
-              className="hidden sm:inline hover:underline text-gray-700"
+              className="hidden sm:inline hover:underline text-lg text-gray-700"
               to="/about"
             >
               About
@@ -39,14 +59,14 @@ function Header() {
           </li>
           <li>
             <NavLink
-              className="hidden sm:inline hover:underline text-gray-700"
+              className="hidden sm:inline hover:underline text-lg text-gray-700"
               to="/profile"
             >
               {currentuser ? (
                 <img
                   src={currentuser.pfp}
                   alt="Pfp"
-                  className="h-7 w-7 rounded-full inline "
+                  className="h-8 w-8 rounded-full inline "
                 />
               ) : (
                 "Signin"

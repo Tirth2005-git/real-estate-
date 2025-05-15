@@ -50,7 +50,7 @@ const listmodel = new mongoose.Schema({
   price: {
     type: Number,
     required: true,
-    trim: true,
+ 
   },
   specialOffer: {
     type: String,
@@ -66,6 +66,7 @@ const listmodel = new mongoose.Schema({
       phone: {
         type: String,
         required: true,
+        trim:true
       },
       email: {
         type: String,
@@ -77,6 +78,7 @@ const listmodel = new mongoose.Schema({
   userref: {
     type: String,
     required: true,
+    trim:true
   },
 });
 const Listing = mongoose.model("Listings", listmodel);

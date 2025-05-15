@@ -10,6 +10,10 @@ import { store, persistor } from "./redux/store.jsx";
 import { PersistGate } from "redux-persist/integration/react";
 import PvtRoute from "./components/PrivateRoute.jsx";
 import CreateListing from "./pages/CreateListing.jsx";
+import UserListings from "./pages/UserListings.jsx";
+import PvtRoute2 from "./components/PrivateRoute2.jsx";
+import ListingView from "./pages/viewListing.jsx";
+import UpdateListing from "./pages/updateListings.jsx";
 import "./index.css";
 function App() {
   return (
@@ -28,6 +32,14 @@ function App() {
                 <Route
                   path="/create-listing"
                   element={<CreateListing />}
+                ></Route>
+                <Route path="/user-listings" element={<UserListings />}></Route>
+              </Route>
+              <Route element={<PvtRoute2 />}>
+                <Route path="/listing" element={<ListingView />}></Route>
+                <Route
+                  path="/update-listing"
+                  element={<UpdateListing />}
                 ></Route>
               </Route>
             </Routes>

@@ -56,7 +56,9 @@ export const {
   updatefailure,
   updatesucccess,
   deleteerror,
-  deletesuccess
+  deletesuccess,
+  getlistingError,
+  getlistingdone,
 } = userSlice.actions;
 
 export default userSlice.reducer;

@@ -1,5 +1,6 @@
 import { useSelector, useDispatch } from "react-redux";
 import { useRef, useState, useEffect } from "react";
+import { clearListings } from "../redux/listingslice.jsx";
 import {
   updatestart,
   updatesucccess,
@@ -7,9 +8,10 @@ import {
   deleteerror,
   deletesuccess,
 } from "../redux/userslice.jsx";
-import { Link } from "react-router-dom";
+import { Link, useNavigate, NavLink } from "react-router-dom";
 
 function Profile() {
+  const navigate = useNavigate();
   const fileref = useRef();
   const [fileup, setFile] = useState(0);
   const [uploading, setUploading] = useState("idile");
@@ -17,6 +19,7 @@ function Profile() {
   const [formData, setFormData] = useState({});
   const [success, setSuccess] = useState(false);
   const { currentuser, loading, error } = useSelector((state) => state.user);
+
   useEffect(() => {
     if (uploading === "success") {
       const timer = setTimeout(() => {
@@ -102,10 +105,11 @@ function Profile() {
       const data = await res.json();
       if (data.success === false) {
         dispatch(deleteerror(data.message));
-
         return;
       }
+      console.log(data.success);
       dispatch(deletesuccess());
+      dispatch(clearListings());
     } catch (err) {
       dispatch(deleteerror(err.message));
     }
@@ -119,7 +123,11 @@ function Profile() {
         dispatch(deleteerror(data.message));
         return;
       }
+      console.log(data.success);
+
       dispatch(deletesuccess());
+      dispatch(clearListings());
+      //navigate("/sign-in");
     } catch (err) {
       dispatch(deleteerror(err.message));
     }
@@ -130,6 +138,7 @@ function Profile() {
         <h1 className="text-slate-900 text-center text-3xl font-bold mt-4">
           Profile
         </h1>
+        {}
         <form
           className="flex flex-col gap-4 items-center mt-6"
           onSubmit={handleSubmit}
@@ -210,14 +219,26 @@ function Profile() {
               <p className="text-green-400 mb-1">✅ Update successful</p>
             ) : null}
 
-            <div className="flex justify-between text-red-700">
-              <span className="cursor-pointer" onClick={handledelete}>
+            <div className="flex justify-between text-red-700 ">
+              <span
+                className="cursor-pointer active:scale-50"
+                onClick={handledelete}
+              >
                 Delete Account
               </span>
-              <span className="cursor-pointer" onClick={handlesingout}>
+              <span
+                className="cursor-pointer active:scale-50"
+                onClick={handlesingout}
+              >
                 Sign Out
               </span>
             </div>
+            <NavLink
+              className="flex text-green-500 justify-center mt-3 text-lg cursor-pointer active:scale-50"
+              to="/user-listings"
+            >
+              View Your listings
+            </NavLink>
           </div>
         </form>
       </div>

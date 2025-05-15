@@ -3,12 +3,13 @@ import { useNavigate, Link } from "react-router-dom";
 import { start, succcess, failure } from "../redux/userslice.jsx";
 import { useSelector, useDispatch } from "react-redux";
 import GoogleO from "../components/GoogleO.jsx";
+import { setAfterlogin } from "../redux/listingslice.jsx";
+
 function Signin() {
   const navigate = useNavigate();
   const [formdata, setdata] = useState({});
   const loading = useSelector((state) => state.user.loading);
   const error = useSelector((state) => state.user.error);
-
   const dispatch = useDispatch();
   function handleChange(e) {
     setdata({ ...formdata, [e.target.id]: e.target.value });
@@ -31,9 +32,11 @@ function Signin() {
         dispatch(failure(data.message));
         return;
       }
-    
-      dispatch(succcess(data.user));
 
+      dispatch(succcess(data.user));
+      if (data.userlisting) {
+        dispatch(setAfterlogin(data.userlisting));
+      }
       navigate("/");
     } catch (err) {
       dispatch(failure(err.message));

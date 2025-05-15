@@ -3,6 +3,7 @@ import { app } from "../firebase.js";
 import { succcess, failure } from "../redux/userslice.jsx";
 import { useDispatch } from "react-redux";
 import { useNavigate } from "react-router-dom";
+import { setAfterlogin } from "../redux/listingslice.jsx";
 function GoogleO() {
   const navigate = useNavigate();
   const dispatch = useDispatch();
@@ -28,8 +29,10 @@ function GoogleO() {
         return dispatch(failure(data.message));
       }
       dispatch(succcess(data.user));
-     
-      
+      if (data.userlisting) {
+        dispatch(setAfterlogin(data.userlisting));
+      }
+
       navigate("/");
     } catch (err) {
       console.log(err.message);

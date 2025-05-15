@@ -2,7 +2,8 @@ import User from "../models/users.model.js";
 import { ErrorHandler } from "../utils/error.js";
 import bcrypt from "bcryptjs";
 import Listing from "../models/listing.model.js";
-
+import { delpfp } from "./fileuplds.controller.js";
+import isCloudinaryURL from "../utils/isclaudinary.js";
 export function test(req, res) {
   res.send("Hello !!!");
 }
@@ -18,8 +19,15 @@ export async function updateUser(req, res, next) {
         !req.body.password &&
         !req.body.imageid
       ) {
-        return next(ErrorHandler(401, "New credentals required "));
+        return next(ErrorHandler(403, "New credentals required "));
       }
+      const user = await User.findById(req.params.id);
+      const { pfp, pfpid } = user;
+
+      if (isCloudinaryURL(pfp)) {
+        await delpfp(pfpid);
+      }
+
       let newreqobj = {};
       Object.keys(req.body).forEach((key) => {
         if (req.body[key] && req.body[key].toString().trim()) {
@@ -54,37 +62,41 @@ export async function updateUser(req, res, next) {
     next(ErrorHandler(500, err.message));
   }
 }
+
 export async function deleteUser(req, res, next) {
   try {
     if (req.params.id !== req.user.userid) {
-      return next(ErrorHandler(403, "can't update others!!"));
+      return next(ErrorHandler(403, "can't delete others!!"));
     }
+    const usertodel = await User.findById(req.params.id);
+    const { pfpid, pfp } = usertodel;
+    if (isCloudinaryURL(pfp)) {
+      await delpfp(pfpid);
+    }
+
     await User.findByIdAndDelete(req.params.id);
-    res
-      .clearCookie("acces_token")
-      .status(201)
-      .send({ success: true, message: "deleted successfully" });
+    res.clearCookie("acces_token").status(201).json({ success: true });
   } catch (err) {
     next(ErrorHandler(500, err.message));
   }
 }
+
 export async function signout(req, res, next) {
   try {
-    res
-      .clearCookie("acces_token")
-      .status(201)
-      .json({ success: true, message: "signed out successfully" });
+    res.clearCookie("acces_token").status(201).json({ success: true });
   } catch (err) {
     next(ErrorHandler(500, err.message));
   }
 }
+
 export async function getUserListings(req, res, next) {
   try {
-    if (req.params.id !== req.user.userid) {
+    if (req.params.id != req.user.userid) {
       return next(ErrorHandler(403, "can't get others's Listings !!"));
     }
     const userlistings = await Listing.find({ userref: req.params.id });
-    res.status(201).send({ success: true, userlistings });
+
+    res.status(201).json({ success: true, userlistings });
   } catch (err) {
     next(ErrorHandler(500, err.message));
   }

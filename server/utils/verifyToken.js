@@ -13,8 +13,9 @@ export default async function verifyToken(req, res, next) {
       }
     });
   } catch (err) {
-   
-
+    if (err.name === "TokenExpiredError") {
+      next(ErrorHandler(405, "Token expired pls login again"));
+    }
     next(ErrorHandler(500, err.message));
   }
 }
