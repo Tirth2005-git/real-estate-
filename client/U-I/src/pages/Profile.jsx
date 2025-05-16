@@ -123,11 +123,9 @@ function Profile() {
         dispatch(deleteerror(data.message));
         return;
       }
-      console.log(data.success);
 
       dispatch(deletesuccess());
       dispatch(clearListings());
-      //navigate("/sign-in");
     } catch (err) {
       dispatch(deleteerror(err.message));
     }

@@ -14,8 +14,14 @@ import UserListings from "./pages/UserListings.jsx";
 import PvtRoute2 from "./components/PrivateRoute2.jsx";
 import ListingView from "./pages/viewListing.jsx";
 import UpdateListing from "./pages/updateListings.jsx";
+
 import "./index.css";
 function App() {
+  window.addEventListener("beforeunload", () => {
+    navigator.sendBeacon("/api/signout");
+    localStorage.removeItem("user");
+    localStorage.removeItem("listings");
+  });
   return (
     <>
       <Provider store={store}>

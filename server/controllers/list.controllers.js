@@ -88,14 +88,77 @@ export async function updateList(req, res, next) {
       return next(ErrorHandler(403, "you can only update yours listing!!"));
     }
 
-    /*const listings = await Listing.findById(req.body.listingid);
-    if (!listings) {
-      return next(ErrorHandler(404, "Listing doesn't exists"));
-    }*/
-    console.log(req.body);
+    let newimgarr = [];
+    let text_data = JSON.parse(req.body["text-data"]);
+    let imagestodel = JSON.parse(req.body["imgstodel"]);
+    let newimgs = JSON.parse(req.body["newimgs"]);
+    let price = parseInt(req.body["price"]);
+    const listingid = JSON.parse(req.body["listingid"]);
+    const specialOffer = JSON.parse(req.body["specialoffer"]).trim();
+    const listing = await Listing.findById(listingid);
 
-    res.status(201).json({ success: true });
+    let updatedtextdata = {};
+    Object.keys(text_data).forEach((key) => {
+      if (text_data[key] && text_data[key].toString().trim()) {
+        updatedtextdata[key] = text_data[key];
+      }
+    });
+
+    if (imagestodel.length > 0) {
+      const idsToDelete = imagestodel.map((img) => img.public_id);
+
+      let images = listing.images;
+      images = images.filter((img) => !idsToDelete.includes(img.public_id));
+      await delimages(...imagestodel);
+      newimgarr.push(...images);
+    }
+    if (newimgs.length > 0) {
+      newimgarr.push(...newimgs);
+    }
+    const updatedlist = await Listing.findByIdAndUpdate(
+      listingid,
+      {
+        $set: {
+          title: updatedtextdata.title?.toLowerCase() || listing.title,
+          listingType:
+            updatedtextdata.listingType?.toLowerCase() || listing.listingType,
+          propertyType:
+            updatedtextdata.propertyType?.toLowerCase() || listing.propertyType,
+          description:
+            updatedtextdata.description?.toLowerCase() || listing.description,
+          images: newimgarr.length > 0 ? newimgarr : listing.images,
+          specialOffer: specialOffer.trim() ? specialOffer : "",
+          features: updatedtextdata.features?.toLowerCase() || listing.features,
+          status: updatedtextdata.status?.toLowerCase() || listing.status,
+          address: {
+            state:
+              updatedtextdata.state?.toLowerCase() || listing.address.state,
+            city: updatedtextdata.city?.toLowerCase() || listing.address.city,
+            zipcode:
+              updatedtextdata.zipcode?.toLowerCase() || listing.address.zipcode,
+            streetAddress:
+              updatedtextdata.streetAddress?.toLowerCase() ||
+              listing.address.streetAddress,
+          },
+          listedBy: {
+            name: updatedtextdata.name?.toLowerCase() || listing.listedBy.name,
+            contact: {
+              email: updatedtextdata.email || listing.listedBy.contact.email,
+              phone: updatedtextdata.phone || listing.listedBy.contact.phone,
+            },
+          },
+          price: (price > 1000 && price) || listing.price,
+        },
+      },
+      { new: true }
+    );
+
+  
+
+    res.status(201).json({ success: true, updatedlist });
   } catch (err) {
+    console.log(err);
+
     next(ErrorHandler(500, err.message));
   }
 }

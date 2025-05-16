@@ -34,7 +34,7 @@ export async function signIn(req, res, next) {
       return next(ErrorHandler(403, "Incorrect password!!!"));
     }
     const token = jwt.sign({ userid: validuser._id }, process.env.SECRET, {
-      expiresIn: "3hr",
+      expiresIn: "3h",
     });
 
     delete validuser.password;
@@ -65,7 +65,7 @@ export async function google(req, res, next) {
 
     if (user) {
       const token = jwt.sign({ userid: user._id }, process.env.SECRET, {
-        expiresIn: "1h",
+        expiresIn: "3h",
       });
 
       user = user.toObject();
@@ -89,7 +89,7 @@ export async function google(req, res, next) {
       await newuser.save();
 
       const token = jwt.sign({ userid: newuser._id }, process.env.SECRET, {
-        expiresIn: "1h",
+        expiresIn: "3h",
       });
 
       newuser = newuser.toObject();

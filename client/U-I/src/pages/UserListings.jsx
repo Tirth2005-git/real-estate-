@@ -33,7 +33,7 @@ function UserListings() {
         setdel(null);
         throw new Error(res.message);
       }
-      
+
       const newList = listings.filter((_, i) => i !== index);
       dispatch(deleteListing(newList));
       setdel(null);
@@ -43,7 +43,9 @@ function UserListings() {
     }
   }
   function handleEdit(index) {
-    navigate("/update-listing", { state: listings[index] });
+    console.log(index);
+
+    navigate("/update-listing", { state: { index } });
   }
   return (
     <>

@@ -1,11 +1,16 @@
 import { useState, useEffect, useRef } from "react";
-import { setListing } from "../redux/listingslice.jsx";
+import { UpdateList } from "../redux/listingslice.jsx";
 import { useDispatch } from "react-redux";
 import { useLocation } from "react-router-dom";
 import { useSelector } from "react-redux";
 function UpdateListing() {
+  const location = useLocation();
+
+  const index = location.state.index;
+
   const { currentuser } = useSelector((state) => state.user);
-  const { state: listing } = useLocation();
+  const { listings } = useSelector((state) => state.listings);
+
   const {
     title,
     address,
@@ -16,7 +21,8 @@ function UpdateListing() {
     price,
     propertyType,
     listingType,
-  } = listing;
+    status,
+  } = listings[index];
 
   const fileref = useRef(0);
   const [formdata, setFormData] = useState({
@@ -25,7 +31,7 @@ function UpdateListing() {
     features,
     price,
     specialOffer,
-    status: "",
+    status,
     propertyType,
     listingType,
     state: address.state,
@@ -45,7 +51,7 @@ function UpdateListing() {
   const [updateerror, setUpdateError] = useState();
   const [uploading, setUploading] = useState("idile");
   const [update, setUpdating] = useState("idile");
-  const [oldImages, setOldImages] = useState(() => [...listing.images]);
+  const [oldImages, setOldImages] = useState(() => [...listings[index].images]);
 
   useEffect(() => {
     if (uploading === "success") {
@@ -69,24 +75,56 @@ function UpdateListing() {
     try {
       setUpdating("updating");
       e.preventDefault();
-      const { newImages, ...rest } = formdata;
+      if (formdata.newimgURLs.length + oldImages.length === 0) {
+        setUpdateError("Atleast 1 image is required");
+        setUpdating("idle")
+        return;
+      }
+      const {
+        newImages,
+        imagesToDel,
+        newimgURLs,
+        price,
+        specialOffer,
+        ...rest
+      } = formdata;
+      const formData = new FormData();
+      formData.append("text-data", JSON.stringify(rest));
+
+      formData.append("newimgs", JSON.stringify(newimgURLs));
+
+      formData.append("imgstodel", JSON.stringify(imagesToDel));
+
+      formData.append("price", price);
+
+      formData.append("listingid", JSON.stringify(listings[index]._id));
+
+      if (!formdata.specialOffer) {
+        formData.append("specialoffer", JSON.stringify(" "));
+      } else {
+        formData.append("specialoffer", JSON.stringify(formdata.specialOffer));
+      }
+
       const res = await fetch(`/api/update/listing/${currentuser._id}`, {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(rest),
+        body: formData,
       });
       const data = await res.json();
       if (data.success === false) {
         setUpdating("idle");
         setUpdateError(data.message);
+        return;
       }
       setUpdating("success");
       setUpdateError(null);
+      console.log(data.updatedlist);
+      dispatch(
+        UpdateList(
+          listings.map((list, i) => (i != index ? list : data.updatedlist))
+        )
+      );
     } catch (err) {
       setUpdateError(err.message);
-      console.log(err.message);
     }
   }
 
@@ -139,7 +177,7 @@ function UpdateListing() {
 
     setFormData((prev) => ({
       ...prev,
-      imagesToDel: [...prev.imagesToDel, imageToDelete.public_id],
+      imagesToDel: [...prev.imagesToDel, imageToDelete],
     }));
 
     setOldImages((prev) => prev.filter((_, i) => i !== index));

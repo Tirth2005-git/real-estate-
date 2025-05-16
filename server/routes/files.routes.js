@@ -7,7 +7,7 @@ import {
   propertyImagesUpload,
 } from "../controllers/fileuplds.controller.js";
 const filerouter = express.Router();
-const upload = multer({
+export const upload = multer({
   storage,
   limits: {
     fileSize: 2 * 1024 * 1024,

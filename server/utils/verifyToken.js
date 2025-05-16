@@ -4,8 +4,12 @@ export default async function verifyToken(req, res, next) {
   try {
     const token = req.cookies.acces_token;
     if (!token) return next(ErrorHandler(401, "Unathorized!!!"));
+
     jwt.verify(token, process.env.SECRET, (err, user) => {
       if (err) {
+        if (err.name === "TokenExpiredError") {
+          return next(ErrorHandler(405, "Token expired pls login again"));
+        }
         return next(ErrorHandler(402, "Unathroized access"));
       } else {
         req.user = user;
@@ -13,9 +17,6 @@ export default async function verifyToken(req, res, next) {
       }
     });
   } catch (err) {
-    if (err.name === "TokenExpiredError") {
-      next(ErrorHandler(405, "Token expired pls login again"));
-    }
     next(ErrorHandler(500, err.message));
   }
 }

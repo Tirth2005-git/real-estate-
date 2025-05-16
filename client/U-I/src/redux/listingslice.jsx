@@ -1,4 +1,5 @@
 import { createSlice } from "@reduxjs/toolkit";
+import UpdateListing from "../pages/updateListings";
 
 const listingSlice = createSlice({
   name: "listings",
@@ -18,9 +19,12 @@ const listingSlice = createSlice({
     deleteListing: (state, action) => {
       state.listings = action.payload;
     },
+    UpdateList: (state, action) => {
+      state.listings = action.payload;
+    },
   },
 });
 
-export const { setListing, clearListings, deleteListing, setAfterlogin } =
+export const { setListing, clearListings, deleteListing, setAfterlogin,UpdateList } =
   listingSlice.actions;
 export default listingSlice.reducer;

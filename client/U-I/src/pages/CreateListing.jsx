@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect,useRef } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { NavLink } from "react-router-dom";
 import { setListing } from "../redux/listingslice.jsx";
@@ -7,6 +7,7 @@ function CreateListing() {
     images: [],
   });
   const dispatch = useDispatch();
+  const fileref = useRef(0);
   const [fileup, setFile] = useState([]);
   const [ferror, setError] = useState();
   const [Cerror, setCreateError] = useState();
@@ -367,38 +368,40 @@ function CreateListing() {
                 </span>
               </label>
               <div className="w-full max-w-md mx-auto p-6 bg-white rounded-2xl shadow-md">
-                <label
-                  htmlFor="images"
-                  className="block text-sm font-medium text-gray-700 mb-2"
-                >
-                  Upload an image
-                </label>
-
-                <div className="flex items-center gap-4">
-                  <input
-                    id="images"
-                    type="file"
-                    accept="image/*"
-                    className="block w-full text-sm text-gray-700 
-                              file:mr-4 file:py-2 file:px-4
-                             file:rounded-md file:border-0
-                             file:text-sm file:font-medium
-                             file:bg-gray-100 file:text-gray-700
-                             hover:file:bg-gray-200 transition duration-200 ease-in-out"
-                    onChange={(e) => setFile(Array.from(e.target.files))}
-                    multiple
-                    name="property-pics"
-                  />
-
-                  <button
-                    type="button"
-                    className="bg-blue-600 hover:bg-blue-700
-                     text-white text-sm font-semibold py-2 px-4 rounded-md transition duration-200"
-                    onClick={handleUpload}
+                <div className="flex justify-between">
+                  <label
+                    className="block text-sm font-medium text-gray-700 mb-2 hover:underline"
+                    onClick={() => fileref.current.click()}
                   >
-                    Upload
-                  </button>
+                    Upload an image
+                  </label>
+                  <p className="text-red-500">
+                    Images:
+                    <span className="ml-2">{fileup.length}</span>
+                  </p>
+                  <div className="flex items-center gap-4">
+                    <input
+                      id="images"
+                      type="file"
+                      accept="image/*"
+                      className="hidden"
+                      onChange={(e) => setFile(Array.from(e.target.files))}
+                      multiple
+                      name="property-pics"
+                      ref={fileref}
+                    />
+
+                    <button
+                      type="button"
+                      className="bg-blue-600 hover:bg-blue-700
+                     text-white text-sm font-semibold py-2 px-4 rounded-md transition duration-200"
+                      onClick={handleUpload}
+                    >
+                      Upload
+                    </button>
+                  </div>
                 </div>
+
                 {uploading === "uploading" ? (
                   <p className="text-yellow-500">Uploading...</p>
                 ) : ferror ? (
@@ -411,7 +414,7 @@ function CreateListing() {
                     {fileup.map((image, index) => (
                       <div
                         key={index}
-                        className="flex  justify-between p-3 rounded-lg border border-gray-200 bg-white shadow-sm"
+                        className="flex justify-between p-3 rounded-lg border border-gray-200 bg-white shadow-sm"
                       >
                         <img
                           src={URL.createObjectURL(image)}
