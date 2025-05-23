@@ -153,9 +153,31 @@ export async function updateList(req, res, next) {
       { new: true }
     );
 
-  
-
     res.status(201).json({ success: true, updatedlist });
+  } catch (err) {
+    console.log(err);
+
+    next(ErrorHandler(500, err.message));
+  }
+}
+
+export async function browseList(req, res, next) {
+  try {
+    let { maxPrice, minPrice, ...filters } = req.body;
+
+    if (minPrice || maxPrice) {
+      filters = { ...filters, price: {} };
+      if (minPrice) {
+        filters.price = { ...filters.price, $gte: parseInt(minPrice) };
+      }
+
+      if (maxPrice) {
+        filters.price = { ...filters.price, $lte: parseFloat(maxPrice) };
+      }
+    }
+
+    const searchResults = await Listing.find(filters);
+    res.status(201).json({ success: true, searchResults });
   } catch (err) {
     console.log(err);
 

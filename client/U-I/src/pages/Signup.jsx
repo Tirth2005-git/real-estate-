@@ -23,7 +23,7 @@ function Signup() {
         body: JSON.stringify(formdata),
       });
       const data = await res.json();
-      if (data.success === false) {
+      if (data.success  === false) {
         setloading(false);
         seterror(data.message);
         return;
@@ -39,45 +39,53 @@ function Signup() {
   }
   return (
     <>
-      <div
-        className="mx-auto flex items-center  flex-col mt-8
-       bg-gray-100 max-w-md p-2 shadow-lg rounded-md"
-      >
-        <h1 className="text-center text-2xl text-gray-600">Sign Up</h1>
-        <form className="flex flex-col gap-3 mt-5" onSubmit={handleSubmit}>
+      <div className="mx-auto mt-8 bg-gray-100 w-80 sm:w-96 md:w-[28rem] p-6 shadow-lg rounded-md flex flex-col items-center">
+        <h1 className="text-2xl text-gray-600 font-semibold mb-4">Sign Up</h1>
+
+        <form className="flex flex-col gap-4 w-full" onSubmit={handleSubmit}>
           <input
             type="text"
             placeholder="User Name"
-            className="bg-gray-200 rounded-lg w-72 p-2"
+            className="bg-gray-200 rounded-lg p-2 w-full"
             id="username"
             onChange={handleChange}
-          ></input>
+          />
           <input
             type="email"
             placeholder="Email"
-            className="bg-gray-200 rounded-lg w-72 p-2"
+            className="bg-gray-200 rounded-lg p-2 w-full"
             id="email"
             onChange={handleChange}
-          ></input>
+          />
           <input
             type="password"
             placeholder="Password"
-            className="bg-gray-200 rounded-lg w-72 p-2"
+            className="bg-gray-200 rounded-lg p-2 w-full"
             id="password"
             onChange={handleChange}
-          ></input>
-          <button className="bg-gray-400 rounded-lg w-72 p-2 mt-3 text-gray-900 hover:opacity-90">
+          />
+          <button className="bg-gray-400 rounded-lg p-2 mt-2 text-white font-medium hover:bg-gray-500 transition w-full">
             {loading ? "LOADING" : "SIGN UP"}
           </button>
-          <GoogleO></GoogleO>
+
+          <GoogleO />
         </form>
-        <div className="flex gap-2 mt-2 justify-start">
-          <p className="text-gray-600"> Have an account?</p>
-          <Link to="/sign-in">
-            <span className="text-blue-600">SignIn</span>
+
+        <div className="flex gap-1 mt-4 text-sm text-gray-600">
+          <p>Have an account?</p>
+          <Link
+            to="/sign-in"
+            className="text-blue-600 hover:underline font-medium"
+          >
+            Sign In
           </Link>
         </div>
-        {error && <p className="text-red-600">{error}</p>}
+
+        {error && (
+          <p className="text-red-500 text-sm mt-2 text-center w-full">
+            {error}
+          </p>
+        )}
       </div>
     </>
   );

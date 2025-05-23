@@ -3,6 +3,7 @@ import {
   listController,
   deleteList,
   updateList,
+  browseList,
 } from "../controllers/list.controllers.js";
 import { getUserListings } from "../controllers/user.controller.js";
 import verifyToken from "../utils/verifyToken.js";
@@ -17,5 +18,6 @@ listingrouter.post(
   upload.none(),
   updateList
 );
+listingrouter.post("/api/browse/listing", verifyToken, browseList);
 
 export default listingrouter;

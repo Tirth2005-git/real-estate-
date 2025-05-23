@@ -1,72 +1,88 @@
 import { FaSearch } from "react-icons/fa";
-import { NavLink } from "react-router-dom";
-import { useSelector } from "react-redux";
+import { NavLink, useLocation } from "react-router-dom";
+import { useSelector, useDispatch } from "react-redux";
+import { GiHamburgerMenu } from "react-icons/gi";
+import { useEffect } from "react";
+import { setVisbility } from "../redux/formslice";
 function Header() {
   const { currentuser } = useSelector((state) => state.user);
+  const location = useLocation();
 
-  const { listings } = useSelector((state) => state.listings);
+  function toggleMenu() {
+    document.querySelector("#mobmenu").classList.toggle("hidden");
+  }
+  useEffect(() => {
+    document.querySelector("#mobmenu").classList.add("hidden");
+  }, [location.pathname]);
+  const dispatch = useDispatch();
   return (
     <>
-      <header className="bg-gray-100 flex flex-wrap p-3 justify-between mx-auto shadow-md items-center">
+      <header className="fixed top-0 left-0 w-full h-16 bg-gray-100 flex items-center justify-between px-4 sm:px-6 shadow-md z-50 flex-nowrap">
         <h1 className="font-bold text-sm sm:text-xl">
           <span className="text-gray-300">YourReal</span>
           <span className="text-gray-500">Estate</span>
         </h1>
-        <form className="bg-gray-200 flex items-center p-3 rounded-lg gap-4">
-          <input
-            type="text"
-            className="w-24 sm:w-48 focus:outline-none"
-            placeholder="Search.."
-          ></input>
-          <FaSearch className="text-gray-700"></FaSearch>
-        </form>
-        <ul className="flex gap-6">
-          {currentuser ? (
+
+        {location.pathname === "/find-properties" && (
+          <div className="bg-gray-200 flex items-center px-2 py-1 rounded-lg gap-2 w-28 sm:w-36 md:w-52 lg:w-64 mx-2">
+            <input
+              type="text"
+              className="w-full bg-transparent text-sm sm:text-base focus:outline-none"
+              placeholder="Search..."
+              id="search"
+              readOnly
+              onClick={() => dispatch(setVisbility())}
+            />
+            <FaSearch className="text-gray-700 flex-shrink-0" />
+          </div>
+        )}
+
+        <ul className="hidden sm:flex gap-6 items-center">
+          {currentuser && (
+            <>
+              <li>
+                <NavLink
+                  className="hover:underline text-lg text-gray-700"
+                  to="/create-listing"
+                >
+                  CreateListing
+                </NavLink>
+              </li>
+              <li>
+                <NavLink
+                  className="hover:underline text-lg text-gray-700"
+                  to="/user-listings"
+                >
+                  YourListings
+                </NavLink>
+              </li>
+            </>
+          )}
+          {location.pathname !== "/find-properties" && (
             <li>
               <NavLink
-                className="hidden sm:inline hover:underline text-lg text-gray-700"
-                to="/create-listing"
+                className="hover:underline text-lg text-gray-700"
+                to="/find-properties"
               >
-                CreateListing
+                BrowseListings
               </NavLink>
             </li>
-          ) : null}
-          {currentuser ? (
-            <li>
-              <NavLink
-                className="hidden sm:inline hover:underline text-lg text-gray-700"
-                to="/user-listings"
-              >
-                YourListings
-              </NavLink>
-            </li>
-          ) : null}
+          )}
           <li>
-            <NavLink
-              className="hidden sm:inline hover:underline text-lg text-gray-700"
-              to="/"
-            >
+            <NavLink className="hover:underline text-lg text-gray-700" to="/">
               Home
             </NavLink>
           </li>
           <li>
             <NavLink
-              className="hidden sm:inline hover:underline text-lg text-gray-700"
-              to="/about"
-            >
-              About
-            </NavLink>
-          </li>
-          <li>
-            <NavLink
-              className="hidden sm:inline hover:underline text-lg text-gray-700"
+              className="hover:underline text-lg text-gray-700"
               to="/profile"
             >
               {currentuser ? (
                 <img
                   src={currentuser.pfp}
                   alt="Pfp"
-                  className="h-8 w-8 rounded-full inline "
+                  className="h-8 w-8 rounded-full inline"
                 />
               ) : (
                 "Signin"
@@ -74,7 +90,74 @@ function Header() {
             </NavLink>
           </li>
         </ul>
+
+        <GiHamburgerMenu
+          onClick={toggleMenu}
+          className="sm:hidden w-6 h-6 cursor-pointer text-gray-700"
+        />
       </header>
+
+      <div className="pt-16"></div>
+
+      <div
+        className="bg-white sm:hidden fixed top-0 right-0 pt-16  z-40"
+        id="mobmenu"
+      >
+        <ul className="flex flex-col items-center gap-4 p-4">
+          {currentuser && (
+            <>
+              <li>
+                <NavLink
+                  className="hover:underline text-base text-gray-700"
+                  to="/create-listing"
+                >
+                  CreateListing
+                </NavLink>
+              </li>
+              <li>
+                <NavLink
+                  className="hover:underline text-base text-gray-700"
+                  to="/user-listings"
+                >
+                  YourListings
+                </NavLink>
+              </li>
+            </>
+          )}
+          <li>
+            <NavLink className="hover:underline text-base text-gray-700" to="/">
+              Home
+            </NavLink>
+          </li>
+
+          {location.pathname !== "/find-properties" ? (
+            <li>
+              <NavLink
+                className="hover:underline text-base text-gray-700"
+                to="/find-properties"
+              >
+                BrowseListings
+              </NavLink>
+            </li>
+          ) : null}
+          <li>
+            <NavLink
+              className="hover:underline text-base text-gray-700"
+              to="/profile"
+            >
+              {currentuser ? (
+                <img
+                  src={currentuser.pfp}
+                  alt="Pfp"
+                  className="h-8 w-8 rounded-full inline"
+                />
+              ) : (
+                "Signin"
+              )}
+            </NavLink>
+          </li>
+        </ul>
+      </div>
     </>
   );
 }

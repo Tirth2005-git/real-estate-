@@ -43,41 +43,41 @@ function Signin() {
     }
   }
   return (
-    <>
-      <div
-        className="mx-auto flex items-center  flex-col mt-8
-       bg-gray-100 max-w-md p-2 shadow-lg rounded-md"
-      >
-        <h1 className="text-center text-2xl text-gray-600">Sign In</h1>
-        <form className="flex flex-col gap-3 mt-5" onSubmit={handleSubmit}>
-          <input
-            type="email"
-            placeholder="Email"
-            className="bg-gray-200 rounded-lg w-72 p-2"
-            id="email"
-            onChange={handleChange}
-          ></input>
-          <input
-            type="password"
-            placeholder="Password"
-            className="bg-gray-200 rounded-lg w-72 p-2"
-            id="userpassword"
-            onChange={handleChange}
-          ></input>
-          <button className="bg-gray-400 rounded-lg w-72 p-2 mt-3 text-gray-900 hover:opacity-90">
-            {loading ? "LOADING" : "SIGN IN"}
-          </button>
-          <GoogleO></GoogleO>
-        </form>
-        <div className="flex gap-2 mt-2 justify-start">
-          <p className="text-gray-600">Don't Have an account?</p>
-          <Link to="/sign-up">
-            <span className="text-blue-600">SignUp</span>
-          </Link>
-        </div>
-        {error && <p className="text-red-600">{error}</p>}
-      </div>
-    </>
+<>
+  <div
+    className="mx-auto flex items-center flex-col mt-8
+    bg-gray-100 max-w-md p-4 shadow-lg rounded-md w-80 md:w-96 lg:w-1/3"
+  >
+    <h1 className="text-center text-2xl text-gray-600">Sign In</h1>
+    <form className="flex flex-col gap-3 mt-5 w-full" onSubmit={handleSubmit}>
+      <input
+        type="email"
+        placeholder="Email"
+        className="bg-gray-200 rounded-lg w-full p-2"
+        id="email"
+        onChange={handleChange}
+      ></input>
+      <input
+        type="password"
+        placeholder="Password"
+        className="bg-gray-200 rounded-lg w-full p-2"
+        id="userpassword"
+        onChange={handleChange}
+      ></input>
+      <button className="bg-gray-400 rounded-lg w-full p-2 mt-3 text-gray-900 hover:opacity-90">
+        {loading ? "LOADING" : "SIGN IN"}
+      </button>
+      <GoogleO></GoogleO>
+    </form>
+    <div className="flex gap-2 mt-2 justify-center w-full">
+      <p className="text-gray-600">Don't Have an account?</p>
+      <Link to="/sign-up">
+        <span className="text-blue-600">SignUp</span>
+      </Link>
+    </div>
+    {error && <p className="text-red-600 w-full text-center">{error}</p>}
+  </div>
+</>
   );
 }
 

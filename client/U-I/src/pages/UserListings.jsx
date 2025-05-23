@@ -43,84 +43,82 @@ function UserListings() {
     }
   }
   function handleEdit(index) {
-    console.log(index);
-
     navigate("/update-listing", { state: { index } });
   }
   return (
     <>
       {listings.length > 0 ? (
         <>
-          <h1 className="text-2xl text-black font-bold text-center mt-4">
+          <h1 className="text-xl sm:text-2xl text-black font-bold text-center mt-4">
             Your Listings Are
           </h1>
-          <div className="flex flex-col gap-4 mt-3 items-center">
-            {listings.map((userlist, index) => {
-              return (
-                <div className="flex gap-4 p-4 rounded-lg bg-white w-full max-w-2xl shadow-md items-center">
-                  <div>
-                    <img
-                      src={userlist.images[0].imageurl}
-                      alt="House"
-                      className="w-36 h-24 object-cover rounded-md"
-                    />
-                  </div>
-
-                  <div className="flex-1 flex flex-col gap-2">
-                    <p className="text-2xl font-semibold text-black">
-                      {userlist.title}
-                    </p>
-
-                    <div className="flex flex-col text-gray-500 text-base">
-                      <p>{userlist.address.streetAddress}</p>
-                      <p>
-                        {userlist.address.city}, {userlist.address.state}
-                      </p>
-                    </div>
-
-                    <p className="text-base mt-2">
-                      <span className="text-black font-medium">
-                        Listing Type:{" "}
-                      </span>
-                      <span className="text-red-500 font-semibold">
-                        {userlist.listingType}
-                      </span>
-                    </p>
-                  </div>
-
-                  <div className="flex flex-col justify-between  gap-3">
-                    <button
-                      className="text-sm text-red-600 hover:underline"
-                      onClick={() => handleDelete(index)}
-                    >
-                      {del === index ? "Deleteing" : "Delete"}
-                    </button>
-                    <button
-                      className="text-sm text-green-600 hover:underline"
-                      onClick={() => handleEdit(index)}
-                    >
-                      Edit
-                    </button>
-                    <button
-                      className="text-sm text-black hover:underline"
-                      onClick={() => handleview(index)}
-                    >
-                      ViewListing
-                    </button>
-                  </div>
+          <div className="flex flex-col gap-4 mt-3 items-center px-4">
+            {listings.map((userlist, index) => (
+              <div
+                key={index}
+                className="flex flex-col sm:flex-row gap-4 p-4 rounded-lg bg-white w-full max-w-2xl shadow-md items-center"
+              >
+                <div className="w-full sm:w-auto">
+                  <img
+                    src={userlist.images[0].imageurl}
+                    alt="House"
+                    className="w-full sm:w-36 h-32 object-cover rounded-md"
+                  />
                 </div>
-              );
-            })}
+
+                <div className="flex-1 flex flex-col gap-2 text-center sm:text-left">
+                  <p className="text-lg sm:text-2xl font-semibold text-black">
+                    {userlist.title}
+                  </p>
+
+                  <div className="flex flex-col text-gray-500 text-sm sm:text-base">
+                    <p>{userlist.address.streetAddress}</p>
+                    <p>
+                      {userlist.address.city}, {userlist.address.state}
+                    </p>
+                  </div>
+
+                  <p className="text-sm sm:text-base mt-2">
+                    <span className="text-black font-medium">
+                      Listing Type:{" "}
+                    </span>
+                    <span className="text-red-500 font-semibold">
+                      {userlist.listingType}
+                    </span>
+                  </p>
+                </div>
+
+                <div className="flex sm:flex-col gap-2 justify-center sm:justify-between text-center sm:text-right">
+                  <button
+                    className="text-sm text-red-600 hover:underline"
+                    onClick={() => handleDelete(index)}
+                  >
+                    {del === index ? "Deleting..." : "Delete"}
+                  </button>
+                  <button
+                    className="text-sm text-green-600 hover:underline"
+                    onClick={() => handleEdit(index)}
+                  >
+                    Edit
+                  </button>
+                  <button
+                    className="text-sm text-black hover:underline"
+                    onClick={() => handleview(index)}
+                  >
+                    View Listing
+                  </button>
+                </div>
+              </div>
+            ))}
           </div>
         </>
       ) : (
-        <h1 className="text-center mt-3">
-          <span className="font-bold tex-2xl">
-            You have not created any listings yet. Create one:
+        <h1 className="text-center mt-6 px-4">
+          <span className="font-bold text-lg sm:text-2xl block">
+            You have not created any listings yet.
           </span>
-
           <NavLink
-            className="flex text-green-500 justify-center mt-3 text-lg cursor-pointer active:scale-50 tex-2xl "
+            className="text-green-500 mt-2 text-base sm:text-lg cursor-pointer hover:underline inline-block"
             to="/create-listing"
           >
             Create Listing

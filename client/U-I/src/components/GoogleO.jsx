@@ -25,7 +25,7 @@ function GoogleO() {
         }),
       });
       const data = await res.json();
-      if (data.succcess === false) {
+      if (data.success === false) {
         return dispatch(failure(data.message));
       }
       dispatch(succcess(data.user));
@@ -41,15 +41,14 @@ function GoogleO() {
     }
   }
   return (
-    <>
-      <button
-        onClick={handlegoogle}
-        className=" bg-red-700
-       rounded-lg w-72 p-2 mt-2 text-white hover:opacity-90"
-      >
-        Continue With Google
-      </button>
-    </>
+<>
+  <button
+    onClick={handlegoogle}
+    className="bg-red-700 rounded-lg w-full p-2 mt-2 text-white hover:opacity-90 "
+  >
+    Continue With Google
+  </button>
+</>
   );
 }
 

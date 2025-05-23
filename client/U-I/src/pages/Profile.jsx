@@ -1,6 +1,7 @@
 import { useSelector, useDispatch } from "react-redux";
 import { useRef, useState, useEffect } from "react";
 import { clearListings } from "../redux/listingslice.jsx";
+import { clearProperties } from "../redux/propertiesSlice.jsx";
 import {
   updatestart,
   updatesucccess,
@@ -99,6 +100,8 @@ function Profile() {
 
   async function handledelete() {
     try {
+      console.log("clicked");
+
       const res = await fetch(`/api/delete/${currentuser._id}`, {
         method: "DELETE",
       });
@@ -110,6 +113,7 @@ function Profile() {
       console.log(data.success);
       dispatch(deletesuccess());
       dispatch(clearListings());
+      dispatch(clearProperties());
     } catch (err) {
       dispatch(deleteerror(err.message));
     }
@@ -118,6 +122,7 @@ function Profile() {
     try {
       const res = await fetch(`/api/signout`);
       const data = await res.json();
+      console.log("clicked");
 
       if (data.success === false) {
         dispatch(deleteerror(data.message));
@@ -126,17 +131,18 @@ function Profile() {
 
       dispatch(deletesuccess());
       dispatch(clearListings());
+      dispatch(clearProperties());
     } catch (err) {
       dispatch(deleteerror(err.message));
     }
   }
   return (
     <>
-      <div className="p-3 mx-auto max-w-lg  bg-gray-100 mt-4  shadow-lg rounded-md">
-        <h1 className="text-slate-900 text-center text-3xl font-bold mt-4">
+      <div className="p-4 mx-auto w-full max-w-md bg-gray-100 mt-6 shadow-lg rounded-md">
+        <h1 className="text-slate-900 text-center text-2xl sm:text-3xl font-bold">
           Profile
         </h1>
-        {}
+
         <form
           className="flex flex-col gap-4 items-center mt-6"
           onSubmit={handleSubmit}
@@ -148,94 +154,93 @@ function Profile() {
             ref={fileref}
             encType="multipart/form-data"
             name="pfp-pic"
-            onChange={(e) => {
-              setFile(e.target.files[0]);
-            }}
-          ></input>
+            onChange={(e) => setFile(e.target.files[0])}
+          />
+
           <img
             src={currentuser.pfp}
             alt="Pfp"
-            className="h-7 w-6 sm:h-20 sm:w-20 rounded-full self-center cursor-pointer"
+            className="h-16 w-16 sm:h-20 sm:w-20 md:h-24 md:w-24 rounded-full cursor-pointer object-cover hover:opacity-80 transition"
             onClick={() => fileref.current.click()}
-          ></img>
+          />
+
           {uploading === "uploading" ? (
             <p className="text-yellow-500">Uploading...</p>
           ) : ferror ? (
-            <p className="text-red-400">{ferror}</p>
+            <p className="text-red-500">{ferror}</p>
           ) : uploading === "success" ? (
-            <p className="text-green-400">
-              ✅ Upload successful ,submit to update
+            <p className="text-green-500">
+              ✅ Upload successful, submit to update
             </p>
           ) : null}
 
           <input
             type="text"
             defaultValue={currentuser.username}
-            placeholder="username"
+            placeholder="Username"
             id="username"
-            className="bg-gray-200 rounded-lg w-72 p-2"
+            className="bg-gray-200 rounded-md w-full max-w-sm p-2"
             onChange={(e) =>
               setFormData({ ...formData, [e.target.id]: e.target.value })
             }
-          ></input>
+          />
           <input
             type="email"
             defaultValue={currentuser.email}
-            placeholder="email"
+            placeholder="Email"
             id="email"
-            className="bg-gray-200 rounded-lg w-72 p-2"
+            className="bg-gray-200 rounded-md w-full max-w-sm p-2"
             onChange={(e) =>
               setFormData({ ...formData, [e.target.id]: e.target.value })
             }
-          ></input>
+          />
           <input
             type="password"
-            placeholder="password"
+            placeholder="Password"
             id="password"
-            className="bg-gray-200 rounded-lg w-72 p-2"
+            className="bg-gray-200 rounded-md w-full max-w-sm p-2"
             onChange={(e) =>
               setFormData({ ...formData, [e.target.id]: e.target.value })
             }
-          ></input>
-          <button className="bg-gray-400 rounded-lg w-72 p-2 mt-3 text-gray-900 hover:opacity-90">
-            {loading ? (
-              <p className="text-white">Updating...</p>
-            ) : (
-              <p className="text-white">Update</p>
-            )}
+          />
+
+          <button className="bg-gray-700 rounded-md w-full max-w-sm p-2 mt-2 text-white hover:opacity-90">
+            {loading ? "Updating..." : "Update"}
           </button>
-          <Link to="/create-listing">
-            <button className="bg-green-800 rounded-lg w-72 p-2 mt-2 text-white hover:opacity-90">
+
+          <Link to="/create-listing" className="w-full max-w-sm">
+            <button className="bg-green-700 w-full rounded-md p-2 mt-2 text-white hover:opacity-90">
               Create Listing
             </button>
           </Link>
 
-          <div className="w-72 mt-2 text-sm">
+          <div className="w-full max-w-sm mt-2 text-sm">
             {error ? (
               <p className="text-red-500 mb-1">{error}</p>
             ) : success ? (
-              <p className="text-green-400 mb-1">✅ Update successful</p>
+              <p className="text-green-500 mb-1">✅ Update successful</p>
             ) : null}
 
-            <div className="flex justify-between text-red-700 ">
+            <div className="flex justify-between text-red-700">
               <span
-                className="cursor-pointer active:scale-50"
+                className="cursor-pointer active:scale-95"
                 onClick={handledelete}
               >
                 Delete Account
               </span>
               <span
-                className="cursor-pointer active:scale-50"
+                className="cursor-pointer active:scale-95"
                 onClick={handlesingout}
               >
                 Sign Out
               </span>
             </div>
+
             <NavLink
-              className="flex text-green-500 justify-center mt-3 text-lg cursor-pointer active:scale-50"
+              className="flex justify-center text-green-600 mt-3 text-base hover:underline"
               to="/user-listings"
             >
-              View Your listings
+              View Your Listings
             </NavLink>
           </div>
         </form>

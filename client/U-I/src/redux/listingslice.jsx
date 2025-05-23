@@ -1,5 +1,5 @@
 import { createSlice } from "@reduxjs/toolkit";
-import UpdateListing from "../pages/updateListings";
+
 
 const listingSlice = createSlice({
   name: "listings",

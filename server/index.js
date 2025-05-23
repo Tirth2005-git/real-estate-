@@ -33,6 +33,6 @@ app.use((err, req, res, next) => {
   const success = false;
   const errcode = err.statusCode || 500;
   const message = err.message || "Internal server error";
-  res.json({ statuscode: errcode, message, success });
+  res.status(errcode).json({ statuscode: errcode, message, success });
 });
 app.listen(3000, () => console.log("running on 3000"));

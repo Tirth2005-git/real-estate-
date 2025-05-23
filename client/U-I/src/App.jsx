@@ -1,6 +1,6 @@
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import Home from "./pages/Home.jsx";
-import About from "./pages/About.jsx";
+
 import Profile from "./pages/Profile.jsx";
 import Signup from "./pages/Signup.jsx";
 import Signin from "./pages/Signin.jsx";
@@ -14,7 +14,7 @@ import UserListings from "./pages/UserListings.jsx";
 import PvtRoute2 from "./components/PrivateRoute2.jsx";
 import ListingView from "./pages/viewListing.jsx";
 import UpdateListing from "./pages/updateListings.jsx";
-
+import FindProperties from "./pages/findProperties.jsx";
 import "./index.css";
 function App() {
   window.addEventListener("beforeunload", () => {
@@ -30,7 +30,7 @@ function App() {
             <Header></Header>
             <Routes>
               <Route path="/" element={<Home />}></Route>
-              <Route path="/about" element={<About />}></Route>
+
               <Route path="/sign-in" element={<Signin />}></Route>
               <Route path="/sign-up" element={<Signup />}></Route>
               <Route element={<PvtRoute></PvtRoute>}>
@@ -38,6 +38,10 @@ function App() {
                 <Route
                   path="/create-listing"
                   element={<CreateListing />}
+                ></Route>
+                <Route
+                  path="/find-properties"
+                  element={<FindProperties />}
                 ></Route>
                 <Route path="/user-listings" element={<UserListings />}></Route>
               </Route>

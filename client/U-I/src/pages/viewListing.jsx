@@ -13,8 +13,8 @@ function ListingView() {
     status,
     price,
     listingType,
+    propertyType,
   } = listing;
-
 
   const [current, setCurrent] = useState(0);
   const nextSlide = () => setCurrent((prev) => (prev + 1) % images.length);
@@ -22,32 +22,37 @@ function ListingView() {
     setCurrent((prev) => (prev - 1 + images.length) % images.length);
 
   return (
-    <div className="max-w-3xl mx-auto p-6 bg-white shadow-lg rounded-2xl mt-6">
-      <div className="relative w-full h-64 overflow-hidden rounded-xl mb-4">
+    <div className="max-w-3xl w-full mx-auto p-4 sm:p-6 bg-white shadow-lg rounded-2xl mt-6">
+      {/* Image Carousel */}
+      <div className="relative w-full h-52 sm:h-64 overflow-hidden rounded-xl mb-4">
         <img
           src={images[current]?.imageurl}
           alt="Listing Slide"
-          className="w-full h-full object-cover transition-all "
+          className="w-full h-full object-cover transition-all"
         />
-        <button
-          onClick={prevSlide}
-          className="absolute top-1/2 left-2 transform -translate-y-1/2 bg-white bg-opacity-70 rounded-full p-1"
-        >
-          ◀
-        </button>
-        <button
-          onClick={nextSlide}
-          className="absolute top-1/2 right-2 transform -translate-y-1/2 bg-white bg-opacity-70 rounded-full p-1"
-        >
-          ▶
-        </button>
+        {images.length > 1 && (
+          <>
+            <button
+              onClick={prevSlide}
+              className="absolute top-1/2 left-2 transform -translate-y-1/2 bg-white bg-opacity-70 rounded-full p-1 text-lg"
+            >
+              ◀
+            </button>
+            <button
+              onClick={nextSlide}
+              className="absolute top-1/2 right-2 transform -translate-y-1/2 bg-white bg-opacity-70 rounded-full p-1 text-lg"
+            >
+              ▶
+            </button>
+          </>
+        )}
       </div>
 
-      <h2 className="text-2xl font-semibold text-gray-800 mb-2">
+      <h2 className="text-xl sm:text-2xl font-semibold text-gray-800 mb-2 text-center sm:text-left">
         Property Listed by {listedBy.name}
       </h2>
 
-      <div className="text-gray-600 mb-4">
+      <div className="text-gray-600 mb-4 space-y-1 text-sm sm:text-base">
         <p>
           <span className="font-semibold">Street:</span> {address.streetAddress}
         </p>
@@ -60,56 +65,70 @@ function ListingView() {
         <p>
           <span className="font-semibold">Zipcode:</span> {address.zipcode}
         </p>
+        <p>
+          <span className="font-semibold text-lg text-red-300 capitalize">property Type:</span> {propertyType}
+        </p>
       </div>
 
       <div className="mb-2">
-        <span className="text-lg text-red-700">For {listingType}</span>
+        <span className="text-base sm:text-lg text-red-700">
+          For {listingType}
+        </span>
       </div>
       <div className="mb-4">
-        <div className="text-3xl text-red-700">
+        <div className="text-2xl sm:text-3xl text-red-700">
           ₹{price}
-          <span
-            className={
-              listingType === "rent" ? "text-red-500 ml-5 text-lg" : "hidden"
-            }
-          >
-            per month
-          </span>
+          {listingType === "rent" && (
+            <span className="ml-3 text-base sm:text-lg text-red-500">
+              per month
+            </span>
+          )}
         </div>
       </div>
+
       <div className="mb-4">
         <div
-          className={
-            status === "available"
-              ? "text-green-400 text-xl"
-              : "text-red-600 text-2xl"
-          }
+          className={`text-xl sm:text-2xl ${
+            status === "available" ? "text-green-500" : "text-red-600"
+          }`}
         >
           {status}
         </div>
       </div>
 
       <div className="mb-4">
-        <h3 className="text-lg font-medium text-gray-700">Description</h3>
-        <p className="text-gray-600">{description}</p>
+        <h3 className="text-base sm:text-lg font-medium text-gray-700">
+          Description
+        </h3>
+        <p className="text-gray-600 text-sm sm:text-base">{description}</p>
       </div>
 
       <div className="mb-4">
-        <h3 className="text-lg font-medium text-gray-700">Features</h3>
-        <p className="text-gray-600">{features}</p>
+        <h3 className="text-base sm:text-lg font-medium text-gray-700">
+          Features
+        </h3>
+        <p className="text-gray-600 text-sm sm:text-base">{features}</p>
       </div>
 
       {specialOffer && (
         <div className="mb-4 bg-yellow-100 border border-yellow-400 text-yellow-800 p-4 rounded-lg">
-          <h3 className="text-lg font-semibold">🎉 Special Offer!</h3>
-          <p>{specialOffer}</p>
+          <h3 className="text-base sm:text-lg font-semibold">
+            🎉 Special Offer!
+          </h3>
+          <p className="text-sm sm:text-base">{specialOffer}</p>
         </div>
       )}
 
       <div>
-        <h3 className="text-lg font-medium text-gray-700">Contact Info</h3>
-        <p className="text-gray-600">📞 {listedBy.contact.phone}</p>
-        <p className="text-gray-600">📧 {listedBy.contact.email}</p>
+        <h3 className="text-base sm:text-lg font-medium text-gray-700">
+          Contact Info
+        </h3>
+        <p className="text-gray-600 text-sm sm:text-base">
+          📞 {listedBy.contact.phone}
+        </p>
+        <p className="text-gray-600 text-sm sm:text-base">
+          📧 {listedBy.contact.email}
+        </p>
       </div>
     </div>
   );
