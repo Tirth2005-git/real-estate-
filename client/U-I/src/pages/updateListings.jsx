@@ -431,6 +431,8 @@ function UpdateListing() {
               type="tel"
               placeholder="phone"
               id="phone"
+              pattern="[0-9]{10}"
+                   title="Phone number must be 10 digits "
               className="p-2 w-full bg-white text-black rounded-lg"
               defaultValue={listedBy.contact.phone}
               onChange={(e) =>
@@ -438,7 +440,6 @@ function UpdateListing() {
               }
             />
 
-            {/* Upload Images */}
             <label htmlFor="images" className="mt-3 text-black block">
               Upload your Images:
               <span className="text-slate-400 ml-2">Only 5 images</span>
@@ -450,7 +451,7 @@ function UpdateListing() {
                   className="text-sm font-medium text-gray-700 hover:underline cursor-pointer"
                   onClick={() => fileref.current.click()}
                 >
-                  Upload an image
+                  Select an image
                 </label>
                 <p className="text-red-500">
                   Images:{" "}
@@ -484,7 +485,6 @@ function UpdateListing() {
                 </div>
               </div>
 
-              {/* Upload Status */}
               {uploading === "uploading" && (
                 <p className="text-yellow-500">Uploading...</p>
               )}
@@ -493,7 +493,6 @@ function UpdateListing() {
                 <p className="text-green-400">✅ Upload successful</p>
               )}
 
-              {/* Uploaded Images Preview */}
               {formdata.newImages && formdata.newImages.length > 0 && (
                 <div className="flex flex-col gap-4 mt-4">
                   {formdata.newImages.map((image, index) => (

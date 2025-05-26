@@ -9,13 +9,13 @@ import {
   deleteerror,
   deletesuccess,
 } from "../redux/userslice.jsx";
-import { Link, useNavigate, NavLink } from "react-router-dom";
+import { Link, NavLink } from "react-router-dom";
 
 function Profile() {
-  const navigate = useNavigate();
   const fileref = useRef();
   const [fileup, setFile] = useState(0);
   const [uploading, setUploading] = useState("idile");
+  const [deleting, setdeleting] = useState(false);
   const [ferror, setError] = useState();
   const [formData, setFormData] = useState({});
   const [success, setSuccess] = useState(false);
@@ -54,6 +54,7 @@ function Profile() {
       if (data.success === false) {
         setUploading("idile");
         setError(data.message);
+        return;
       }
 
       setFormData({
@@ -62,8 +63,10 @@ function Profile() {
         imageid: data.imageid,
       });
       setUploading("success");
+      setError(false);
     } catch (err) {
       setError(err.message);
+      setUploading("idle");
     }
   }
 
@@ -88,6 +91,7 @@ function Profile() {
 
       setSuccess(true);
       dispatch(updatesucccess(data.user));
+      setFormData({});
     } catch (err) {
       dispatch(updatefailure(err.message));
     }
@@ -100,21 +104,23 @@ function Profile() {
 
   async function handledelete() {
     try {
-      console.log("clicked");
-
+      setdeleting(true);
       const res = await fetch(`/api/delete/${currentuser._id}`, {
         method: "DELETE",
       });
       const data = await res.json();
       if (data.success === false) {
         dispatch(deleteerror(data.message));
+        setdeleting(false);
         return;
       }
-      console.log(data.success);
+
       dispatch(deletesuccess());
       dispatch(clearListings());
       dispatch(clearProperties());
+      setdeleting(false);
     } catch (err) {
+      setdeleting(false);
       dispatch(deleteerror(err.message));
     }
   }
@@ -226,7 +232,7 @@ function Profile() {
                 className="cursor-pointer active:scale-95"
                 onClick={handledelete}
               >
-                Delete Account
+                {deleting ? "Deleting" : "Delete Account"}
               </span>
               <span
                 className="cursor-pointer active:scale-95"

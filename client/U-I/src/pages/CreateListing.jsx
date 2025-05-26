@@ -362,7 +362,7 @@ function CreateListing() {
               className="p-2 w-full bg-white text-black rounded-lg"
               pattern="[0-9]{10}"
               required
-              title="Phone number must be 10 digits"
+              title="Phone number must be 10 digits "
               onChange={(e) =>
                 setFormData({ ...formdata, [e.target.id]: e.target.value })
               }
@@ -379,7 +379,7 @@ function CreateListing() {
                   className="text-sm font-medium text-gray-700 hover:underline cursor-pointer"
                   onClick={() => fileref.current.click()}
                 >
-                  Upload an image
+                  Select an image
                 </label>
                 <p className="text-red-500">
                   Images: <span className="ml-2">{fileup.length}</span>

@@ -1,6 +1,6 @@
 import { configureStore } from "@reduxjs/toolkit";
 import userReducer from "./userslice.jsx";
-import storage from "redux-persist/lib/storage";
+import storageSession from "redux-persist/lib/storage/session";
 import { combineReducers } from "@reduxjs/toolkit";
 import { persistStore, persistReducer } from "redux-persist";
 import listingReducer from "./listingslice.jsx";
@@ -8,7 +8,7 @@ import formReducer from "./formslice.jsx";
 import propertyReducer from "./propertiesSlice.jsx";
 const persistConfig = {
   key: "root",
-  storage,
+  storage: storageSession,
   blacklist: ["formToggle"],
   version: 1,
 };

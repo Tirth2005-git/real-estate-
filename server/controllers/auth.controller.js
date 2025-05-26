@@ -51,7 +51,7 @@ export async function signIn(req, res, next) {
         ...(userlisting && { userlisting }),
       });
   } catch (err) {
-    console.log(err.message);
+    
 
     next(ErrorHandler(500, err.message));
   }

@@ -4,6 +4,7 @@ import bcrypt from "bcryptjs";
 import Listing from "../models/listing.model.js";
 import { delpfp } from "./fileuplds.controller.js";
 import isCloudinaryURL from "../utils/isclaudinary.js";
+import { delimages } from "./fileuplds.controller.js";
 export function test(req, res) {
   res.send("Hello !!!");
 }
@@ -24,8 +25,10 @@ export async function updateUser(req, res, next) {
       const user = await User.findById(req.params.id);
       const { pfp, pfpid } = user;
 
-      if (isCloudinaryURL(pfp)) {
-        await delpfp(pfpid);
+      if (req.body.avatar) {
+        if (isCloudinaryURL(pfp)) {
+          await delpfp(pfpid);
+        }
       }
 
       let newreqobj = {};
@@ -34,6 +37,9 @@ export async function updateUser(req, res, next) {
           newreqobj[key] = req.body[key];
         }
       });
+      if (Object.keys(newreqobj).length == 0) {
+        next(ErrorHandler(401, "New credentials required"));
+      }
       req.body = newreqobj;
 
       if (req.body.password) {
@@ -43,11 +49,11 @@ export async function updateUser(req, res, next) {
         req.params.id,
         {
           $set: {
-            username: req.body.username,
-            email: req.body.email,
-            pfp: req.body.avatar,
-            password: req.body.password,
-            pfpid: req.body.imageid,
+            username: req.body.username?.trim(),
+            email: req.body.email?.trim(),
+            pfp: req.body.avatar?.trim(),
+            password: req.body.password?.trim(),
+            pfpid: req.body.imageid?.trim(),
           },
         },
         {
@@ -55,7 +61,10 @@ export async function updateUser(req, res, next) {
         }
       );
       updateduser = updateduser.toObject();
-      delete updateduser.password;
+      if (updateduser.password) {
+        delete updateduser.password;
+      }
+
       res.status(201).json({ success: true, user: updateduser });
     }
   } catch (err) {
@@ -74,6 +83,18 @@ export async function deleteUser(req, res, next) {
       await delpfp(pfpid);
     }
 
+    const userlistings = await Listing.find({
+      userref: req.params.id,
+    });
+
+    if (userlistings.length > 0) {
+      userlistings.forEach(async (listing) => {
+        const imagestodel = Array.from(listing.images);
+
+        await delimages(...imagestodel);
+      });
+      await Listing.deleteMany({ userref: req.params.id });
+    }
     await User.findByIdAndDelete(req.params.id);
     res.clearCookie("acces_token").status(201).json({ success: true });
   } catch (err) {
