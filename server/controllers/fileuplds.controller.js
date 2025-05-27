@@ -52,7 +52,7 @@ export async function propertyImagesUpload(req, res, next) {
       .status(201)
       .json({ success: true, uploadedurls: Array.from(uploadedurls) });
   } catch (err) {
-    console.log(err.message);
+   
 
     next(ErrorHandler(500, err.message));
   }

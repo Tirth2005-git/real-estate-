@@ -54,7 +54,7 @@ function FindProperties() {
       }
 
       const data = await res.json();
-      console.log(data.searchResults);
+ 
       if (data.searchResults.length == 0) {
         setSearching(false);
         setSeacrhError("No Results found");
@@ -275,7 +275,6 @@ function FindProperties() {
                   </div>
                 </div>
 
-                {/* Contact Info at Bottom of Card */}
                 <div className="flex justify-between items-center px-4 py-2 border-t text-sm text-gray-600">
                   <p className="flex items-center gap-1">
                     📞 <span>{userlist.listedBy.contact?.phone}</span>

@@ -34,7 +34,7 @@ function Signup() {
     } catch (err) {
       setloading(false);
       seterror(err.message);
-      console.log(err.message);
+     
     }
   }
   return (

@@ -57,7 +57,7 @@ export async function listController(req, res, next) {
       return next(ErrorHandler(403, "Can only create your own listings"));
     }
   } catch (err) {
-    console.log(err.message);
+    
 
     next(ErrorHandler(500, err.message));
   }
@@ -155,7 +155,7 @@ export async function updateList(req, res, next) {
 
     res.status(201).json({ success: true, updatedlist });
   } catch (err) {
-    console.log(err);
+    
 
     next(ErrorHandler(500, err.message));
   }
@@ -179,8 +179,7 @@ export async function browseList(req, res, next) {
     const searchResults = await Listing.find(filters);
     res.status(201).json({ success: true, searchResults });
   } catch (err) {
-    console.log(err);
-
+  
     next(ErrorHandler(500, err.message));
   }
 }

@@ -38,7 +38,7 @@ export async function updateUser(req, res, next) {
         }
       });
       if (Object.keys(newreqobj).length == 0) {
-        next(ErrorHandler(401, "New credentials required"));
+        return next(ErrorHandler(401, "New credentials required"));
       }
       req.body = newreqobj;
 

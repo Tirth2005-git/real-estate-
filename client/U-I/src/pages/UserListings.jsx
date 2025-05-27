@@ -39,7 +39,7 @@ function UserListings() {
       setdel(null);
     } catch (err) {
       setdel(null);
-      console.log(err.message);
+   
     }
   }
   function handleEdit(index) {

@@ -128,7 +128,7 @@ function Profile() {
     try {
       const res = await fetch(`/api/signout`);
       const data = await res.json();
-      console.log("clicked");
+     
 
       if (data.success === false) {
         dispatch(deleteerror(data.message));

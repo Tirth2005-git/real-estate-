@@ -103,7 +103,7 @@ export async function google(req, res, next) {
         .json({ success: true, user: newuser });
     }
   } catch (err) {
-    console.log(err.message);
+    
     next(ErrorHandler(500, err.message));
   }
 }
