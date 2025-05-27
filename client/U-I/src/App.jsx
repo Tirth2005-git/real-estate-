@@ -17,7 +17,10 @@ import UpdateListing from "./pages/updateListings.jsx";
 import FindProperties from "./pages/findProperties.jsx";
 import "./index.css";
 function App() {
-  
+  window.addEventListener("beforeunload", async () => {
+    navigator.sendBeacon("/api/signout");
+  });
+
   return (
     <>
       <Provider store={store}>

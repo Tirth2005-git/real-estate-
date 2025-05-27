@@ -16,18 +16,23 @@ await mongoose
   .catch((err) => {
     console.log(err.message);
   });
+
 const __dirname = path.resolve();
+
 const app = express();
 app.use(express.json());
 app.use(cookieParser());
-app.use(userroute);
-app.use(authroute);
-app.use(listingrouter);
-app.use(filerouter);
-app.use(express.static(path.join(__dirname, "/client/U-I/dist")));
+app.use("/api", userroute);
+app.use("/api", authroute);
+app.use("/api", listingrouter);
+app.use("/api", filerouter);
+
+app.use(express.static(path.join(__dirname, "client", "U-I", "dist")));
+
 app.get("*", (req, res) =>
   res.sendFile(path.join(__dirname, "client", "U-I", "dist", "index.html"))
 );
+
 app.use((err, req, res, next) => {
   if (err.code === "LIMIT_FILE_SIZE") {
     return res.json({
@@ -42,4 +47,10 @@ app.use((err, req, res, next) => {
   res.status(errcode).json({ statuscode: errcode, message, success });
 });
 
-app.listen(3000, () => console.log("running on 3000"));
+app.listen(3000, (err) => {
+  if (err) {
+    console.log(err);
+    return;
+  }
+  console.log("running on 3000");
+});

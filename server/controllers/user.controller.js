@@ -5,9 +5,7 @@ import Listing from "../models/listing.model.js";
 import { delpfp } from "./fileuplds.controller.js";
 import isCloudinaryURL from "../utils/isclaudinary.js";
 import { delimages } from "./fileuplds.controller.js";
-export function test(req, res) {
-  res.send("Hello !!!");
-}
+
 export async function updateUser(req, res, next) {
   try {
     if (req.params.id !== req.user.userid) {

@@ -15,13 +15,13 @@ export const upload = multer({
 });
 
 filerouter.post(
-  "/api/pfp/upload",
+  "/pfp/upload",
   verifyToken,
   upload.single("pfp-pic"),
   pfpUpload
 );
 filerouter.post(
-  "/api/mult/uploads",
+  "/mult/uploads",
   verifyToken,
   upload.array("property-pics", 5),
   propertyImagesUpload
