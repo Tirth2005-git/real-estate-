@@ -7,7 +7,9 @@ import cookieParser from "cookie-parser";
 import listingrouter from "./routes/lists.route.js";
 import filerouter from "./routes/files.routes.js";
 import path from "path";
+
 dotenv.config();
+
 await mongoose
   .connect(process.env.MONGO)
   .then(() => {
@@ -15,6 +17,7 @@ await mongoose
   })
   .catch((err) => {
     console.log(err.message);
+    console.log(process.env.MONGO);
   });
 
 const __dirname = path.resolve();
@@ -29,10 +32,6 @@ app.use("/api", filerouter);
 
 app.use(express.static(path.join(__dirname, "client", "U-I", "dist")));
 
-app.get("*", (req, res) =>
-  res.sendFile(path.join(__dirname, "client", "U-I", "dist", "index.html"))
-);
-
 app.use((err, req, res, next) => {
   if (err.code === "LIMIT_FILE_SIZE") {
     return res.json({
@@ -45,6 +44,10 @@ app.use((err, req, res, next) => {
   const errcode = err.statusCode || 500;
   const message = err.message || "Internal server error";
   res.status(errcode).json({ statuscode: errcode, message, success });
+});
+
+app.get(/^\/(?!api).*/, (req, res) => {
+  res.sendFile(path.join(__dirname, "client", "U-I", "dist", "index.html"));
 });
 
 app.listen(3000, (err) => {
