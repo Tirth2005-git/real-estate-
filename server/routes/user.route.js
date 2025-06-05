@@ -9,4 +9,5 @@ const userrouter = express.Router();
 userrouter.post("/update/:id", verifyToken, updateUser);
 userrouter.delete("/delete/:id", verifyToken, deleteUser);
 userrouter.get("/signout",signout)
+userrouter.post("/webclosed",signout)
 export default userrouter;

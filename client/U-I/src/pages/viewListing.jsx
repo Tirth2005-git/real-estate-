@@ -23,7 +23,6 @@ function ListingView() {
 
   return (
     <div className="max-w-3xl w-full mx-auto p-4 sm:p-6 bg-white shadow-lg rounded-2xl mt-6">
-      {/* Image Carousel */}
       <div className="relative w-full h-52 sm:h-64 overflow-hidden rounded-xl mb-4">
         <img
           src={images[current]?.imageurl}
@@ -66,7 +65,10 @@ function ListingView() {
           <span className="font-semibold">Zipcode:</span> {address.zipcode}
         </p>
         <p>
-          <span className="font-semibold text-lg text-red-300 capitalize">property Type:</span> {propertyType}
+          <span className="font-semibold text-lg text-red-300 capitalize">
+            property Type:
+          </span>{" "}
+          {propertyType}
         </p>
       </div>
 
@@ -123,12 +125,24 @@ function ListingView() {
         <h3 className="text-base sm:text-lg font-medium text-gray-700">
           Contact Info
         </h3>
-        <p className="text-gray-600 text-sm sm:text-base">
-          📞 {listedBy.contact.phone}
-        </p>
-        <p className="text-gray-600 text-sm sm:text-base">
-          📧 {listedBy.contact.email}
-        </p>
+        <a
+          href={`mailto:${listedBy.contact?.email}`}
+          className="flex items-center gap-1  "
+        >
+          📧{" "}
+          <span className="underline hover:pointer ">
+            {listedBy.contact?.email}
+          </span>
+        </a>
+        <a
+          href={`https://wa.me/91${listedBy.contact?.phone}`}
+          className="flex items-center gap-1 "
+        >
+          📞{" "}
+          <span className="underline hover:pointer ">
+            {listedBy.contact?.phone}
+          </span>
+        </a>
       </div>
     </div>
   );

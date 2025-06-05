@@ -3,14 +3,14 @@ import jwt from "jsonwebtoken";
 export default async function verifyToken(req, res, next) {
   try {
     const token = req.cookies.acces_token;
-    if (!token) return next(ErrorHandler(401, "Unathorized!!!"));
+    if (!token) return next(ErrorHandler(401, "Unathorized!!! pls login"));
 
     jwt.verify(token, process.env.SECRET, (err, user) => {
       if (err) {
         if (err.name === "TokenExpiredError") {
-          return next(ErrorHandler(405, "Token expired pls login again"));
+          return next(ErrorHandler(405, "Token expired pls login"));
         }
-        return next(ErrorHandler(402, "Unathroized access"));
+        return next(ErrorHandler(402, "Unathroized access,pls login"));
       } else {
         req.user = user;
         next();

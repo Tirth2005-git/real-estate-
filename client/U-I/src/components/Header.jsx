@@ -2,18 +2,24 @@ import { FaSearch } from "react-icons/fa";
 import { NavLink, useLocation } from "react-router-dom";
 import { useSelector, useDispatch } from "react-redux";
 import { GiHamburgerMenu } from "react-icons/gi";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { setVisbility } from "../redux/formslice";
 function Header() {
   const { currentuser } = useSelector((state) => state.user);
   const location = useLocation();
-
+  const [toggle, setToggle] = useState(false);
   function toggleMenu() {
     document.querySelector("#mobmenu").classList.toggle("hidden");
   }
   useEffect(() => {
-    document.querySelector("#mobmenu").classList.add("hidden");
-  }, [location.pathname]);
+    const mobMenu = document.querySelector("#mobmenu");
+    mobMenu.classList.add("hidden");
+    if (toggle) {
+      mobMenu.classList.add("hidden");
+      setToggle(false);
+    }
+  }, [toggle, location.pathname]);
+
   const dispatch = useDispatch();
   return (
     <>
@@ -58,16 +64,16 @@ function Header() {
               </li>
             </>
           )}
-          {location.pathname !== "/find-properties" && (
-            <li>
-              <NavLink
-                className="hover:underline text-lg text-gray-700"
-                to="/find-properties"
-              >
-                BrowseListings
-              </NavLink>
-            </li>
-          )}
+
+          <li>
+            <NavLink
+              className="hover:underline text-lg text-gray-700"
+              to="/find-properties"
+            >
+              BrowseListings
+            </NavLink>
+          </li>
+
           <li>
             <NavLink className="hover:underline text-lg text-gray-700" to="/">
               Home
@@ -110,6 +116,7 @@ function Header() {
                 <NavLink
                   className="hover:underline text-base text-gray-700"
                   to="/create-listing"
+                  onClick={() => setToggle(true)}
                 >
                   CreateListing
                 </NavLink>
@@ -118,6 +125,7 @@ function Header() {
                 <NavLink
                   className="hover:underline text-base text-gray-700"
                   to="/user-listings"
+                  onClick={() => setToggle(true)}
                 >
                   YourListings
                 </NavLink>
@@ -125,31 +133,37 @@ function Header() {
             </>
           )}
           <li>
-            <NavLink className="hover:underline text-base text-gray-700" to="/">
+            <NavLink
+              className="hover:underline text-base text-gray-700"
+              to="/"
+              onClick={() => setToggle(true)}
+            >
               Home
             </NavLink>
           </li>
 
-          {location.pathname !== "/find-properties" ? (
-            <li>
-              <NavLink
-                className="hover:underline text-base text-gray-700"
-                to="/find-properties"
-              >
-                BrowseListings
-              </NavLink>
-            </li>
-          ) : null}
+          <li>
+            <NavLink
+              className="hover:underline text-base text-gray-700"
+              to="/find-properties"
+              onClick={() => setToggle(true)}
+            >
+              BrowseListings
+            </NavLink>
+          </li>
+
           <li>
             <NavLink
               className="hover:underline text-base text-gray-700"
               to="/profile"
+              onClick={() => setToggle(true)}
             >
               {currentuser ? (
                 <img
                   src={currentuser.pfp}
                   alt="Pfp"
                   className="h-8 w-8 rounded-full inline"
+                  onClick={() => setToggle(true)}
                 />
               ) : (
                 "Signin"

@@ -39,12 +39,12 @@ function UserListings() {
       setdel(null);
     } catch (err) {
       setdel(null);
-   
     }
   }
   function handleEdit(index) {
     navigate("/update-listing", { state: { index } });
   }
+
   return (
     <>
       {listings.length > 0 ? (
@@ -56,7 +56,7 @@ function UserListings() {
             {listings.map((userlist, index) => (
               <div
                 key={index}
-                className="flex flex-col sm:flex-row gap-4 p-4 rounded-lg bg-white w-full max-w-2xl shadow-md items-center"
+                className="flex flex-col sm:flex-row gap-4 p-4 rounded-lg bg-white w-full max-w-3xl shadow-md items-center"
               >
                 <div className="w-full sm:w-auto">
                   <img
@@ -78,14 +78,39 @@ function UserListings() {
                     </p>
                   </div>
 
-                  <p className="text-sm sm:text-base mt-2">
-                    <span className="text-black font-medium">
-                      Listing Type:{" "}
-                    </span>
-                    <span className="text-red-500 font-semibold">
-                      {userlist.listingType}
-                    </span>
-                  </p>
+                 
+                  <div className="flex flex-col sm:flex-row sm:space-x-4">
+                    <p className="text-sm sm:text-base mt-2">
+                      <span className="text-black font-medium">
+                        Listing Type:{" "}
+                      </span>
+                      <span className="text-red-500 font-semibold">
+                        {userlist.listingType}
+                      </span>
+                    </p>
+
+                    <p className="text-sm sm:text-base mt-2">
+                      <span className="text-black font-medium">
+                        Property Type:{" "}
+                      </span>
+                      <span className="text-red-500 font-semibold">
+                        {userlist.propertyType}
+                      </span>
+                    </p>
+
+                    <p className="text-sm sm:text-base mt-2">
+                      <span className="text-black font-medium">Status: </span>
+                      <span
+                        className={
+                          userlist.status === "available"
+                            ? "text-green-500 font-semibold"
+                            : "text-red-500 font-semibold"
+                        }
+                      >
+                        {userlist.status}
+                      </span>
+                    </p>
+                  </div>
                 </div>
 
                 <div className="flex sm:flex-col gap-2 justify-center sm:justify-between text-center sm:text-right">

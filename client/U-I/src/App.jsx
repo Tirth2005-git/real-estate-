@@ -1,6 +1,6 @@
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import Home from "./pages/Home.jsx";
-
+import { useEffect } from "react";
 import Profile from "./pages/Profile.jsx";
 import Signup from "./pages/Signup.jsx";
 import Signin from "./pages/Signin.jsx";
@@ -17,10 +17,6 @@ import UpdateListing from "./pages/updateListings.jsx";
 import FindProperties from "./pages/findProperties.jsx";
 import "./index.css";
 function App() {
-  window.addEventListener("beforeunload", async () => {
-    navigator.sendBeacon("/api/signout");
-  });
-
   return (
     <>
       <Provider store={store}>
@@ -29,7 +25,6 @@ function App() {
             <Header></Header>
             <Routes>
               <Route path="/" element={<Home />}></Route>
-
               <Route path="/sign-in" element={<Signin />}></Route>
               <Route path="/sign-up" element={<Signup />}></Route>
               <Route element={<PvtRoute></PvtRoute>}>

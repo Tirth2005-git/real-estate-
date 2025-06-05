@@ -65,7 +65,6 @@ function CreateListing() {
       }
       setCreateUploading("success");
       setCreateError(null);
-
       dispatch(setListing(data.newlisting));
     } catch (err) {
       setCreateUploading("idle");

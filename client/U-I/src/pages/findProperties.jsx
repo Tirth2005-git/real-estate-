@@ -2,7 +2,7 @@ import { useSelector, useDispatch } from "react-redux";
 import { setVisbility } from "../redux/formslice.jsx";
 import { setproperties } from "../redux/propertiesSlice.jsx";
 import { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
 function FindProperties() {
   const [formdata, setformdata] = useState(0);
   const [searching, setSearching] = useState(false);
@@ -54,7 +54,7 @@ function FindProperties() {
       }
 
       const data = await res.json();
- 
+
       if (data.searchResults.length == 0) {
         setSearching(false);
         setSeacrhError("No Results found");
@@ -63,6 +63,7 @@ function FindProperties() {
       dispatch(setproperties(data.searchResults));
       setSearching(false);
       setSeacrhError(false);
+      setformdata(0);
     } catch (err) {
       setSearching(false);
       setSeacrhError(err.message);
@@ -88,13 +89,24 @@ function FindProperties() {
                   id="listingType"
                   name="listingType"
                   value={type}
+                  checked={formdata?.listingType === type}
+                  onChange={(e) => {
+                    if (formdata?.listingType !== e.target.value) {
+                      setformdata({
+                        ...formdata,
+                        listingType: e.target.value,
+                      });
+                    }
+                  }}
+                  onClick={(e) => {
+                    if (formdata?.listingType === e.target.value) {
+                      setformdata({
+                        ...formdata,
+                        listingType: "",
+                      });
+                    }
+                  }}
                   className="accent-blue-500"
-                  onChange={(e) =>
-                    setformdata({
-                      ...formdata,
-                      [e.target.id]: e.target.value.trim(),
-                    })
-                  }
                 />
                 <span className="text-xs sm:text-base text-gray-700 ml-2">
                   {type}
@@ -115,12 +127,23 @@ function FindProperties() {
                   name="propertyType"
                   value={type}
                   className="accent-blue-500"
-                  onChange={(e) =>
-                    setformdata({
-                      ...formdata,
-                      [e.target.id]: e.target.value.trim(),
-                    })
-                  }
+                  checked={formdata?.propertyType === type}
+                  onChange={(e) => {
+                    if (formdata?.propertyType !== e.target.value) {
+                      setformdata({
+                        ...formdata,
+                        propertyType: e.target.value,
+                      });
+                    }
+                  }}
+                  onClick={(e) => {
+                    if (formdata?.propertyType === e.target.value) {
+                      setformdata({
+                        ...formdata,
+                        propertyType: "",
+                      });
+                    }
+                  }}
                 />
                 <span className="text-xs sm:text-base text-gray-700 ml-2">
                   {type}
@@ -138,6 +161,7 @@ function FindProperties() {
               className="w-full sm:w-32 bg-white rounded-lg text-sm p-1"
               id="minPrice"
               min="1000"
+              value={formdata?.["minPrice"] || ""}
               placeholder="Min Price"
               onChange={(e) =>
                 setformdata({ ...formdata, [e.target.id]: e.target.value })
@@ -149,6 +173,7 @@ function FindProperties() {
               id="maxPrice"
               placeholder="Max Price"
               min="1000"
+              value={formdata?.["maxPrice"] || ""}
               onChange={(e) =>
                 setformdata({ ...formdata, [e.target.id]: e.target.value })
               }
@@ -165,6 +190,7 @@ function FindProperties() {
             placeholder="State"
             className="bg-white text-black p-1 text-sm rounded-lg w-full"
             id="address.state"
+            value={formdata?.["address.state"] || ""}
             onChange={(e) =>
               setformdata({
                 ...formdata,
@@ -177,6 +203,7 @@ function FindProperties() {
             placeholder="City"
             className="bg-white text-black p-1 text-sm rounded-lg w-full"
             id="address.city"
+            value={formdata?.["address.city"] || ""}
             onChange={(e) =>
               setformdata({
                 ...formdata,
@@ -189,6 +216,7 @@ function FindProperties() {
             placeholder="Zipcode"
             className="bg-white text-black p-1 text-sm rounded-lg w-full"
             id="address.zipcode"
+            value={formdata?.["address.zipcode"] || ""}
             onChange={(e) =>
               setformdata({
                 ...formdata,
@@ -203,7 +231,9 @@ function FindProperties() {
             {searching ? "Searching" : "Search"}
           </button>
           {searcherror ? (
-            <p className="text-red-400 text-sm flex justify-center">{searcherror}</p>
+            <p className="text-red-400 text-sm flex justify-center">
+              {searcherror}
+            </p>
           ) : null}
         </div>
       </form>
@@ -214,9 +244,11 @@ function FindProperties() {
           </h1>
           <div className="flex flex-col gap-4 mt-3 items-center px-4">
             {properties.map((userlist, index) => (
-              <div className="bg-white rounded-lg w-full max-w-3xl shadow-md">
+              <div
+                className="bg-white rounded-lg w-full max-w-3xl shadow-md"
+                key={index}
+              >
                 <div
-                  key={index}
                   className="flex flex-col sm:flex-row gap-4 p-4 justify-center items-center"
                   onClick={() => handleview(index)}
                 >
@@ -276,12 +308,24 @@ function FindProperties() {
                 </div>
 
                 <div className="flex justify-between items-center px-4 py-2 border-t text-sm text-gray-600">
-                  <p className="flex items-center gap-1">
-                    📞 <span>{userlist.listedBy.contact?.phone}</span>
-                  </p>
-                  <p className="flex items-center gap-1">
-                    📧 <span>{userlist.listedBy.contact?.email}</span>
-                  </p>
+                  <a
+                    href={`mailto:${userlist.listedBy.contact?.email}`}
+                    className="flex items-center gap-1  "
+                  >
+                    📧{" "}
+                    <span className="underline hover:pointer ">
+                      {userlist.listedBy.contact?.email}
+                    </span>
+                  </a>
+                  <a
+                    href={`https://wa.me/91${userlist.listedBy.contact?.phone}`}
+                    className="flex items-center gap-1 "
+                  >
+                    📞{" "}
+                    <span className="underline hover:pointer ">
+                      {userlist.listedBy.contact?.phone}
+                    </span>
+                  </a>
                 </div>
               </div>
             ))}
