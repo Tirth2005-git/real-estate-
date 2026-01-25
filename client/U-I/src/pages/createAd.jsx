@@ -1,9 +1,11 @@
 import { useState } from "react";
 import { FaTrash, FaFilePdf, FaPlus, FaMinus } from "react-icons/fa";
 import { useDispatch, useSelector } from "react-redux";
+import { addAd } from "../redux/adsslice.jsx";
 
 function CreateAdvertisement() {
   const { currentuser } = useSelector((state) => state.user);
+  const dispatch = useDispatch();
   const mumbaiLocalities = [
     "Andheri",
     "Bandra",
@@ -480,6 +482,7 @@ function CreateAdvertisement() {
       const data = await response.json();
       if (!response.ok) throw new Error(data.message || "Failed to create ad");
       console.log("after submission: ", data);
+      dispatch(addAd(data. advertisement));
 
       alert("Advertisement submitted successfully!");
     } catch (err) {
