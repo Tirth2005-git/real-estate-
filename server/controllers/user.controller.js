@@ -5,71 +5,125 @@ import Listing from "../models/listing.model.js";
 import { delpfp } from "./fileuplds.controller.js";
 import isCloudinaryURL from "../utils/isclaudinary.js";
 import { delimages } from "./fileuplds.controller.js";
-
 export async function updateUser(req, res, next) {
   try {
     if (req.params.id !== req.user.userid) {
-      return next(ErrorHandler(403, "can't update others!!"));
-    } else {
-      if (
-        !req.body.username &&
-        !req.body.email &&
-        !req.body.avatar &&
-        !req.body.password &&
-        !req.body.imageid
-      ) {
-        return next(ErrorHandler(403, "New credentals required "));
-      }
-      const user = await User.findById(req.params.id);
-      const { pfp, pfpid } = user;
-
-      if (req.body.avatar) {
-        if (isCloudinaryURL(pfp)) {
-          await delpfp(pfpid);
-        }
-      }
-
-      let newreqobj = {};
-      Object.keys(req.body).forEach((key) => {
-        if (req.body[key] && req.body[key].toString().trim()) {
-          newreqobj[key] = req.body[key];
-        }
-      });
-      if (Object.keys(newreqobj).length == 0) {
-        return next(ErrorHandler(401, "New credentials required"));
-      }
-      req.body = newreqobj;
-
-      if (req.body.password) {
-        req.body.password = bcrypt.hashSync(req.body.password, 10);
-      }
-      let updateduser = await User.findByIdAndUpdate(
-        req.params.id,
-        {
-          $set: {
-            username: req.body.username?.trim(),
-            email: req.body.email?.trim(),
-            pfp: req.body.avatar?.trim(),
-            password: req.body.password?.trim(),
-            pfpid: req.body.imageid?.trim(),
-          },
-        },
-        {
-          new: true,
-        }
-      );
-      updateduser = updateduser.toObject();
-      if (updateduser.password) {
-        delete updateduser.password;
-      }
-
-      res.status(201).json({ success: true, user: updateduser });
+      return next(ErrorHandler(403, "Unauthorized!"));
     }
+
+    const allowedFields = [
+      "username",
+      "password",
+      "personalContactValue",
+      "companyContactValue",
+      "localities",
+      "companyName",
+      "companyAddress",
+      "pfp",
+      "pfpid",
+      "companyDescription",
+    ];
+
+    const hasValidField = allowedFields.some(
+      (field) => req.body[field] && req.body[field].toString().trim(),
+    );
+
+    if (!hasValidField) {
+      return next(ErrorHandler(400, "At least one field is required"));
+    }
+
+    const user = await User.findById(req.params.id);
+
+    if (req.body.pfp) {
+      if (isCloudinaryURL(user.pfp)) {
+        await delpfp(user.pfpid);
+      }
+    }
+
+    let cleanBody = {};
+    Object.keys(req.body).forEach((key) => {
+      if (req.body[key] && req.body[key].toString().trim()) {
+        cleanBody[key] = req.body[key];
+      }
+    });
+
+    if (cleanBody.personalContactValue || cleanBody.companyContactValue) {
+      const emailConditions = [];
+
+      if (cleanBody.personalContactValue) {
+        const personalEmail = cleanBody.personalContactValue.trim();
+        emailConditions.push({ personalContactValue: personalEmail });
+        emailConditions.push({ companyContactValue: personalEmail });
+      }
+
+      if (cleanBody.companyContactValue) {
+        const companyEmail = cleanBody.companyContactValue.trim();
+        emailConditions.push({ personalContactValue: companyEmail });
+        emailConditions.push({ companyContactValue: companyEmail });
+      }
+
+      const existingEmail = await User.findOne({
+        $or: emailConditions,
+        _id: { $ne: req.params.id },
+      });
+
+      if (existingEmail) {
+        return next(ErrorHandler(409, `Email is already registered`));
+      }
+    }
+
+    if (cleanBody.username) {
+      const usernameCheck = await User.findOne({
+        username: cleanBody.username.trim(),
+        _id: { $ne: req.params.id },
+      });
+
+      if (usernameCheck) {
+        return next(ErrorHandler(409, "Username already in use"));
+      }
+    }
+
+    if (cleanBody.password) {
+      cleanBody.password = await bcrypt.hash(cleanBody.password, 10);
+    }
+
+    const stringFields = [
+      "username",
+      "personalContactValue",
+      "companyContactValue",
+      "companyName",
+      "companyAddress",
+      "companyDescription",
+    ];
+
+    stringFields.forEach((field) => {
+      if (cleanBody[field]) {
+        cleanBody[field] = cleanBody[field].trim();
+      }
+    });
+
+    const updatedUser = await User.findByIdAndUpdate(
+      req.params.id,
+      {
+        $set: cleanBody,
+      },
+      {
+        new: true,
+      },
+    );
+
+    const userResponse = updatedUser.toObject();
+    delete userResponse.password;
+
+    res.status(200).json({
+      success: true,
+      message: "Profile updated successfully",
+      user: userResponse,
+    });
   } catch (err) {
     next(ErrorHandler(500, err.message));
   }
 }
-
 export async function deleteUser(req, res, next) {
   try {
     if (req.params.id !== req.user.userid) {

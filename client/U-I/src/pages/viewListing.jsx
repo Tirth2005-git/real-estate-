@@ -4,7 +4,7 @@ import { useLocation } from "react-router-dom";
 function ListingView() {
   const { state: listing } = useLocation();
   const {
-    address,
+    location,
     description,
     features,
     images,
@@ -14,6 +14,8 @@ function ListingView() {
     price,
     listingType,
     propertyType,
+    bhk,
+    area,
   } = listing;
 
   const [current, setCurrent] = useState(0);
@@ -47,28 +49,40 @@ function ListingView() {
         )}
       </div>
 
-      <h2 className="text-xl sm:text-2xl font-semibold text-gray-800 mb-2 text-center sm:text-left">
-        Property Listed by {listedBy.name}
-      </h2>
+      <div className="mb-4">
+        <h2 className="text-xl sm:text-2xl font-semibold text-gray-800 mb-2">
+          Property Listed by {listedBy.name}
+          {listedBy.role !== "user" && (
+            <span className="ml-2 text-sm bg-blue-100 text-blue-800 px-2 py-1 rounded">
+              {listedBy.role === "dealer" ? "🏢 Dealer" : "👷 Builder"}
+              {listedBy.companyName && ` • ${listedBy.companyName}`}
+            </span>
+          )}
+        </h2>
+      </div>
 
       <div className="text-gray-600 mb-4 space-y-1 text-sm sm:text-base">
         <p>
-          <span className="font-semibold">Street:</span> {address.streetAddress}
+          <span className="font-semibold">Locality:</span> {location?.locality}
         </p>
         <p>
-          <span className="font-semibold">City:</span> {address.city}
-        </p>
-        <p>
-          <span className="font-semibold">State:</span> {address.state}
-        </p>
-        <p>
-          <span className="font-semibold">Zipcode:</span> {address.zipcode}
+          <span className="font-semibold">Address:</span> {location?.address}
         </p>
         <p>
           <span className="font-semibold text-lg text-red-300 capitalize">
-            property Type:
+            Property Type:
           </span>{" "}
           {propertyType}
+        </p>
+        {/* Show BHK for residential */}
+        {bhk && (
+          <p>
+            <span className="font-semibold">BHK:</span> {bhk}
+          </p>
+        )}
+
+        <p>
+          <span className="font-semibold">Area:</span> {area} sq.ft
         </p>
       </div>
 
@@ -79,7 +93,7 @@ function ListingView() {
       </div>
       <div className="mb-4">
         <div className="text-2xl sm:text-3xl text-red-700">
-          ₹{price}
+          ₹{price.toLocaleString()}
           {listingType === "rent" && (
             <span className="ml-3 text-base sm:text-lg text-red-500">
               per month
@@ -109,7 +123,20 @@ function ListingView() {
         <h3 className="text-base sm:text-lg font-medium text-gray-700">
           Features
         </h3>
-        <p className="text-gray-600 text-sm sm:text-base">{features}</p>
+        {features && features.length > 0 ? (
+          <div className="flex flex-wrap gap-2 mt-2">
+            {features.map((feature, index) => (
+              <span
+                key={index}
+                className="bg-gray-100 text-gray-800 px-3 py-1 rounded-full text-sm"
+              >
+                {feature}
+              </span>
+            ))}
+          </div>
+        ) : (
+          <p className="text-gray-500 text-sm">No features listed</p>
+        )}
       </div>
 
       {specialOffer && (
@@ -121,28 +148,37 @@ function ListingView() {
         </div>
       )}
 
-      <div>
-        <h3 className="text-base sm:text-lg font-medium text-gray-700">
-          Contact Info
+      <div className="mt-6 pt-4 border-t border-gray-200">
+        <h3 className="text-base sm:text-lg font-medium text-gray-700 mb-3">
+          Contact Information
         </h3>
-        <a
-          href={`mailto:${listedBy.contact?.email}`}
-          className="flex items-center gap-1  "
-        >
-          📧{" "}
-          <span className="underline hover:pointer ">
-            {listedBy.contact?.email}
-          </span>
-        </a>
-        <a
-          href={`https://wa.me/91${listedBy.contact?.phone}`}
-          className="flex items-center gap-1 "
-        >
-          📞{" "}
-          <span className="underline hover:pointer ">
-            {listedBy.contact?.phone}
-          </span>
-        </a>
+        <div className="space-y-3">
+          <a
+            href={`mailto:${listedBy.contact?.email}`}
+            className="flex items-center gap-2 text-blue-600 hover:text-blue-800"
+          >
+            <span className="text-xl">📧</span>
+            <span className="underline">{listedBy.contact?.email}</span>
+          </a>
+          <a
+            href={`https://wa.me/91${listedBy.contact?.phone}`}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="flex items-center gap-2 text-green-600 hover:text-green-800"
+          >
+            <span className="text-xl">📞</span>
+            <span className="underline">{listedBy.contact?.phone}</span>
+          </a>
+
+          {listedBy.dealerType && (
+            <p className="text-sm text-gray-600 mt-2">
+              Dealer Type:{" "}
+              <span className="font-semibold capitalize">
+                {listedBy.dealerType}
+              </span>
+            </p>
+          )}
+        </div>
       </div>
     </div>
   );

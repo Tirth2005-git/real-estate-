@@ -1,93 +1,277 @@
 import { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
-import GoogleO from "../components/GoogleO.jsx";
+
+const mumbaiLocalities = [
+  "Andheri",
+  "Bandra",
+  "Borivali",
+  "Dadar",
+  "Goregaon",
+  "Malad",
+  "Powai",
+  "Thane",
+];
+
 function Signup() {
   const navigate = useNavigate();
-  const [formdata, setdata] = useState({});
+
+  const [formdata, setdata] = useState({
+    username: "",
+    password: "",
+    role: "user",
+
+    personalContactValue: "",
+
+    dealerType: "individual",
+
+    localities: [],
+
+    companyName: "",
+    companyAddress: "",
+    companyContactValue: "",
+    companyDescription: "",
+  });
+
   const [loading, setloading] = useState(false);
   const [error, seterror] = useState(null);
+
+  const isCompanyAccount =
+    (formdata.role === "dealer" && formdata.dealerType === "agency") ||
+    formdata.role === "builder";
+
   function handleChange(e) {
-    setdata({ ...formdata, [e.target.id]: e.target.value });
+    const { id, value } = e.target;
+
+    setdata((prev) => {
+      const newState = { ...prev, [id]: value };
+
+      if (id === "role") {
+        if (value === "user") {
+          newState.dealerType = "individual";
+          newState.localities = [];
+          newState.companyName = "";
+          newState.companyAddress = "";
+          newState.companyContactValue = "";
+          newState.companyDescription = "";
+        } else if (value !== "dealer") {
+          newState.localities = [];
+        } else if (value === "builder") {
+          newState.personalContactValue = "";
+        }
+      } else if (id === "dealerType") {
+        if (value === "agency") {
+          newState.personalContactValue = "";
+        } else {
+          newState.companyName = "";
+          newState.companyAddress = "";
+          newState.companyContactValue = "";
+          newState.companyDescription = "";
+        }
+      }
+
+      return newState;
+    });
+  }
+
+  function handleLocalityChange(locality) {
+    setdata((prev) => {
+      const exists = prev.localities.includes(locality);
+
+      return {
+        ...prev,
+        localities: exists
+          ? prev.localities.filter((l) => l !== locality)
+          : [...prev.localities, locality],
+      };
+    });
   }
 
   async function handleSubmit(e) {
+    e.preventDefault();
+
+    if (!formdata?.username?.trim() || !formdata?.password?.trim()) {
+      seterror("Username and password are required");
+      return;
+    }
+
+    if (!isCompanyAccount && !formdata?.personalContactValue?.trim()) {
+      seterror("Personal email is required");
+      return;
+    }
+
+    if (isCompanyAccount && !formdata.companyContactValue?.trim()) {
+      seterror("Company email is required");
+      return;
+    }
+    if (isCompanyAccount && !formdata.companyDescription?.trim()) {
+      seterror("Company description is required");
+      return;
+    }
+
+    if (formdata.role === "dealer" && formdata.localities.length === 0) {
+      seterror("Please select at least one locality");
+      return;
+    }
+
+    if (
+      isCompanyAccount &&
+      (!formdata.companyName || !formdata.companyAddress)
+    ) {
+      seterror("Company name and address are required");
+      return;
+    }
+
+    const Email =
+      formdata.personalContactValue?.toLowerCase().trim() ||
+      formdata.companyContactValue.toLowerCase().trim();
+
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    const allowedDomains = [
+      "gmail.com",
+      "yahoo.com",
+      "outlook.com",
+      "hotmail.com",
+      "yahoo.in",
+      "rediffmail.com",
+      "icloud.com",
+      "protonmail.com",
+      "aol.com",
+      "zoho.com",
+      "mail.com",
+      "gmail.co.in",
+    ];
+
+    if (!emailRegex.test(Email)) {
+      seterror("Please enter a valid email address");
+      return;
+    }
+
+    const domain = Email.split("@")[1];
+
+    if (!allowedDomains.includes(domain)) {
+      seterror("Please Enter valid Domain of email");
+      return;
+    }
     try {
-      e.preventDefault();
-      if (!formdata.username || !formdata.email || !formdata.password) return;
       setloading(true);
+      seterror(null);
+
       const res = await fetch("/api/signup", {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify(formdata),
       });
-      const data = await res.json();
-      if (data.success  === false) {
-        setloading(false);
-        seterror(data.message);
-        return;
+
+      if (!res.ok) {
+        const { message } = await res.json();
+        throw new Error(message || "Signup failed");
       }
+
       setloading(false);
-      seterror(null);
+      seterror(false);
       navigate("/sign-in");
     } catch (err) {
       setloading(false);
-      seterror(err.message);
-     
+      seterror(err.message || "Something went wrong");
     }
   }
+
   return (
-    <>
-      <div className="mx-auto mt-8 bg-gray-100 w-80 sm:w-96 md:w-[28rem] p-6 shadow-lg rounded-md flex flex-col items-center">
-        <h1 className="text-2xl text-gray-600 font-semibold mb-4">Sign Up</h1>
+    <div className="mx-auto mt-8 bg-gray-100 w-96 p-6 shadow-lg rounded-md">
+      <h1 className="text-2xl text-gray-600 font-semibold mb-4">Sign Up</h1>
 
-        <form className="flex flex-col gap-4 w-full" onSubmit={handleSubmit}>
-          <input
-            type="text"
-            placeholder="User Name"
-            className="bg-gray-200 rounded-lg p-2 w-full"
-            id="username"
-            onChange={handleChange}
-          />
-          <input
-            type="email"
-            placeholder="Email"
-            className="bg-gray-200 rounded-lg p-2 w-full"
-            id="email"
-            onChange={handleChange}
-          />
-          <input
-            type="password"
-            placeholder="Password"
-            className="bg-gray-200 rounded-lg p-2 w-full"
-            id="password"
-            onChange={handleChange}
-          />
-          <button className="bg-gray-400 rounded-lg p-2 mt-2 text-white font-medium hover:bg-gray-500 transition w-full">
-            {loading ? "LOADING" : "SIGN UP"}
-          </button>
+      <form className="flex flex-col gap-4" onSubmit={handleSubmit}>
+        <input id="username" placeholder="Username" onChange={handleChange} />
 
-          <GoogleO />
-        </form>
+        <input
+          id="password"
+          type="password"
+          placeholder="Password"
+          onChange={handleChange}
+        />
 
-        <div className="flex gap-1 mt-4 text-sm text-gray-600">
-          <p>Have an account?</p>
-          <Link
-            to="/sign-in"
-            className="text-blue-600 hover:underline font-medium"
+        <select id="role" value={formdata.role} onChange={handleChange}>
+          <option value="user">User</option>
+          <option value="dealer">Dealer</option>
+          <option value="builder">Builder</option>
+        </select>
+
+        {formdata.role === "dealer" && (
+          <select
+            id="dealerType"
+            value={formdata.dealerType}
+            onChange={handleChange}
           >
-            Sign In
-          </Link>
-        </div>
-
-        {error && (
-          <p className="text-red-500 text-sm mt-2 text-center w-full">
-            {error}
-          </p>
+            <option value="individual">Individual Dealer</option>
+            <option value="agency">Agency</option>
+          </select>
         )}
-      </div>
-    </>
+
+        {!isCompanyAccount && (
+          <input
+            id="personalContactValue"
+            type="email"
+            placeholder="Email address"
+            onChange={handleChange}
+          />
+        )}
+
+        {formdata.role === "dealer" && (
+          <div>
+            <p className="font-medium">Select Localities</p>
+            {mumbaiLocalities.map((loc) => (
+              <label key={loc} className="block">
+                <input
+                  type="checkbox"
+                  checked={formdata.localities.includes(loc)}
+                  onChange={() => handleLocalityChange(loc)}
+                />
+                {loc}
+              </label>
+            ))}
+          </div>
+        )}
+
+        {isCompanyAccount && (
+          <>
+            <input
+              id="companyName"
+              placeholder="Company Name"
+              onChange={handleChange}
+            />
+
+            <input
+              id="companyAddress"
+              placeholder="Company Address"
+              onChange={handleChange}
+            />
+
+            <input
+              id="companyContactValue"
+              type="email"
+              placeholder="Company email"
+              onChange={handleChange}
+            />
+
+            <textarea
+              id="companyDescription"
+              placeholder="Company Description "
+              onChange={handleChange}
+            />
+          </>
+        )}
+
+        <button className="bg-gray-400 rounded-lg w-full p-2 mt-3 text-gray-900 hover:opacity-90">
+          {loading ? "SIGNING UP" : "SIGN UP"}
+        </button>
+      </form>
+
+      {error && <p className="text-red-500 mt-2">{error}</p>}
+
+      <Link to="/sign-in" className="text-blue-600">
+        Sign In
+      </Link>
+    </div>
   );
 }
 

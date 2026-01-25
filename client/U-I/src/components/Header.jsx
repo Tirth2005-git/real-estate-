@@ -44,7 +44,7 @@ function Header() {
         )}
 
         <ul className="hidden sm:flex gap-6 items-center">
-          {currentuser && (
+          {currentuser && currentuser.role !== "builder" && (
             <>
               <li>
                 <NavLink
@@ -65,6 +65,28 @@ function Header() {
             </>
           )}
 
+          {currentuser && currentuser.role === "builder" && (
+            <>
+              <li>
+                <NavLink
+                  className="hover:underline text-lg text-gray-700"
+                  to="/create-ad"
+                >
+                  CreateAd
+                </NavLink>
+              </li>
+              <li>
+                <NavLink
+                  className="hover:underline text-lg text-gray-700"
+                  to="/builder-ads"
+                >
+                  YourAds
+                </NavLink>
+              </li>
+            </>
+          )}
+
+       
           <li>
             <NavLink
               className="hover:underline text-lg text-gray-700"
@@ -79,6 +101,7 @@ function Header() {
               Home
             </NavLink>
           </li>
+
           <li>
             <NavLink
               className="hover:underline text-lg text-gray-700"
@@ -106,11 +129,11 @@ function Header() {
       <div className="pt-16"></div>
 
       <div
-        className="bg-white sm:hidden fixed top-0 right-0 pt-16  z-40"
+        className="bg-white sm:hidden fixed top-0 right-0 pt-16 z-40"
         id="mobmenu"
       >
         <ul className="flex flex-col items-center gap-4 p-4">
-          {currentuser && (
+          {currentuser && currentuser.role !== "builder" && (
             <>
               <li>
                 <NavLink
@@ -132,6 +155,30 @@ function Header() {
               </li>
             </>
           )}
+
+          {currentuser && currentuser.role === "builder" && (
+            <>
+              <li>
+                <NavLink
+                  className="hover:underline text-base text-gray-700"
+                  to="/create-ad"
+                  onClick={() => setToggle(true)}
+                >
+                  CreateAd
+                </NavLink>
+              </li>
+              <li>
+                <NavLink
+                  className="hover:underline text-base text-gray-700"
+                  to="/builder-ads"
+                  onClick={() => setToggle(true)}
+                >
+                  YourAds
+                </NavLink>
+              </li>
+            </>
+          )}
+
           <li>
             <NavLink
               className="hover:underline text-base text-gray-700"

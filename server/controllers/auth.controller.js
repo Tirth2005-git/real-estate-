@@ -1,109 +1,177 @@
 import User from "../models/users.model.js";
 import bcrypt from "bcryptjs";
 import { ErrorHandler } from "../utils/error.js";
-import randpass from "../utils/randpass.js";
 import jwt from "jsonwebtoken";
 import Listing from "../models/listing.model.js";
+
 export async function signUp(req, res, next) {
-  const { username, email, password } = req.body;
-  const hashedpassword = bcrypt.hashSync(password, 10);
-  let existing = await User.findOne({ email });
-  {
-    if (existing) {
-      return next(ErrorHandler(401, "User already exists"));
-    }
-  }
-  let newUser = new User({ username, email, password: hashedpassword });
   try {
-    await newUser.save();
-    newUser = newUser.toObject();
-    delete newUser.password;
-    res.status(201).json({ success: true, user: newUser });
+    let {
+      username,
+      password,
+      role,
+      dealerType,
+      localities,
+      companyName,
+      companyAddress,
+      companyContactValue,
+      companyDescription,
+      personalContactValue,
+    } = req.body;
+
+    username = username?.trim();
+    password = password?.trim();
+    role = role?.trim();
+    dealerType = dealerType?.trim();
+    companyName = companyName?.trim();
+    companyAddress = companyAddress?.trim();
+    companyContactValue = companyContactValue?.trim();
+    personalContactValue = personalContactValue?.trim();
+    companyDescription = companyDescription?.trim();
+
+    if (!username || !password || !role) {
+      return next(ErrorHandler(400, "Invalid signup data"));
+    }
+
+    const hashedPassword = await bcrypt.hash(password, 10);
+
+    let newsignup = null;
+
+    if (role === "user") {
+      if (!personalContactValue) {
+        return next(ErrorHandler(400, "Email required"));
+      }
+
+      newsignup = {
+        username,
+        password: hashedPassword,
+        role,
+        personalContactValue,
+      };
+    } else if (role === "dealer") {
+      if (!localities || localities.length === 0) {
+        return next(ErrorHandler(400, "Dealer localities required"));
+      }
+
+      if (dealerType === "agency") {
+        if (!companyName || !companyAddress || !companyContactValue) {
+          return next(ErrorHandler(400, "Company details required"));
+        }
+
+        newsignup = {
+          username,
+          password: hashedPassword,
+          role,
+          dealerType,
+          localities,
+          companyName,
+          companyAddress,
+          companyContactValue,
+          ...(companyDescription && { companyDescription }),
+        };
+      } else {
+        if (!personalContactValue) {
+          return next(ErrorHandler(400, "Email required"));
+        }
+
+        newsignup = {
+          username,
+          password: hashedPassword,
+          role,
+          dealerType,
+          localities,
+          personalContactValue,
+        };
+      }
+    } else if (role === "builder") {
+      if (!companyName || !companyAddress || !companyContactValue) {
+        return next(ErrorHandler(400, "Company details required"));
+      }
+
+      newsignup = {
+        username,
+        password: hashedPassword,
+        role,
+        companyName,
+        companyAddress,
+        companyContactValue,
+        ...(companyDescription && { companyDescription }),
+      };
+    }
+
+    if (!newsignup) {
+      return next(ErrorHandler(400, "Invalid signup data"));
+    }
+
+    await User.create(newsignup);
+
+    res.sendStatus(201);
   } catch (err) {
+    if (err.code === 11000) {
+      const field = Object.keys(err.keyValue)[0];
+
+      let message = "Duplicate value";
+
+      if (field === "username") {
+        message = "Username already exists";
+      } else if (
+        field === "personalContactValue" ||
+        field === "companyContactValue"
+      ) {
+        message = "Email already registered";
+      }
+
+      return next(ErrorHandler(409, message));
+    }
     next(ErrorHandler(500, err.message));
   }
 }
+
 export async function signIn(req, res, next) {
   try {
-    const { email, userpassword } = req.body;
-    let validuser = await User.findOne({ email: [email] });
-    if (!validuser) return next(ErrorHandler(404, "User not found!!!"));
-    validuser = validuser.toObject();
-    const isvalid = bcrypt.compareSync(userpassword, validuser.password);
-    if (!isvalid) {
-      return next(ErrorHandler(403, "Incorrect password!!!"));
+    const { email, password } = req.body;
+
+    if (!email || !password) {
+      return next(ErrorHandler(400, "Email and password are required"));
     }
+
+    const validuser = await User.findOne({
+      $or: [{ personalContactValue: email }, { companyContactValue: email }],
+    });
+
+    if (!validuser) {
+      return next(ErrorHandler(404, "User not found"));
+    }
+
+    const isvalid = bcrypt.compareSync(password, validuser.password);
+
+    if (!isvalid) {
+      return next(ErrorHandler(403, "Incorrect password"));
+    }
+
     const token = jwt.sign({ userid: validuser._id }, process.env.SECRET, {
       expiresIn: "3h",
     });
 
-    delete validuser.password;
-    const userlisting = await Listing.find({ userref: validuser._id });
+    const userObj = validuser.toObject();
+    delete userObj.password;
+
+    const userlisting = await Listing.find({
+      userref: validuser._id,
+    });
 
     res
-      .status(201)
-      .cookie("acces_token", token, {
+      .status(200)
+      .cookie("access_token", token, {
         httpOnly: true,
       })
       .json({
-        success: true,
-        user: validuser,
+        user: userObj,
         ...(userlisting && { userlisting }),
       });
   } catch (err) {
-    
+    console.log(err.message);
 
-    next(ErrorHandler(500, err.message));
-  }
-}
-
-export async function google(req, res, next) {
-  try {
-    const { email, pfp, name } = req.body;
-
-    let user = await User.findOne({ email });
-
-    if (user) {
-      const token = jwt.sign({ userid: user._id }, process.env.SECRET, {
-        expiresIn: "3h",
-      });
-
-      user = user.toObject();
-      delete user.password;
-      const userlisting = await Listing.find({ userref: user._id });
-      res
-        .status(201)
-        .cookie("acces_token", token, {
-          httpOnly: true,
-        })
-        .json({ success: true, user, ...(userlisting && { userlisting }) });
-    } else {
-      const newpass = randpass();
-      let newuser = new User({
-        username: name,
-        email,
-        password: bcrypt.hashSync(newpass, 10),
-        pfp,
-      });
-
-      await newuser.save();
-
-      const token = jwt.sign({ userid: newuser._id }, process.env.SECRET, {
-        expiresIn: "3h",
-      });
-
-      newuser = newuser.toObject();
-      delete newuser.password;
-
-      res
-        .status(201)
-        .cookie("acces_token", token, {
-          httpOnly: true,
-        })
-        .json({ success: true, user: newuser });
-    }
-  } catch (err) {
-    
     next(ErrorHandler(500, err.message));
   }
 }

@@ -2,18 +2,37 @@ import { useState, useEffect, useRef } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { NavLink } from "react-router-dom";
 import { setListing } from "../redux/listingslice.jsx";
+
 function CreateListing() {
+  const [propertyCategory, setPropertyCategory] = useState("residential");
   const [formdata, setFormData] = useState({
     images: [],
+    features: [],
   });
   const dispatch = useDispatch();
   const fileref = useRef(0);
   const [fileup, setFile] = useState([]);
   const [ferror, setError] = useState();
   const [Cerror, setCreateError] = useState();
-  const [uploading, setUploading] = useState("idile");
-  const [Cuploading, setCreateUploading] = useState("idile");
+  const [uploading, setUploading] = useState("idle");
+  const [Cuploading, setCreateUploading] = useState("idle");
   const { currentuser } = useSelector((state) => state.user);
+
+  useEffect(() => {
+    if (currentuser) {
+      setFormData((prev) => ({
+        ...prev,
+        name: currentuser.username,
+        email:
+          currentuser.personalContactValue ||
+          currentuser.companyContactValue ||
+          "",
+        phone: "",
+        role: currentuser.role,
+      }));
+    }
+  }, [currentuser]);
+
   useEffect(() => {
     if (uploading === "success") {
       const timer = setTimeout(() => {
@@ -30,54 +49,163 @@ function CreateListing() {
       }, 3000);
       return () => clearTimeout(timer);
     }
-  }, [uploading]);
+  }, [Cuploading]);
 
   async function handleSubmit(e) {
+    e.preventDefault();
+
     try {
-      e.preventDefault();
-      if (!formdata) {
-        return;
-      }
-      if (formdata.images.length === 0) {
-        setCreateError("Atleast 1 image required");
-        setCreateUploading("idle");
-        return;
-      }
-      if (!formdata.status) {
-        formdata.status = "available";
+      const trimmedData = {};
+      Object.keys(formdata).forEach((key) => {
+        if (typeof formdata[key] === "string") {
+          trimmedData[key] = formdata[key].trim();
+        } else {
+          trimmedData[key] = formdata[key];
+        }
+      });
+
+      const requiredFields = [
+        "title",
+        "listingType",
+        "propertyType",
+        "description",
+        "price",
+        "area",
+        "locality",
+        "address",
+        "name",
+        "email",
+        "phone",
+      ];
+
+      if (propertyCategory === "residential") {
+        requiredFields.push("bhk");
       }
 
-      setCreateUploading("uploading");
-      const res = await fetch(`/api/list/${currentuser._id}`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          formdata: { ...formdata, userref: currentuser._id },
-        }),
-      });
-      const data = await res.json();
-      if (data.success === false) {
-        setCreateUploading("idle");
-        setCreateError(data.message);
+      for (let field of requiredFields) {
+        if (!trimmedData[field] || trimmedData[field] === "") {
+          setCreateError(`${field.replace(/([A-Z])/g, " $1")} is required`);
+          return;
+        }
+      }
+
+      if (!trimmedData.images || trimmedData.images.length === 0) {
+        setCreateError("At least 1 image is required");
         return;
       }
+
+      if (trimmedData.email) {
+        const allowedDomains = [
+          "gmail.com",
+          "yahoo.com",
+          "outlook.com",
+          "hotmail.com",
+          "yahoo.in",
+          "rediffmail.com",
+          "icloud.com",
+          "protonmail.com",
+          "aol.com",
+          "zoho.com",
+          "mail.com",
+          "gmail.co.in",
+        ];
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        if (!emailRegex.test(trimmedData.email)) {
+          setCreateError("Please enter a valid email address");
+          return;
+        }
+        const domain = trimmedData.email.split("@")[1];
+
+        if (!allowedDomains.includes(domain)) {
+          setCreateError("Please enter a valid email domain");
+          return;
+        }
+      }
+
+      // 5. Phone validation
+      if (trimmedData.phone) {
+        const phoneRegex = /^[0-9]{10}$/;
+        if (!phoneRegex.test(trimmedData.phone.replace(/\D/g, ""))) {
+          setCreateError("Phone number must be 10 digits");
+          return;
+        }
+      }
+
+      // 6. Prepare data for API
+      setFormData(trimmedData);
+
+      // Add structured data
+      trimmedData.bhk = trimmedData.bhk || null;
+      trimmedData.area = Number(trimmedData.area);
+      trimmedData.price = Number(trimmedData.price);
+      trimmedData.status = trimmedData.status || "available";
+      trimmedData.features = trimmedData.features || [];
+      trimmedData.specialOffer = trimmedData.specialOffer || "";
+
+      // Add location object
+      trimmedData.location = {
+        locality: trimmedData.locality,
+        address: trimmedData.address,
+      };
+
+      // Add listedBy object with role/company data
+      trimmedData.listedBy = {
+        userId: currentuser._id,
+        role: currentuser.role,
+        ...(currentuser.role === "dealer" && {
+          dealerType: currentuser.dealerType,
+        }),
+        ...(currentuser.role === "dealer" && currentuser.dealerType === "agency"
+          ? {
+              companyName: currentuser.companyName || "",
+            }
+          : {}),
+        name: trimmedData.name,
+        contact: {
+          phone: trimmedData.phone,
+          email: trimmedData.email,
+        },
+      };
+
+      trimmedData.userref = currentuser._id;
+
+      // Clean up old fields
+      delete trimmedData.name;
+      delete trimmedData.email;
+      delete trimmedData.phone;
+      delete trimmedData.locality;
+      delete trimmedData.address;
+
+      setCreateUploading("uploading");
+
+      const res = await fetch(`/api/list/${currentuser._id}`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(trimmedData),
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        setCreateError(data.message || "Failed to create listing");
+        return;
+      }
+
       setCreateUploading("success");
       setCreateError(null);
       dispatch(setListing(data.newlisting));
     } catch (err) {
-      setCreateUploading("idle");
-      setCreateError(null);
+      setCreateError(err.message || "Something went wrong");
     }
   }
+
   async function handleUpload() {
     try {
       setUploading("uploading");
 
-      if (!fileup || fileup.length == 0 || fileup.length > 5) {
+      if (!fileup || fileup.length === 0 || fileup.length > 5) {
         setUploading("idle");
-        setError("Invalid file quantity");
+        setError("Please select 1-5 images");
         return;
       }
 
@@ -90,25 +218,102 @@ function CreateListing() {
       });
 
       const data = await res.json();
-
       if (data.success === false) {
         setUploading("idle");
         setError(data.message);
         return;
       }
+
       setFormData({ ...formdata, images: data.uploadedurls });
       setUploading("success");
       setError(null);
     } catch (err) {
-      setUploading("idle");
       setError(err.message);
+      setUploading("idle");
     }
   }
-  function handleDelete(index) {
-    setFile(fileup.filter((image, i) => i != index));
-  }
-  const { listings } = useSelector((state) => state.listings);
 
+  function handleDelete(index) {
+    setFile(fileup.filter((image, i) => i !== index));
+  }
+
+  const { listings } = useSelector((state) => state.listings);
+  const mumbaiLocalities = [
+    "Andheri",
+    "Bandra",
+    "Borivali",
+    "Dadar",
+    "Goregaon",
+    "Malad",
+    "Powai",
+    "Thane",
+    "Chembur",
+    "Kandivali",
+    "Juhu",
+    "Santacruz",
+    "Lower Parel",
+    "Worli",
+    "Colaba",
+  ];
+
+  const residentialTypes = [
+    "Flat",
+    "Bungalow",
+    "Villa",
+    "Studio Apartment",
+    "Builder Floor",
+  ];
+  const commercialTypes = [
+    "Office Space",
+    "Shop",
+    "Showroom",
+    "Warehouse",
+    "Industrial",
+  ];
+  const residentialFeatures = [
+    "Swimming Pool",
+    "Gym",
+    "Club House",
+    "Children's Play Area",
+    "24/7 Security",
+    "Lift/Elevator",
+    "Car Parking",
+    "Garden/Lawn",
+    "Intercom",
+    "Wi-Fi Ready",
+    "CCTV Surveillance",
+    "Shopping Center Nearby",
+    "School Nearby",
+    "Hospital Nearby",
+    "Public Transport Access",
+    "Balcony/Terrace",
+    "Modular Kitchen",
+    "Air Conditioning",
+    "Geyser",
+  ];
+  const commercialFeatures = [
+    "24/7 Security",
+    "Lift/Elevator",
+    "Car Parking",
+    "Wi-Fi Ready",
+    "CCTV Surveillance",
+    "Public Transport Access",
+    "Air Conditioning",
+    "Conference Room",
+    "Pantry",
+    "Reception Area",
+    "Modular Furniture",
+    "Toilets",
+    "Storage Space",
+    "Separate Entrance",
+    "Metro Station Nearby",
+    "Bank Nearby",
+    "Restaurant Nearby",
+  ];
+  const featuresList =
+    propertyCategory === "residential"
+      ? residentialFeatures
+      : commercialFeatures;
   return (
     <>
       <h1 className="text-center text-black font-bold mt-4 text-xl sm:text-2xl">
@@ -125,6 +330,7 @@ function CreateListing() {
           </NavLink>
         </p>
       )}
+
       <form
         className="bg-gray-200 mx-auto flex flex-col md:flex-row p-4 sm:p-6 justify-between gap-6 rounded-xl max-w-5xl mt-4"
         onSubmit={handleSubmit}
@@ -144,10 +350,10 @@ function CreateListing() {
 
             <div className="w-full">
               <label htmlFor="listingType" className="block text-black mb-1">
-                Listing Type :
+                Listing Type:
               </label>
               <div className="flex flex-wrap gap-4">
-                <label>
+                <label className="flex items-center">
                   <input
                     type="radio"
                     value="rent"
@@ -164,7 +370,7 @@ function CreateListing() {
                   />
                   Rent
                 </label>
-                <label>
+                <label className="flex items-center">
                   <input
                     type="radio"
                     value="sale"
@@ -186,17 +392,54 @@ function CreateListing() {
 
             <div className="w-full">
               <label className="block text-sm font-medium text-gray-700 mb-2">
+                Property Category
+              </label>
+              <div className="flex flex-wrap gap-4">
+                <label className="flex items-center space-x-2">
+                  <input
+                    type="radio"
+                    name="propertyCategory"
+                    value="residential"
+                    checked={propertyCategory === "residential"}
+                    onChange={(e) => setPropertyCategory(e.target.value)}
+                    className="text-blue-600 focus:ring-blue-500"
+                  />
+                  <span className="text-gray-700">Residential</span>
+                </label>
+                <label className="flex items-center space-x-2">
+                  <input
+                    type="radio"
+                    name="propertyCategory"
+                    value="commercial"
+                    checked={propertyCategory === "commercial"}
+                    onChange={(e) => setPropertyCategory(e.target.value)}
+                    className="text-blue-600 focus:ring-blue-500"
+                  />
+                  <span className="text-gray-700">Commercial</span>
+                </label>
+              </div>
+            </div>
+
+            {/* Property Type */}
+            <div className="w-full">
+              <label className="block text-sm font-medium text-gray-700 mb-2">
                 Property Type
               </label>
               <div className="flex flex-wrap gap-4">
-                {["villa", "bungalow", "flat", "office space"].map((type) => (
+                {(propertyCategory === "residential"
+                  ? residentialTypes
+                  : commercialTypes
+                ).map((type) => (
                   <label key={type} className="flex items-center space-x-2">
                     <input
                       type="radio"
                       name="propertyType"
                       id="propertyType"
-                      value={type}
-                      checked={formdata.propertyType === type}
+                      value={type.toLowerCase().replace(" ", "-")}
+                      checked={
+                        formdata.propertyType ===
+                        type.toLowerCase().replace(" ", "-")
+                      }
                       onChange={(e) =>
                         setFormData({
                           ...formdata,
@@ -212,6 +455,30 @@ function CreateListing() {
               </div>
             </div>
 
+            {/* BHK (Residential only) */}
+            {propertyCategory === "residential" && (
+              <div className="w-full">
+                <label htmlFor="bhk" className="block text-black mb-1">
+                  BHK Configuration:
+                </label>
+                <select
+                  id="bhk"
+                  className="p-2 w-full bg-white text-black rounded-lg"
+                  required
+                  onChange={(e) =>
+                    setFormData({ ...formdata, [e.target.id]: e.target.value })
+                  }
+                >
+                  <option value="">Select BHK</option>
+                  <option value="1 BHK">1 BHK</option>
+                  <option value="2 BHK">2 BHK</option>
+                  <option value="3 BHK">3 BHK</option>
+                  <option value="4 BHK">4 BHK</option>
+                  <option value="Studio">Studio</option>
+                </select>
+              </div>
+            )}
+
             <textarea
               id="description"
               placeholder="Enter description of property"
@@ -225,7 +492,7 @@ function CreateListing() {
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="flex flex-col gap-2">
                 <label htmlFor="price" className="text-black mb-1">
-                  Price :
+                  Price (₹):
                 </label>
                 <input
                   type="number"
@@ -237,8 +504,23 @@ function CreateListing() {
                   }
                   min="1000"
                 />
+
+                <label htmlFor="area" className="text-black mb-1">
+                  Built-up Area (sq.ft):
+                </label>
+                <input
+                  type="number"
+                  id="area"
+                  className="p-2 bg-white text-black rounded-lg"
+                  required
+                  min="1000"
+                  onChange={(e) =>
+                    setFormData({ ...formdata, [e.target.id]: e.target.value })
+                  }
+                />
+
                 <label htmlFor="specialOffer" className="text-black mb-1">
-                  Special Offer :
+                  Special Offer:
                 </label>
                 <textarea
                   id="specialOffer"
@@ -249,19 +531,40 @@ function CreateListing() {
                 ></textarea>
               </div>
 
-              <div>
-                <label htmlFor="features" className="text-black mb-1 block">
-                  Features:
+              <div className="w-full">
+                <label className="block text-black mb-2">
+                  Select Features:
                 </label>
-                <textarea
-                  placeholder="features"
-                  className="p-2 bg-white text-black h-28 w-full rounded-lg resize-none"
-                  id="features"
-                  required
-                  onChange={(e) =>
-                    setFormData({ ...formdata, [e.target.id]: e.target.value })
-                  }
-                ></textarea>
+                <div className="grid grid-cols-2 gap-2 max-h-48 overflow-y-auto p-2 bg-white rounded">
+                  {featuresList.map((feature) => (
+                    <label
+                      key={feature}
+                      className="flex items-center space-x-2"
+                    >
+                      <input
+                        type="checkbox"
+                        checked={formdata.features.includes(feature)}
+                        onChange={(e) => {
+                          if (e.target.checked) {
+                            setFormData({
+                              ...formdata,
+                              features: [...formdata.features, feature],
+                            });
+                          } else {
+                            setFormData({
+                              ...formdata,
+                              features: formdata.features.filter(
+                                (f) => f !== feature,
+                              ),
+                            });
+                          }
+                        }}
+                        className="text-blue-600"
+                      />
+                      <span className="text-sm">{feature}</span>
+                    </label>
+                  ))}
+                </div>
               </div>
             </div>
 
@@ -269,61 +572,52 @@ function CreateListing() {
               <label htmlFor="status" className="block text-black mb-1">
                 Status:
               </label>
-              <input
-                type="radio"
-                value="Available"
-                name="status"
-                className="mr-2"
-                onChange={(e) =>
-                  setFormData({ ...formdata, [e.target.name]: e.target.value })
-                }
-                checked
-                required
-              />
-              Available
+              <label className="flex items-center">
+                <input
+                  type="radio"
+                  value="available"
+                  name="status"
+                  className="mr-2"
+                  onChange={(e) =>
+                    setFormData({
+                      ...formdata,
+                      [e.target.name]: e.target.value,
+                    })
+                  }
+                  checked
+                  required
+                />
+                Available
+              </label>
             </div>
           </div>
         </div>
 
         <div className="w-full md:w-1/2">
           <div className="flex flex-col gap-4 w-full">
-            <label className="block text-black mb-2">Address</label>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              <input
-                type="text"
-                placeholder="State"
+            <label className="block text-black mb-2">Location Details</label>
+            <div className="flex flex-col gap-3">
+              <select
+                id="locality"
                 className="p-2 bg-white text-black rounded-lg"
-                id="state"
                 required
                 onChange={(e) =>
                   setFormData({ ...formdata, [e.target.id]: e.target.value })
                 }
-              />
+              >
+                <option value="">Select Mumbai Locality</option>
+                {mumbaiLocalities.map((locality) => (
+                  <option key={locality} value={locality}>
+                    {locality}
+                  </option>
+                ))}
+              </select>
+
               <input
                 type="text"
-                placeholder="City"
+                placeholder="Complete Address"
                 className="p-2 bg-white text-black rounded-lg"
-                id="city"
-                required
-                onChange={(e) =>
-                  setFormData({ ...formdata, [e.target.id]: e.target.value })
-                }
-              />
-              <input
-                type="text"
-                placeholder="Zipcode"
-                className="p-2 bg-white text-black rounded-lg"
-                id="zipcode"
-                required
-                onChange={(e) =>
-                  setFormData({ ...formdata, [e.target.id]: e.target.value })
-                }
-              />
-              <input
-                type="text"
-                placeholder="Street Address"
-                className="p-2 bg-white text-black rounded-lg sm:col-span-2"
-                id="streetAddress"
+                id="address"
                 required
                 onChange={(e) =>
                   setFormData({ ...formdata, [e.target.id]: e.target.value })
@@ -332,13 +626,14 @@ function CreateListing() {
             </div>
 
             <label className="block text-black mb-2 mt-4">
-              Details of Lister
+              Your Contact Details
             </label>
             <input
               type="text"
-              placeholder="name"
+              placeholder="Your Name"
               id="name"
               className="p-2 w-full bg-white text-black rounded-lg"
+              value={formdata.name || ""}
               required
               onChange={(e) =>
                 setFormData({ ...formdata, [e.target.id]: e.target.value })
@@ -346,9 +641,10 @@ function CreateListing() {
             />
             <input
               type="email"
-              placeholder="email"
+              placeholder="Email"
               id="email"
               className="p-2 w-full bg-white text-black rounded-lg"
+              value={formdata.email || ""}
               required
               onChange={(e) =>
                 setFormData({ ...formdata, [e.target.id]: e.target.value })
@@ -356,17 +652,19 @@ function CreateListing() {
             />
             <input
               type="tel"
-              placeholder="phone"
+              placeholder="Phone Number"
               id="phone"
               className="p-2 w-full bg-white text-black rounded-lg"
+              value={formdata.phone || ""}
               pattern="[0-9]{10}"
               required
-              title="Phone number must be 10 digits "
+              title="Phone number must be 10 digits"
               onChange={(e) =>
                 setFormData({ ...formdata, [e.target.id]: e.target.value })
               }
             />
 
+            {/* Image Upload */}
             <label htmlFor="images" className="mt-3 text-black block">
               Upload your Images:
               <span className="text-slate-400 ml-2">Only 5 images</span>
@@ -378,7 +676,7 @@ function CreateListing() {
                   className="text-sm font-medium text-gray-700 hover:underline cursor-pointer"
                   onClick={() => fileref.current.click()}
                 >
-                  Select an image
+                  Select images
                 </label>
                 <p className="text-red-500">
                   Images: <span className="ml-2">{fileup.length}</span>
@@ -398,18 +696,19 @@ function CreateListing() {
                     type="button"
                     className="bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold py-2 px-4 rounded-md"
                     onClick={handleUpload}
+                    disabled={uploading === "uploading"}
                   >
-                    Upload
+                    {uploading === "uploading" ? "Uploading..." : "Upload"}
                   </button>
                 </div>
               </div>
 
               {uploading === "uploading" && (
-                <p className="text-yellow-500">Uploading...</p>
+                <p className="text-yellow-500 mt-2">Uploading...</p>
               )}
-              {ferror && <p className="text-red-400">{ferror}</p>}
+              {ferror && <p className="text-red-400 mt-2">{ferror}</p>}
               {uploading === "success" && (
-                <p className="text-green-400">✅ Upload successful</p>
+                <p className="text-green-400 mt-2">✅ Upload successful</p>
               )}
 
               {fileup.length > 0 && (
@@ -441,15 +740,17 @@ function CreateListing() {
               <button
                 type="submit"
                 className="bg-green-800 rounded-lg w-72 p-2 text-white hover:opacity-90 transition-transform duration-150 active:scale-110"
+                disabled={Cuploading === "uploading"}
               >
-                Submit
+                {Cuploading === "uploading"
+                  ? "Creating Listing..."
+                  : "Submit Listing"}
               </button>
 
-              {Cuploading === "uploading" && (
-                <p className="text-green-400">Creating</p>
-              )}
               {Cuploading === "success" && (
-                <p className="text-green-500">Uploaded</p>
+                <p className="text-green-500">
+                  ✅ Listing Created Successfully!
+                </p>
               )}
               {Cerror && <p className="text-red-500">{Cerror}</p>}
             </div>
@@ -459,4 +760,5 @@ function CreateListing() {
     </>
   );
 }
+
 export default CreateListing;

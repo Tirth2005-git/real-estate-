@@ -15,7 +15,10 @@ import PvtRoute2 from "./components/PrivateRoute2.jsx";
 import ListingView from "./pages/viewListing.jsx";
 import UpdateListing from "./pages/updateListings.jsx";
 import FindProperties from "./pages/findProperties.jsx";
+
+import BuilderAds from "./pages/builderAd.jsx";
 import "./index.css";
+import CreateAdvertisement from "./pages/createAd.jsx";
 function App() {
   return (
     <>
@@ -38,6 +41,11 @@ function App() {
                   element={<FindProperties />}
                 ></Route>
                 <Route path="/user-listings" element={<UserListings />}></Route>
+                <Route
+                  path="/create-ad"
+                  element={<CreateAdvertisement />}
+                ></Route>
+                <Route path="/builder-ads" element={<BuilderAds />}></Route>
               </Route>
               <Route element={<PvtRoute2 />}>
                 <Route path="/listing" element={<ListingView />}></Route>

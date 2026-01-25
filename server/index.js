@@ -6,6 +6,7 @@ import authroute from "./routes/auth.route.js";
 import cookieParser from "cookie-parser";
 import listingrouter from "./routes/lists.route.js";
 import filerouter from "./routes/files.routes.js";
+import adsrouter from "./routes/ads.routes.js";
 import path from "path";
 dotenv.config();
 await mongoose
@@ -26,6 +27,7 @@ app.use("/api", userroute);
 app.use("/api", authroute);
 app.use("/api", listingrouter);
 app.use("/api", filerouter);
+app.use("/api", adsrouter);
 
 app.use(express.static(path.join(__dirname, "client", "U-I", "dist")));
 

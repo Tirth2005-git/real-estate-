@@ -6,15 +6,14 @@ import { useSelector } from "react-redux";
 
 function UpdateListing() {
   const location = useLocation();
-
   const index = location.state.index;
-
   const { currentuser } = useSelector((state) => state.user);
   const { listings } = useSelector((state) => state.listings);
 
+  const listing = listings[index];
   const {
     title,
-    address,
+    location: propertyLocation,
     description,
     features,
     listedBy,
@@ -23,36 +22,47 @@ function UpdateListing() {
     propertyType,
     listingType,
     status,
-  } = listings[index];
+    bhk,
+    area,
+    images,
+  } = listing;
+
+  const [propertyCategory, setPropertyCategory] = useState(
+    ["flat", "bungalow", "villa", "studio apartment", "builder floor"].includes(
+      propertyType
+    )
+      ? "residential"
+      : "commercial"
+  );
 
   const fileref = useRef(0);
   const [formdata, setFormData] = useState({
-    title,
-    description,
-    features,
-    price,
-    specialOffer,
-    status,
-    propertyType,
-    listingType,
-    state: address.state,
-    city: address.city,
-    zipcode: address.zipcode,
-    streetAddress: address.streetAddress,
-    name: listedBy.name,
-    email: listedBy.contact.email,
-    phone: listedBy.contact.phone,
+    title: title || "",
+    description: description || "",
+    features: features || [],
+    price: price || "",
+    specialOffer: specialOffer || "",
+    status: status || "available",
+    propertyType: propertyType || "",
+    listingType: listingType || "",
+    bhk: bhk || "",
+    area: area || "",
+    locality: propertyLocation?.locality || "",
+    address: propertyLocation?.address || "",
+    name: listedBy?.name || "",
+    email: listedBy?.contact?.email || "",
+    phone: listedBy?.contact?.phone || "",
     newImages: [],
     imagesToDel: [],
     newimgURLs: [],
   });
-  const dispatch = useDispatch();
 
+  const dispatch = useDispatch();
   const [ferror, setError] = useState();
   const [updateerror, setUpdateError] = useState();
-  const [uploading, setUploading] = useState("idile");
-  const [update, setUpdating] = useState("idile");
-  const [oldImages, setOldImages] = useState(() => [...listings[index].images]);
+  const [uploading, setUploading] = useState("idle");
+  const [update, setUpdating] = useState("idle");
+  const [oldImages, setOldImages] = useState(() => [...images]);
 
   useEffect(() => {
     if (uploading === "success") {
@@ -74,58 +84,130 @@ function UpdateListing() {
 
   async function handleUpdate(e) {
     try {
+      if (Object.keys(formdata).length === 0) {
+        dispatch(updatefailure("Please Enter Credentials To update"));
+        return;
+      }
       setUpdating("updating");
       e.preventDefault();
-      if (formdata.newimgURLs.length + oldImages.length === 0) {
-        setUpdateError("Atleast 1 image is required");
+
+      const trimmedData = {};
+      Object.keys(formdata).forEach((key) => {
+        if (typeof formdata[key] === "string" && formdata[key] !== "") {
+          trimmedData[key] = formdata[key].trim();
+        } else if (Array.isArray(formdata[key])) {
+          trimmedData[key] = formdata[key];
+        } else {
+          trimmedData[key] = formdata[key];
+        }
+      });
+
+      if (trimmedData.newimgURLs.length + oldImages.length === 0) {
+        setUpdateError("At least 1 image is required");
         setUpdating("idle");
         return;
       }
+
+      if (
+        trimmedData.email &&
+        trimmedData.email !== listings[index].listedBy.contact.email
+      ) {
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        if (!emailRegex.test(trimmedData.email)) {
+          setUpdateError("Please enter a valid email address");
+          setUpdating("idle");
+          return;
+        }
+
+        const allowedDomains = [
+          "gmail.com",
+          "yahoo.com",
+          "outlook.com",
+          "hotmail.com",
+          "yahoo.in",
+          "rediffmail.com",
+          "icloud.com",
+          "protonmail.com",
+          "aol.com",
+          "zoho.com",
+          "mail.com",
+          "gmail.co.in",
+        ];
+
+        const domain = trimmedData.email.split("@")[1];
+        if (!allowedDomains.includes(domain)) {
+          setUpdateError("Please use Gmail, Yahoo, Outlook, Hotmail, etc.");
+          setUpdating("idle");
+          return;
+        }
+      }
+
+      if (trimmedData.phone) {
+        const phoneRegex = /^[0-9]{10}$/;
+        if (!phoneRegex.test(trimmedData.phone.replace(/\D/g, ""))) {
+          setUpdateError("Phone number must be 10 digits");
+          setUpdating("idle");
+          return;
+        }
+      }
+
+      if (!trimmedData.status || trimmedData.status === "") {
+        trimmedData.status = "available";
+      }
+
+      setFormData(trimmedData);
+
       const {
         newImages,
         imagesToDel,
         newimgURLs,
         price,
         specialOffer,
+        locality,
+        address,
+        bhk,
+        area,
         ...rest
-      } = formdata;
+      } = trimmedData;
+
+      const textData = {
+        ...rest,
+        bhk: bhk || null,
+        area: area || 100,
+        locality: locality || "",
+        address: address || "",
+      };
+
       const formData = new FormData();
-      formData.append("text-data", JSON.stringify(rest));
-
+      formData.append("text-data", JSON.stringify(textData));
       formData.append("newimgs", JSON.stringify(newimgURLs));
-
       formData.append("imgstodel", JSON.stringify(imagesToDel));
-
       formData.append("price", price);
-
       formData.append("listingid", JSON.stringify(listings[index]._id));
-
-      if (!formdata.specialOffer) {
-        formData.append("specialoffer", JSON.stringify(" "));
-      } else {
-        formData.append("specialoffer", JSON.stringify(formdata.specialOffer));
-      }
+      formData.append("specialoffer", JSON.stringify(specialOffer || ""));
 
       const res = await fetch(`/api/update/listing/${currentuser._id}`, {
         method: "POST",
         body: formData,
       });
+
       const data = await res.json();
       if (data.success === false) {
         setUpdating("idle");
         setUpdateError(data.message);
         return;
       }
+
       setUpdating("success");
       setUpdateError(null);
       dispatch(
         UpdateList(
-          listings.map((list, i) => (i != index ? list : data.updatedlist))
+          listings.map((list, i) => (i !== index ? list : data.updatedlist))
         )
       );
     } catch (err) {
       setUpdating("idle");
-      setUpdateError(err.message);
+      setUpdateError(err.message || "Something went wrong");
     }
   }
 
@@ -135,10 +217,10 @@ function UpdateListing() {
 
       if (
         oldImages.length + formdata.newImages.length > 5 ||
-        formdata.newImages.length == 0
+        formdata.newImages.length === 0
       ) {
         setUploading("idle");
-        setError("Invalid file quantity");
+        setError("Invalid file quanity");
         return;
       }
 
@@ -153,12 +235,12 @@ function UpdateListing() {
       });
 
       const data = await res.json();
-
       if (data.success === false) {
         setUploading("idle");
         setError(data.message);
         return;
       }
+
       setFormData({ ...formdata, newimgURLs: data.uploadedurls });
       setUploading("success");
       setError(null);
@@ -167,22 +249,101 @@ function UpdateListing() {
       setError(err.message);
     }
   }
+
   function handleNewDelete(index) {
     setFormData((prev) => ({
       ...prev,
       newImages: prev.newImages.filter((_, i) => i !== index),
     }));
   }
+
   function handleOldDelete(index) {
     const imageToDelete = oldImages[index];
-
     setFormData((prev) => ({
       ...prev,
       imagesToDel: [...prev.imagesToDel, imageToDelete],
     }));
-
     setOldImages((prev) => prev.filter((_, i) => i !== index));
   }
+
+  const residentialTypes = [
+    "flat",
+    "bungalow",
+    "villa",
+    "studio apartment",
+    "builder floor",
+  ];
+  const commercialTypes = [
+    "office space",
+    "shop",
+    "showroom",
+    "warehouse",
+    "industrial",
+  ];
+
+  const mumbaiLocalities = [
+    "Andheri",
+    "Bandra",
+    "Borivali",
+    "Dadar",
+    "Goregaon",
+    "Malad",
+    "Powai",
+    "Thane",
+    "Chembur",
+    "Kandivali",
+    "Juhu",
+    "Santacruz",
+    "Lower Parel",
+    "Worli",
+    "Colaba",
+  ];
+
+  const residentialFeatures = [
+    "Swimming Pool",
+    "Gym",
+    "Club House",
+    "Children's Play Area",
+    "24/7 Security",
+    "Lift/Elevator",
+    "Car Parking",
+    "Garden/Lawn",
+    "Intercom",
+    "Wi-Fi Ready",
+    "CCTV Surveillance",
+    "Shopping Center Nearby",
+    "School Nearby",
+    "Hospital Nearby",
+    "Public Transport Access",
+    "Balcony/Terrace",
+    "Modular Kitchen",
+    "Air Conditioning",
+    "Geyser",
+  ];
+  const commercialFeatures = [
+    "24/7 Security",
+    "Lift/Elevator",
+    "Car Parking",
+    "Wi-Fi Ready",
+    "CCTV Surveillance",
+    "Public Transport Access",
+    "Air Conditioning",
+    "Conference Room",
+    "Pantry",
+    "Reception Area",
+    "Modular Furniture",
+    "Toilets",
+    "Storage Space",
+    "Separate Entrance",
+    "Metro Station Nearby",
+    "Bank Nearby",
+    "Restaurant Nearby",
+  ];
+  const featuresList =
+    propertyCategory === "residential"
+      ? residentialFeatures
+      : commercialFeatures;
+
   return (
     <>
       <h1 className="text-center text-black font-bold mt-4 text-xl sm:text-2xl">
@@ -200,7 +361,7 @@ function UpdateListing() {
               placeholder="Title"
               id="title"
               className="p-2 w-full bg-white text-black rounded-lg"
-              defaultValue={title}
+              value={formdata.title}
               onChange={(e) =>
                 setFormData({ ...formdata, [e.target.id]: e.target.value })
               }
@@ -208,10 +369,10 @@ function UpdateListing() {
 
             <div className="w-full">
               <label htmlFor="listingType" className="block text-black mb-1">
-                Listing Type :
+                Listing Type:
               </label>
               <div className="flex flex-wrap gap-4">
-                <label>
+                <label className="flex items-center">
                   <input
                     type="radio"
                     value="rent"
@@ -228,7 +389,7 @@ function UpdateListing() {
                   />
                   Rent
                 </label>
-                <label>
+                <label className="flex items-center">
                   <input
                     type="radio"
                     value="sale"
@@ -250,10 +411,43 @@ function UpdateListing() {
 
             <div className="w-full">
               <label className="block text-sm font-medium text-gray-700 mb-2">
+                Property Category
+              </label>
+              <div className="flex flex-wrap gap-4">
+                <label className="flex items-center space-x-2">
+                  <input
+                    type="radio"
+                    name="propertyCategory"
+                    value="residential"
+                    checked={propertyCategory === "residential"}
+                    onChange={(e) => setPropertyCategory(e.target.value)}
+                    className="text-blue-600 focus:ring-blue-500"
+                  />
+                  <span className="text-gray-700">Residential</span>
+                </label>
+                <label className="flex items-center space-x-2">
+                  <input
+                    type="radio"
+                    name="propertyCategory"
+                    value="commercial"
+                    checked={propertyCategory === "commercial"}
+                    onChange={(e) => setPropertyCategory(e.target.value)}
+                    className="text-blue-600 focus:ring-blue-500"
+                  />
+                  <span className="text-gray-700">Commercial</span>
+                </label>
+              </div>
+            </div>
+
+            <div className="w-full">
+              <label className="block text-sm font-medium text-gray-700 mb-2">
                 Property Type
               </label>
               <div className="flex flex-wrap gap-4">
-                {["villa", "bungalow", "flat", "office space"].map((type) => (
+                {(propertyCategory === "residential"
+                  ? residentialTypes
+                  : commercialTypes
+                ).map((type) => (
                   <label key={type} className="flex items-center space-x-2">
                     <input
                       type="radio"
@@ -264,7 +458,7 @@ function UpdateListing() {
                       onChange={(e) =>
                         setFormData({
                           ...formdata,
-                          propertyType: e.target.value,
+                          [e.target.id]: e.target.value,
                         })
                       }
                       className="text-blue-600 focus:ring-blue-500"
@@ -275,11 +469,34 @@ function UpdateListing() {
               </div>
             </div>
 
+            {propertyCategory === "residential" && (
+              <div className="w-full">
+                <label htmlFor="bhk" className="block text-black mb-1">
+                  BHK Configuration:
+                </label>
+                <select
+                  id="bhk"
+                  className="p-2 w-full bg-white text-black rounded-lg"
+                  value={formdata.bhk}
+                  onChange={(e) =>
+                    setFormData({ ...formdata, [e.target.id]: e.target.value })
+                  }
+                >
+                  <option value="">Select BHK</option>
+                  <option value="1 BHK">1 BHK</option>
+                  <option value="2 BHK">2 BHK</option>
+                  <option value="3 BHK">3 BHK</option>
+                  <option value="4 BHK">4 BHK</option>
+                  <option value="Studio">Studio</option>
+                </select>
+              </div>
+            )}
+
             <textarea
               id="description"
               placeholder="Enter description of property"
               className="p-2 w-full h-36 bg-white text-black rounded-lg resize-none"
-              defaultValue={description}
+              value={formdata.description}
               onChange={(e) =>
                 setFormData({ ...formdata, [e.target.id]: e.target.value })
               }
@@ -288,25 +505,40 @@ function UpdateListing() {
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="flex flex-col gap-2">
                 <label htmlFor="price" className="text-black mb-1">
-                  Price :
+                  Price (₹):
                 </label>
                 <input
                   type="number"
                   id="price"
                   className="p-2 bg-white text-black rounded-lg"
-                  defaultValue={price}
+                  value={formdata.price}
                   onChange={(e) =>
                     setFormData({ ...formdata, [e.target.id]: e.target.value })
                   }
                   min="1000"
                 />
+
+                <label htmlFor="area" className="text-black mb-1">
+                  Area (sq.ft):
+                </label>
+                <input
+                  type="number"
+                  id="area"
+                  className="p-2 bg-white text-black rounded-lg"
+                  value={formdata.area}
+                  onChange={(e) =>
+                    setFormData({ ...formdata, [e.target.id]: e.target.value })
+                  }
+                  min="100"
+                />
+
                 <label htmlFor="specialOffer" className="text-black mb-1">
-                  Special Offer :
+                  Special Offer:
                 </label>
                 <textarea
                   id="specialOffer"
                   className="p-2 bg-white text-black h-24 rounded-lg resize-none"
-                  defaultValue={specialOffer}
+                  value={formdata.specialOffer}
                   onChange={(e) =>
                     setFormData({ ...formdata, [e.target.id]: e.target.value })
                   }
@@ -314,28 +546,50 @@ function UpdateListing() {
               </div>
 
               <div>
-                <label htmlFor="features" className="text-black mb-1 block">
-                  Features:
-                </label>
-                <textarea
-                  placeholder="features"
-                  className="p-2 bg-white text-black h-28 w-full rounded-lg resize-none"
-                  id="features"
-                  defaultValue={features}
-                  onChange={(e) =>
-                    setFormData({ ...formdata, [e.target.id]: e.target.value })
-                  }
-                ></textarea>
+                <label className="text-black mb-1 block">Features:</label>
+                <div className="grid grid-cols-2 gap-2 max-h-48 overflow-y-auto p-2 bg-white rounded">
+                  {featuresList.map((feature) => (
+                    <label
+                      key={feature}
+                      className="flex items-center space-x-2"
+                    >
+                      <input
+                        type="checkbox"
+                        checked={formdata.features.includes(feature)}
+                        onChange={(e) => {
+                          let newFeatures = [...formdata.features];
+                          if (e.target.checked) {
+                            newFeatures.push(feature);
+                          } else {
+                            newFeatures = newFeatures.filter(
+                              (f) => f !== feature
+                            );
+                          }
+                          setFormData({
+                            ...formdata,
+                            features: newFeatures,
+                          });
+                        }}
+                        className="text-blue-600"
+                      />
+                      <span className="text-sm">{feature}</span>
+                    </label>
+                  ))}
+                </div>
+                <p className="text-xs text-gray-500 mt-1">
+                  Selected: {formdata.features.length} features
+                </p>
               </div>
             </div>
 
             <div className="w-full mt-2">
-              <label htmlFor="status" className="block text-black mb-1">
-                Status:
-              </label>
-              {["Available", "Rented", "Sold", "Under Negotiations"].map(
+              <label className="block text-black mb-1">Status:</label>
+              {["available", "rented", "sold", "under negotiation"].map(
                 (status) => (
-                  <label key={status} className="flex items-center space-x-2">
+                  <label
+                    key={status}
+                    className="flex items-center space-x-2 mr-4"
+                  >
                     <input
                       type="radio"
                       value={status}
@@ -345,11 +599,11 @@ function UpdateListing() {
                       onChange={(e) =>
                         setFormData({
                           ...formdata,
-                          [e.target.name]: e.target.value,
+                          status: e.target.value,
                         })
                       }
                     />
-                    {status}
+                    <span className="capitalize">{status}</span>
                   </label>
                 )
               )}
@@ -359,90 +613,76 @@ function UpdateListing() {
 
         <div className="w-full md:w-1/2">
           <div className="flex flex-col gap-4 w-full">
-            <label className="block text-black mb-2">Address</label>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              <input
-                type="text"
-                placeholder="State"
+            <label className="block text-black mb-2">Location Details</label>
+            <div className="flex flex-col gap-3">
+              <select
+                id="locality"
                 className="p-2 bg-white text-black rounded-lg"
-                id="state"
-                defaultValue={address.state}
+                value={formdata.locality}
                 onChange={(e) =>
                   setFormData({ ...formdata, [e.target.id]: e.target.value })
                 }
-              />
+              >
+                <option value="">Select Mumbai Locality</option>
+                {mumbaiLocalities.map((locality) => (
+                  <option key={locality} value={locality}>
+                    {locality}
+                  </option>
+                ))}
+              </select>
+
               <input
                 type="text"
-                placeholder="City"
+                placeholder="Complete Address"
                 className="p-2 bg-white text-black rounded-lg"
-                id="city"
-                defaultValue={address.city}
-                onChange={(e) =>
-                  setFormData({ ...formdata, [e.target.id]: e.target.value })
-                }
-              />
-              <input
-                type="text"
-                placeholder="Zipcode"
-                className="p-2 bg-white text-black rounded-lg"
-                id="zipcode"
-                defaultValue={address.zipcode}
-                onChange={(e) =>
-                  setFormData({ ...formdata, [e.target.id]: e.target.value })
-                }
-              />
-              <input
-                type="text"
-                placeholder="Street Address"
-                className="p-2 bg-white text-black rounded-lg sm:col-span-2"
-                id="streetAddress"
-                defaultValue={address.streetAddress}
+                id="address"
+                value={formdata.address}
                 onChange={(e) =>
                   setFormData({ ...formdata, [e.target.id]: e.target.value })
                 }
               />
             </div>
 
-            {/* Lister Details */}
             <label className="block text-black mb-2 mt-4">
-              Details of Lister
+              Contact Details
             </label>
             <input
               type="text"
-              placeholder="name"
+              placeholder="Your Name"
               id="name"
               className="p-2 w-full bg-white text-black rounded-lg"
-              defaultValue={listedBy.name}
+              value={formdata.name}
               onChange={(e) =>
                 setFormData({ ...formdata, [e.target.id]: e.target.value })
               }
             />
             <input
               type="email"
-              placeholder="email"
+              placeholder="Email"
               id="email"
               className="p-2 w-full bg-white text-black rounded-lg"
-              defaultValue={listedBy.contact.email}
+              value={formdata.email}
               onChange={(e) =>
                 setFormData({ ...formdata, [e.target.id]: e.target.value })
               }
             />
             <input
               type="tel"
-              placeholder="phone"
+              placeholder="Phone Number"
               id="phone"
               pattern="[0-9]{10}"
-                   title="Phone number must be 10 digits "
+              title="Phone number must be 10 digits"
               className="p-2 w-full bg-white text-black rounded-lg"
-              defaultValue={listedBy.contact.phone}
+              value={formdata.phone}
               onChange={(e) =>
                 setFormData({ ...formdata, [e.target.id]: e.target.value })
               }
             />
 
+            {/* Image Upload */}
             <label htmlFor="images" className="mt-3 text-black block">
-              Upload your Images:
-              <span className="text-slate-400 ml-2">Only 5 images</span>
+              Upload Images:
+              <span className="text-slate-400 ml-2">Maximum 5 images</span>
             </label>
 
             <div className="w-full bg-white rounded-2xl shadow-md p-4">
@@ -451,12 +691,12 @@ function UpdateListing() {
                   className="text-sm font-medium text-gray-700 hover:underline cursor-pointer"
                   onClick={() => fileref.current.click()}
                 >
-                  Select an image
+                  Select images
                 </label>
                 <p className="text-red-500">
                   Images:{" "}
                   <span className="ml-2">
-                    {oldImages.length + formdata.newImages.length}
+                    {oldImages.length + formdata.newImages.length}/5
                   </span>
                 </p>
                 <div className="flex items-center gap-2">
@@ -479,83 +719,98 @@ function UpdateListing() {
                     type="button"
                     className="bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold py-2 px-4 rounded-md"
                     onClick={handleUpload}
+                    disabled={uploading === "uploading"}
                   >
-                    Upload
+                    {uploading === "uploading" ? "Uploading..." : "Upload"}
                   </button>
                 </div>
               </div>
 
               {uploading === "uploading" && (
-                <p className="text-yellow-500">Uploading...</p>
+                <p className="text-yellow-500 mt-2">Uploading...</p>
               )}
-              {ferror && <p className="text-red-400">{ferror}</p>}
+              {ferror && <p className="text-red-400 mt-2">{ferror}</p>}
               {uploading === "success" && (
-                <p className="text-green-400">✅ Upload successful</p>
+                <p className="text-green-400 mt-2">✅ Upload successful</p>
               )}
 
-              {formdata.newImages && formdata.newImages.length > 0 && (
-                <div className="flex flex-col gap-4 mt-4">
-                  {formdata.newImages.map((image, index) => (
-                    <div
-                      key={index}
-                      className="flex justify-between p-3 rounded-lg border border-gray-200 bg-white shadow-sm"
-                    >
-                      <img
-                        src={URL.createObjectURL(image)}
-                        className="w-12 h-12 object-cover"
-                        alt={`upload-${index}`}
-                      />
-                      <button
-                        type="button"
-                        onClick={() => handleNewDelete(index)}
-                        className="text-red-500 text-xs font-semibold hover:text-red-600"
+              {formdata.newImages.length > 0 && (
+                <div className="mt-4">
+                  <p className="text-sm font-medium text-gray-700 mb-2">
+                    New Images:
+                  </p>
+                  <div className="flex flex-col gap-2">
+                    {formdata.newImages.map((image, index) => (
+                      <div
+                        key={index}
+                        className="flex justify-between items-center p-3 rounded-lg border border-gray-200 bg-white shadow-sm"
                       >
-                        DELETE
-                      </button>
-                    </div>
-                  ))}
+                        <img
+                          src={URL.createObjectURL(image)}
+                          className="w-12 h-12 object-cover rounded"
+                          alt={`new-${index}`}
+                        />
+                        <button
+                          type="button"
+                          onClick={() => handleNewDelete(index)}
+                          className="text-red-500 text-xs font-semibold hover:text-red-600 px-3 py-1 bg-red-50 rounded"
+                        >
+                          Delete
+                        </button>
+                      </div>
+                    ))}
+                  </div>
                 </div>
               )}
-              {oldImages && oldImages.length > 0 && (
-                <div className="flex flex-col gap-4 mt-4">
-                  {oldImages.map((image, index) => (
-                    <div
-                      key={index}
-                      className="flex justify-between p-3 rounded-lg border border-gray-200 bg-white shadow-sm"
-                    >
-                      <img
-                        src={image.imageurl}
-                        className="w-12 h-12 object-cover"
-                        alt={`old-${index}`}
-                      />
-                      <button
-                        type="button"
-                        onClick={() => handleOldDelete(index)}
-                        className="text-red-500 text-xs font-semibold hover:text-red-600"
+
+              {oldImages.length > 0 && (
+                <div className="mt-4">
+                  <p className="text-sm font-medium text-gray-700 mb-2">
+                    Existing Images:
+                  </p>
+                  <div className="flex flex-col gap-2">
+                    {oldImages.map((image, index) => (
+                      <div
+                        key={index}
+                        className="flex justify-between items-center p-3 rounded-lg border border-gray-200 bg-white shadow-sm"
                       >
-                        DELETE
-                      </button>
-                    </div>
-                  ))}
+                        <img
+                          src={image.imageurl}
+                          className="w-12 h-12 object-cover rounded"
+                          alt={`old-${index}`}
+                        />
+                        <button
+                          type="button"
+                          onClick={() => handleOldDelete(index)}
+                          className="text-red-500 text-xs font-semibold hover:text-red-600 px-3 py-1 bg-red-50 rounded"
+                        >
+                          Delete
+                        </button>
+                      </div>
+                    ))}
+                  </div>
                 </div>
               )}
             </div>
 
+            {/* Submit Button */}
             <div className="flex flex-col items-center gap-3 mt-6">
               <button
                 type="submit"
-                className="bg-green-800 rounded-lg w-72 p-2 text-white hover:opacity-90 transition-transform duration-150 active:scale-110"
+                className="bg-green-800 rounded-lg w-72 p-2 text-white hover:opacity-90 transition-transform duration-150 active:scale-110 disabled:opacity-50"
+                disabled={update === "updating"}
               >
-                Update
+                {update === "updating" ? "Updating..." : "Update Listing"}
               </button>
 
-              {update === "updating" && (
-                <p className="text-green-400">Updating</p>
-              )}
               {update === "success" && (
-                <p className="text-green-500">Updated</p>
+                <p className="text-green-500">
+                  ✅ Listing Updated Successfully!
+                </p>
               )}
-              {updateerror && <p className="text-red-500">{updateerror}</p>}
+              {updateerror && (
+                <p className="text-red-500 text-center">{updateerror}</p>
+              )}
             </div>
           </div>
         </div>
@@ -563,4 +818,5 @@ function UpdateListing() {
     </>
   );
 }
+
 export default UpdateListing;
