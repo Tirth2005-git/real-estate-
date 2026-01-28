@@ -9,13 +9,19 @@ const adsSlice = createSlice({
   initialState,
   reducers: {
     addAd: (state, action) => {
-      state.ads.unshift(action.payload); 
+      state.ads.unshift(action.payload);
     },
     setAds: (state, action) => {
-      state.ads = action.payload; 
+      state.ads = action.payload;
+    },
+    deleteAd: (state, action) => {
+      state.ads = action.payload;
+    },
+    clearAds: (state) => {
+      state.ads = [];
     },
   },
 });
 
-export const { addAd, setAds } = adsSlice.actions;
+export const { addAd, setAds, deleteAd, clearAds } = adsSlice.actions;
 export default adsSlice.reducer;

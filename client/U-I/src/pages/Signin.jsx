@@ -3,7 +3,7 @@ import { useNavigate, Link } from "react-router-dom";
 import { start, succcess, failure } from "../redux/userslice.jsx";
 import { useSelector, useDispatch } from "react-redux";
 import { setAfterlogin } from "../redux/listingslice.jsx";
-
+import { setAds } from "../redux/adsslice.jsx";
 function Signin() {
   const navigate = useNavigate();
   const [formdata, setdata] = useState({
@@ -56,7 +56,7 @@ function Signin() {
     const domain = trimmedEmail.split("@")[1];
 
     if (!allowedDomains.includes(domain)) {
-      dispatch(failure("Please Enter valid Domain of email"));
+      dispatch(failure("Please enter a valid email domain"));
       return;
     }
 
@@ -72,18 +72,23 @@ function Signin() {
         }),
       });
 
+      const data = await res.json();
+
       if (!res.ok) {
-        const { message } = await res.json();
-        dispatch(failure(message || "Login failed"));
+        dispatch(failure(data.message || "Login failed"));
         return;
       }
 
-      const data = await res.json();
-
+      
       dispatch(succcess(data.user));
 
+      
+      if (data.ads) {
+        dispatch(setAds(data.ads)); 
+      }
+
       if (data.userlisting) {
-        dispatch(setAfterlogin(data.userlisting));
+        dispatch(setAfterlogin(data.userlisting)); 
       }
 
       navigate("/");

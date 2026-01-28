@@ -413,6 +413,11 @@ function CreateAdvertisement() {
 
     if (!formData.areaRange.min || !formData.areaRange.max)
       return setSubmitError("Area range is required");
+    if (Number(formData.priceRange.min) > Number(formData.priceRange.max))
+      return setSubmitError("Min price cannot be greater than max price");
+
+    if (Number(formData.areaRange.min) > Number(formData.areaRange.max))
+      return setSubmitError("Min area cannot be greater than max area");
 
     if (!formData.possessionDate)
       return setSubmitError("Possession date is required");
@@ -421,13 +426,17 @@ function CreateAdvertisement() {
       return setSubmitError("RERA number is required");
 
     if (formData.images.length < 3)
-      return setSubmitError("Upload at least 1 image");
+      return setSubmitError("Upload at least 3 images");
 
     if (formData.images.length > 5)
       return setSubmitError("Maximum 5 images allowed");
 
     if (!formData.projectContacts || formData.projectContacts.length === 0)
       return setSubmitError("At least one contact is required");
+    if (!formData.brochure) {
+      setSubmitError("Project brochure (PDF) is required before submitting.");
+      return;
+    }
 
     for (let i = 0; i < formData.projectContacts.length; i++) {
       const c = formData.projectContacts[i];
@@ -443,11 +452,7 @@ function CreateAdvertisement() {
           `Contact ${i + 1}: Enter valid email or valid domain`,
         );
     }
-    if (Number(formData.priceRange.min) > Number(formData.priceRange.max))
-      return setSubmitError("Min price cannot be greater than max price");
 
-    if (Number(formData.areaRange.min) > Number(formData.areaRange.max))
-      return setSubmitError("Min area cannot be greater than max area");
     const finalData = {
       ...formData,
       projectName: formData.projectName.trim(),
@@ -469,7 +474,7 @@ function CreateAdvertisement() {
         email: c.email.trim(),
       })),
     };
-    console.log("final data: ", finalData);
+
     setUploading(true);
     setSubmitError("");
     try {
@@ -481,8 +486,8 @@ function CreateAdvertisement() {
 
       const data = await response.json();
       if (!response.ok) throw new Error(data.message || "Failed to create ad");
-      console.log("after submission: ", data);
-      dispatch(addAd(data. advertisement));
+
+      dispatch(addAd(data.advertisement));
 
       alert("Advertisement submitted successfully!");
     } catch (err) {
@@ -860,7 +865,9 @@ function CreateAdvertisement() {
                     onChange={handlePdfSelect}
                     className="hidden"
                     id="pdfInput"
+                    disabled={!!formData.brochure}
                   />
+
                   <button
                     type="button"
                     onClick={() => document.getElementById("pdfInput").click()}

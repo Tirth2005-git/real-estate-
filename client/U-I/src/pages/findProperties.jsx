@@ -3,8 +3,11 @@ import { setVisbility } from "../redux/formslice.jsx";
 import { setproperties } from "../redux/propertiesSlice.jsx";
 import { useState, useEffect } from "react";
 import { useNavigate, Link } from "react-router-dom";
+import { setAds } from "../redux/adsslice.jsx";
 
 function FindProperties() {
+  const { ads } = useSelector((state) => state.ads);
+
   const [formdata, setformdata] = useState({});
   const [searching, setSearching] = useState(false);
   const [searcherror, setSeacrhError] = useState(false);
@@ -43,35 +46,43 @@ function FindProperties() {
     try {
       e.preventDefault();
 
-      const hasSearchCriteria = Object.values(formdata).some((value) => {
-        if (Array.isArray(value)) {
-          return value.length > 0;
-        }
-        return value && value.toString().trim() !== "";
-      });
+      const { locality, propertyType } = formdata;
 
-      if (!hasSearchCriteria) {
-        setSeacrhError("Please select at least one search criteria");
+      if (!locality?.trim()) {
+        setSeacrhError("Please select a locality");
+        return;
+      }
+
+      if (!propertyType?.trim()) {
+        setSeacrhError("Please select a property type");
         return;
       }
 
       setSearching(true);
+      setSeacrhError(false);
 
       const searchParams = {};
+
       Object.keys(formdata).forEach((key) => {
         if (formdata[key] && formdata[key].toString().trim()) {
           if (key === "locality") {
-            searchParams["location.locality"] = formdata[key].trim();
+            searchParams["location.locality"] = formdata[key]
+              .trim()
+              .toLowerCase();
           } else if (Array.isArray(formdata[key])) {
-            searchParams[key] = formdata[key];
+            searchParams[key] = formdata[key].map((v) =>
+              v.toString().trim().toLowerCase(),
+            );
           } else {
-            searchParams[key] = formdata[key].trim();
+            searchParams[key] = formdata[key].toString().trim().toLowerCase();
           }
         }
       });
-      if (formdata.selectedFeatures && formdata.selectedFeatures.length > 0) {
+
+      if (formdata.selectedFeatures?.length > 0) {
         searchParams.selectedFeatures = formdata.selectedFeatures;
       }
+
       const res = await fetch("/api/browse/listing", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -87,13 +98,18 @@ function FindProperties() {
 
       const data = await res.json();
 
-      if (data.searchResults.length === 0) {
-        setSeacrhError("No properties found matching your criteria");
+      if (
+        (!data.listings || data.listings.length === 0) &&
+        (!data.ads || data.ads.length === 0)
+      ) {
+        setSeacrhError("No properties or ads found for this area");
         setSearching(false);
         return;
       }
 
-      dispatch(setproperties(data.searchResults));
+      dispatch(setproperties(data.listings || []));
+      dispatch(setAds(data.ads || []));
+
       setSearching(false);
       setSeacrhError(false);
       setformdata({});
@@ -260,7 +276,7 @@ function FindProperties() {
           >
             <option value="">Select Locality</option>
             {mumbaiLocalities.map((locality) => (
-              <option key={locality} value={locality}>
+              <option key={locality} value={locality.toLowerCase()}>
                 {locality}
               </option>
             ))}
@@ -487,6 +503,57 @@ function FindProperties() {
           )}
         </div>
       </form>
+      {ads.length > 0 && (
+        <div className="pt-28 px-4">
+          <h1 className="text-2xl font-bold text-center mb-6 text-purple-700">
+            Featured Projects in This Area
+          </h1>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 max-w-7xl mx-auto mb-12">
+            {ads.map((ad, index) => (
+              <div
+                key={index}
+                className="bg-white rounded-xl shadow-lg overflow-hidden hover:shadow-xl transition-shadow"
+              >
+                <div className="h-48 overflow-hidden">
+                  <img
+                    src={ad.images[0]}
+                    alt={ad.projectName}
+                    className="w-full h-full object-cover"
+                  />
+                </div>
+
+                <div className="p-4">
+                  <span className="inline-block bg-purple-100 text-purple-800 text-xs px-2 py-1 rounded mb-2">
+                    🏗 Sponsored Project
+                  </span>
+
+                  <h3 className="text-lg font-bold text-gray-800 mb-1">
+                    {ad.projectName}
+                  </h3>
+
+                  <p className="text-sm text-gray-600 mb-2">
+                    📍 {ad.location.locality}, Mumbai
+                  </p>
+
+                  <p className="text-sm text-gray-500 mb-3">
+                    {ad.projectType} • {ad.unitTypes.join(", ")}
+                  </p>
+
+                  <p className="text-green-700 font-semibold">
+                    ₹{ad.priceRange.min.toLocaleString()} – ₹
+                    {ad.priceRange.max.toLocaleString()}
+                  </p>
+
+                  <div className="pt-3 border-t text-sm text-blue-600">
+                    📞 {ad.projectContacts[0]?.phone}
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
 
       {properties.length > 0 ? (
         <div className="pt-24 px-4">

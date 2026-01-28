@@ -4,7 +4,8 @@ import bcrypt from "bcryptjs";
 import Listing from "../models/listing.model.js";
 import { delpfp } from "./fileuplds.controller.js";
 import isCloudinaryURL from "../utils/isclaudinary.js";
-import { delimages } from "./fileuplds.controller.js";
+import { delimages, delpdf } from "./fileuplds.controller.js";
+import Advertisement from "../models/advertisement.model.js";
 export async function updateUser(req, res, next) {
   try {
     if (req.params.id !== req.user.userid) {
@@ -124,31 +125,61 @@ export async function updateUser(req, res, next) {
     next(ErrorHandler(500, err.message));
   }
 }
+
 export async function deleteUser(req, res, next) {
   try {
     if (req.params.id !== req.user.userid) {
-      return next(ErrorHandler(403, "can't delete others!!"));
+      return next(ErrorHandler(403, "Can't delete others!!"));
     }
+
     const usertodel = await User.findById(req.params.id);
-    const { pfpid, pfp } = usertodel;
+    if (!usertodel) {
+      return next(ErrorHandler(404, "User not found"));
+    }
+
+    const { pfpid, pfp, role } = usertodel;
+
     if (isCloudinaryURL(pfp)) {
       await delpfp(pfpid);
     }
 
-    const userlistings = await Listing.find({
-      userref: req.params.id,
-    });
+    if (role !== "builder") {
+      const userlistings = await Listing.find({ userref: req.params.id });
 
-    if (userlistings.length > 0) {
-      userlistings.forEach(async (listing) => {
-        const imagestodel = Array.from(listing.images);
+      if (userlistings.length > 0) {
+        for (const listing of userlistings) {
+          const imagestodel = Array.from(listing.images || []);
+          if (imagestodel.length > 0) {
+            await delimages(...imagestodel);
+          }
+        }
 
-        await delimages(...imagestodel);
-      });
-      await Listing.deleteMany({ userref: req.params.id });
+        await Listing.deleteMany({ userref: req.params.id });
+      }
     }
+
+    if (role === "builder") {
+      const ads = await Advertisement.find({ builderId: req.params.id });
+
+      if (ads.length > 0) {
+        for (const ad of ads) {
+          const imagestodel = Array.from(ad.images || []);
+          if (imagestodel.length > 0) {
+            await delimages(...imagestodel);
+          }
+
+          if (ad.brochure?.public_id) {
+            await delpdf(ad.brochure.public_id);
+          }
+        }
+
+        await Advertisement.deleteMany({ builderId: req.params.id });
+      }
+    }
+
     await User.findByIdAndDelete(req.params.id);
-    res.clearCookie("acces_token").status(201).json({ success: true });
+
+    res.clearCookie("access_token").status(201).json({ success: true });
   } catch (err) {
     next(ErrorHandler(500, err.message));
   }
@@ -156,7 +187,7 @@ export async function deleteUser(req, res, next) {
 
 export async function signout(req, res, next) {
   try {
-    res.clearCookie("acces_token").status(201).json({ success: true });
+    res.clearCookie("access_token").status(201).json({ success: true });
   } catch (err) {
     next(ErrorHandler(500, err.message));
   }

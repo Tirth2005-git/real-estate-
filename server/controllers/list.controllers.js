@@ -1,3 +1,4 @@
+import Advertisement from "../models/advertisement.model.js";
 import { ErrorHandler } from "../utils/error.js";
 import Listing from "../models/listing.model.js";
 import { delimages } from "./fileuplds.controller.js";
@@ -48,7 +49,7 @@ export async function listController(req, res, next) {
       images: images || [],
 
       location: {
-        locality: location.locality.trim(),
+        locality: location.locality.trim().toLowerCase(),
         address: location.address.trim(),
       },
 
@@ -87,7 +88,7 @@ export async function listController(req, res, next) {
   } catch (err) {
     if (err.code === 11000) {
       return next(
-        ErrorHandler(409, "Listing with similar data already exists")
+        ErrorHandler(409, "Listing with similar data already exists"),
       );
     }
 
@@ -180,7 +181,8 @@ export async function updateList(req, res, next) {
 
       location: {
         locality:
-          updatedtextdata.locality?.trim() || listing.location?.locality,
+          updatedtextdata.locality?.trim().toLowerCase() ||
+          listing.location?.locality,
         address: updatedtextdata.address?.trim() || listing.location?.address,
       },
 
@@ -204,7 +206,7 @@ export async function updateList(req, res, next) {
     const updatedlist = await Listing.findByIdAndUpdate(
       listingid,
       { $set: updateData },
-      { new: true }
+      { new: true },
     );
 
     res.status(200).json({
@@ -224,6 +226,7 @@ export async function updateList(req, res, next) {
     next(ErrorHandler(500, err.message));
   }
 }
+
 export async function browseList(req, res, next) {
   try {
     let filters = { status: "available" };
@@ -243,12 +246,13 @@ export async function browseList(req, res, next) {
       ...otherFilters
     } = req.body;
 
+    // ===== Listings Filters =====
     if (listingType) filters.listingType = listingType.toLowerCase();
     if (propertyType) filters.propertyType = propertyType.toLowerCase();
     if (bhk) filters.bhk = bhk;
 
     if (locality) {
-      filters["location.locality"] = locality;
+      filters["location.locality"] = locality.toLowerCase();
     }
 
     if (minPrice || maxPrice) {
@@ -279,17 +283,30 @@ export async function browseList(req, res, next) {
         filters[key] = otherFilters[key];
       }
     }
-    delete filters.propertyCategory;
- 
 
-    const searchResults = await Listing.find(filters)
+    delete filters.propertyCategory;
+
+    // 🔹 Fetch Listings
+    const listings = await Listing.find(filters)
       .sort({ createdAt: -1 })
       .limit(50);
 
+    // 🔹 Fetch Builder Ads (based only on locality + propertyType)
+    let ads = [];
+    if (locality && propertyType) {
+      ads = await Advertisement.find({
+        location: locality,
+        projectType: propertyType,
+      })
+        .sort({ createdAt: -1 })
+        .limit(10);
+    }
+
     res.status(200).json({
       success: true,
-      count: searchResults.length,
-      searchResults,
+      count: listings.length,
+      listings,
+      ads,
     });
   } catch (err) {
     console.error("Browse error:", err);

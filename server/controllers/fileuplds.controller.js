@@ -14,10 +14,8 @@ export async function pfpUpload(req, res, next) {
         { timeout: 10000, folder: "realestate/pfp" },
         (error, result) => {
           if (error) {
-            console.error("Cloudinary PFP upload error:", error);
             reject(error);
           } else {
-            console.log("PFP uploaded:", result.public_id);
             resolve(result);
           }
         },
@@ -32,7 +30,6 @@ export async function pfpUpload(req, res, next) {
       imageid: result.public_id,
     });
   } catch (err) {
-    console.error("PFP upload error:", err.message);
     next(ErrorHandler(500, err.message));
   }
 }
@@ -40,7 +37,6 @@ export async function pfpUpload(req, res, next) {
 export async function propertyImagesUpload(req, res, next) {
   try {
     if (!req.files || req.files.length == 0) {
-      console.log("No files in request");
       return next(ErrorHandler(401, "Please upload images"));
     }
 
@@ -78,7 +74,6 @@ export async function propertyImagesUpload(req, res, next) {
       uploadedurls: Array.from(uploadedurls),
     });
   } catch (err) {
-    console.error("Property images upload error:", err.message);
     next(ErrorHandler(500, err.message));
   }
 }
@@ -86,10 +81,9 @@ export async function propertyImagesUpload(req, res, next) {
 export async function delpfp(pid) {
   try {
     const result = await cloudinary.uploader.destroy(pid);
-    console.log("PFP deleted:", result);
+
     return result;
   } catch (err) {
-    console.error("Delete PFP error:", err.message);
     throw err;
   }
 }
@@ -99,16 +93,12 @@ export async function delimages(...images) {
     const limit = pLimit(3);
     const delimages = images.map((image, index) => {
       return limit(async () => {
-        console.log(`Deleting image ${index + 1}:`, image.public_id);
         await cloudinary.uploader.destroy(image.public_id);
-        console.log(`Image ${index + 1} deleted`);
       });
     });
     await Promise.all(delimages);
-    console.log("All images deleted");
   } catch (err) {
-    console.error("Delete images error:", err.message);
-    throw err;
+    next(ErrorHandler(500, err.message));
   }
 }
 
@@ -128,7 +118,6 @@ export async function uploadImages(req, res, next) {
             { folder: "realestate/ads" },
             (error, uploadResult) => {
               if (error) {
-                console.error(`Advertisement image ${index + 1} error:`, error);
                 reject(error);
               } else {
                 resolve(uploadResult);
@@ -153,7 +142,6 @@ export async function uploadImages(req, res, next) {
       uploadedurls: Array.from(uploadedUrls),
     });
   } catch (err) {
-    console.error("Advertisement images upload error:", err.message);
     next(ErrorHandler(500, err.message));
   }
 }
@@ -161,7 +149,6 @@ export async function uploadImages(req, res, next) {
 export async function uploadPdf(req, res, next) {
   try {
     if (!req.file) {
-      console.log("No PDF in request");
       return next(ErrorHandler(400, "Please upload a PDF file"));
     }
 
@@ -176,7 +163,6 @@ export async function uploadPdf(req, res, next) {
         },
         (error, result) => {
           if (error) {
-            console.error("PDF upload error:", error);
             reject(error);
           } else {
             resolve(result);
@@ -195,7 +181,16 @@ export async function uploadPdf(req, res, next) {
       },
     });
   } catch (err) {
-    console.error("PDF upload error:", err.message);
+    next(ErrorHandler(500, err.message));
+  }
+}
+export async function delpdf(public_id) {
+  if (!public_id) return;
+  try {
+    await cloudinary.uploader.destroy(public_id, {
+      resource_type: "raw",
+    });
+  } catch (err) {
     next(ErrorHandler(500, err.message));
   }
 }

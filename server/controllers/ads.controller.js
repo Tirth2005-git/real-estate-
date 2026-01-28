@@ -1,11 +1,15 @@
 import Advertisement from "../models/advertisement.model.js";
 import { ErrorHandler } from "../utils/error.js";
-export async function createad(req, res,next) {
+import { delimages, delpdf } from "./fileuplds.controller.js";
+export async function createad(req, res, next) {
   try {
     if (req.user.userid !== req.params.id) {
-      return next(ErrorHandler(403, "unauthorized,can only create your own ads"));
+      return next(
+        ErrorHandler(403, "unauthorized, can only create your own ads"),
+      );
     }
-    const {
+
+    let {
       projectName,
       description,
       location,
@@ -42,30 +46,44 @@ export async function createad(req, res,next) {
       return res.status(400).json({ message: "RERA number is required" });
     }
 
-    const newAd = new Advertisement({
-      builderId:req.user.userid,
+    
+    const normalizedAd = {
+      builderId: req.user.userid,
       projectName: projectName.trim(),
       description: description.trim(),
-      location,
-      projectType,
-      unitTypes,
+      location: location.trim().toLowerCase(),
+      projectType: projectType.trim().toLowerCase(),
+
+      unitTypes: unitTypes.map((u) => u.trim().toLowerCase()),
+
       priceRange: {
         min: Number(priceRange.min),
         max: Number(priceRange.max),
       },
+
       areaRange: {
         min: Number(areaRange.min),
         max: Number(areaRange.max),
       },
+
       possessionDate: possessionDate || null,
       reraRegistered: !!reraRegistered,
-      reraNumber: reraNumber || "",
-      amenities: amenities || [],
-      images,
-      brochure: brochure || null,
-      projectContacts,
-    });
+      reraNumber: reraNumber ? reraNumber.trim().toLowerCase() : "",
 
+      amenities: amenities ? amenities.map((a) => a.trim().toLowerCase()) : [],
+
+      images, // already urls / ids — don’t lowercase
+
+      brochure: brochure || null,
+
+      projectContacts: projectContacts.map((c) => ({
+        name: c.name.trim().toLowerCase(),
+        phone: c.phone.trim(), // keep digits
+        email: c.email ? c.email.trim().toLowerCase() : "",
+      })),
+    };
+
+    const newAd = new Advertisement(normalizedAd);
     const savedAd = await newAd.save();
 
     res.status(201).json({
@@ -79,5 +97,35 @@ export async function createad(req, res,next) {
       success: false,
       message: "Failed to create advertisement",
     });
+  }
+}
+
+export async function deletead(req, res, next) {
+  try {
+    if (req.params.id !== req.user.userid) {
+      return next(
+        ErrorHandler(403, "You can only delete your own advertisement!"),
+      );
+    }
+
+    const ad = await Advertisement.findById(req.body.adId);
+    if (!ad) {
+      return next(ErrorHandler(404, "Advertisement not found"));
+    }
+
+    if (ad.images && ad.images.length > 0) {
+      const imagesToDelete = ad.images;
+      await delimages(...imagesToDelete);
+    }
+
+    if (ad.brochure && ad.brochure.public_id) {
+      await delpdf(ad.brochure.public_id);
+    }
+
+    await Advertisement.findByIdAndDelete(req.body.adId);
+
+    res.status(200).json({ success: true, message: "Advertisement deleted" });
+  } catch (err) {
+    next(ErrorHandler(500, err.message));
   }
 }

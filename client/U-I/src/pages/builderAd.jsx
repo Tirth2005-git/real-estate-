@@ -1,7 +1,7 @@
 import { useSelector, useDispatch } from "react-redux";
 import { useState } from "react";
 import { NavLink, useNavigate } from "react-router-dom";
-//import { deleteAd } from "../redux/adsSlice.jsx";
+import { deleteAd } from "../redux/adsslice";
 
 function BuilderAds() {
   const { currentuser } = useSelector((state) => state.user);
@@ -14,7 +14,7 @@ function BuilderAds() {
     navigate("/ad", { state: ads[index] });
   }
 
-  /*async function handleDelete(index) {
+  async function handleDelete(index) {
     try {
       setDel(index);
       const adToDelete = ads[index];
@@ -37,7 +37,7 @@ function BuilderAds() {
       setDel(null);
     }
   }
-*/
+
   return (
     <>
       {ads.length > 0 ? (

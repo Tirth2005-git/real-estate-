@@ -3,6 +3,7 @@ import bcrypt from "bcryptjs";
 import { ErrorHandler } from "../utils/error.js";
 import jwt from "jsonwebtoken";
 import Listing from "../models/listing.model.js";
+import  Advertisement from "../models/advertisement.model.js"
 
 export async function signUp(req, res, next) {
   try {
@@ -144,7 +145,6 @@ export async function signIn(req, res, next) {
     }
 
     const isvalid = bcrypt.compareSync(password, validuser.password);
-
     if (!isvalid) {
       return next(ErrorHandler(403, "Incorrect password"));
     }
@@ -156,22 +156,23 @@ export async function signIn(req, res, next) {
     const userObj = validuser.toObject();
     delete userObj.password;
 
-    const userlisting = await Listing.find({
-      userref: validuser._id,
-    });
+    let payload = { user: userObj };
+
+    
+    if (validuser.role === "builder") {
+      const ads = await Advertisement.find({ builderId: validuser._id });
+      payload.ads = ads;
+    } else {
+      const listings = await Listing.find({ userref: validuser._id });
+      payload.userlisting = listings;
+    }
 
     res
       .status(200)
-      .cookie("access_token", token, {
-        httpOnly: true,
-      })
-      .json({
-        user: userObj,
-        ...(userlisting && { userlisting }),
-      });
+      .cookie("access_token", token, { httpOnly: true })
+      .json(payload);
   } catch (err) {
     console.log(err.message);
-
     next(ErrorHandler(500, err.message));
   }
 }

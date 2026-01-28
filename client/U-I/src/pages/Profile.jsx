@@ -7,6 +7,8 @@ import {
   deletesuccess,
 } from "../redux/userslice.jsx";
 import { NavLink } from "react-router-dom";
+import { clearAds } from "../redux/adsslice.jsx";
+import { clearListings } from "../redux/listingslice.jsx";
 
 function Profile() {
   const mumbaiLocalities = [
@@ -221,10 +223,14 @@ function Profile() {
   async function handlesignout() {
     await fetch("/api/signout");
     dispatch(deletesuccess());
+    dispatch(clearAds());
+    dispatch(clearListings());
+    dispatch(clearProperties());
   }
   async function handledelete() {
     try {
       setdeleting(true);
+
       const res = await fetch(`/api/delete/${currentuser._id}`, {
         method: "DELETE",
       });
@@ -237,8 +243,14 @@ function Profile() {
       }
 
       dispatch(deletesuccess());
-      dispatch(clearListings());
-      dispatch(clearProperties());
+
+      if (currentuser.role === "builder") {
+        dispatch(clearAds());
+      } else {
+        dispatch(clearListings());
+        dispatch(clearProperties());
+      }
+
       setdeleting(false);
     } catch (err) {
       setdeleting(false);
@@ -449,12 +461,21 @@ function Profile() {
           </span>
         </div>
 
-        <NavLink
-          to="/user-listings"
-          className="text-green-600 text-sm hover:underline"
-        >
-          View your listings
-        </NavLink>
+        {currentuser?.role !== "builder" ? (
+          <NavLink
+            to="/user-listings"
+            className="text-green-600 text-sm hover:underline"
+          >
+            View your listings
+          </NavLink>
+        ) : (
+          <NavLink
+            to="/builder-ads"
+            className="text-blue-600 text-sm hover:underline"
+          >
+            View your ads
+          </NavLink>
+        )}
       </form>
     </div>
   );
