@@ -169,7 +169,6 @@ function CreateListing() {
 
       trimmedData.userref = currentuser._id;
 
-      // Clean up old fields
       delete trimmedData.name;
       delete trimmedData.email;
       delete trimmedData.phone;
@@ -254,6 +253,16 @@ function CreateListing() {
     "Lower Parel",
     "Worli",
     "Colaba",
+    "Vile Parle",
+    "Dahisar",
+    "Mira Road",
+    "Bhandup",
+    "Mulund",
+    "Vikhroli",
+    "Ghatkopar",
+    "Kurla",
+    "Sion",
+    "Matunga",
   ];
 
   const residentialTypes = [
@@ -420,7 +429,6 @@ function CreateListing() {
               </div>
             </div>
 
-            {/* Property Type */}
             <div className="w-full">
               <label className="block text-sm font-medium text-gray-700 mb-2">
                 Property Type

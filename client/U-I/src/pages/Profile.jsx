@@ -9,7 +9,7 @@ import {
 import { NavLink } from "react-router-dom";
 import { clearAds } from "../redux/adsslice.jsx";
 import { clearListings } from "../redux/listingslice.jsx";
-
+import { clearProperties } from "../redux/propertiesSlice.jsx";
 function Profile() {
   const mumbaiLocalities = [
     "Andheri",

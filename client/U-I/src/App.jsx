@@ -17,6 +17,7 @@ import UpdateListing from "./pages/updateListings.jsx";
 import FindProperties from "./pages/findProperties.jsx";
 import ViewAd from "./pages/viewad.jsx";
 import BuilderAds from "./pages/builderAd.jsx";
+import FindDealers from "./pages/findDealers.jsx";
 import "./index.css";
 import CreateAdvertisement from "./pages/createAd.jsx";
 function App() {
@@ -47,6 +48,7 @@ function App() {
                 ></Route>
                 <Route path="/builder-ads" element={<BuilderAds />}></Route>
                 <Route path="/ad" element={<ViewAd />}></Route>
+                <Route path="/browse-dealers" element={<FindDealers />}></Route>
               </Route>
 
               <Route element={<PvtRoute2 />}>

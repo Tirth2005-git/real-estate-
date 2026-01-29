@@ -229,92 +229,70 @@ export async function updateList(req, res, next) {
 
 export async function browseList(req, res, next) {
   try {
-    let filters = { status: "available" };
-
     const {
-      listingType,
-      propertyType,
-      bhk,
       locality,
+      propertyType,
+      propertyCategory,
+      bhk,
       minPrice,
       maxPrice,
       minArea,
       maxArea,
-      listedByRole,
-      dealerType,
       Features,
-      ...otherFilters
     } = req.body;
 
-    // ===== Listings Filters =====
-    if (listingType) filters.listingType = listingType.toLowerCase();
-    if (propertyType) filters.propertyType = propertyType.toLowerCase();
-    if (bhk) filters.bhk = bhk;
+    const listingFilters = { status: "available" };
 
     if (locality) {
-      filters["location.locality"] = locality.toLowerCase();
+      const locLower = locality.toLowerCase();
+      listingFilters["location.locality"] = locLower;
     }
 
+    if (propertyType) listingFilters.propertyType = propertyType.toLowerCase();
+    if (bhk) listingFilters.bhk = bhk;
+
     if (minPrice || maxPrice) {
-      filters.price = {};
-      if (minPrice) filters.price.$gte = Number(minPrice);
-      if (maxPrice) filters.price.$lte = Number(maxPrice);
+      listingFilters.price = {};
+      if (minPrice) listingFilters.price.$gte = Number(minPrice);
+      if (maxPrice) listingFilters.price.$lte = Number(maxPrice);
     }
 
     if (minArea || maxArea) {
-      filters.area = {};
-      if (minArea) filters.area.$gte = Number(minArea);
-      if (maxArea) filters.area.$lte = Number(maxArea);
+      listingFilters.area = {};
+      if (minArea) listingFilters.area.$gte = Number(minArea);
+      if (maxArea) listingFilters.area.$lte = Number(maxArea);
     }
 
-    if (listedByRole) {
-      filters["listedBy.role"] = listedByRole.toLowerCase();
-      if (listedByRole === "dealer" && dealerType) {
-        filters["listedBy.dealerType"] = dealerType.toLowerCase();
-      }
+    if (Features?.length) {
+      listingFilters.features = { $all: Features };
     }
 
-    if (Features && Array.isArray(Features) && Features.length > 0) {
-      filters.features = { $in: Features };
+    const adFilters = {};
+
+    if (locality) {
+      const locLower = locality.toLowerCase();
+      adFilters.location = locLower;
     }
 
-    for (const key in otherFilters) {
-      if (otherFilters[key] && otherFilters[key].toString().trim()) {
-        filters[key] = otherFilters[key];
-      }
+    if (propertyCategory) {
+      adFilters.projectType = propertyCategory.toLowerCase();
     }
 
-    delete filters.propertyCategory;
-
-    // 🔹 Fetch Listings
-    const listings = await Listing.find(filters)
+    const listings = await Listing.find(listingFilters)
       .sort({ createdAt: -1 })
       .limit(50);
 
-    // 🔹 Fetch Builder Ads (based only on locality + propertyType)
-    let ads = [];
-    if (locality && propertyType) {
-      ads = await Advertisement.find({
-        location: locality,
-        projectType: propertyType,
-      })
-        .sort({ createdAt: -1 })
-        .limit(10);
-    }
+    const ads = await Advertisement.find(adFilters)
+      .sort({ createdAt: -1 })
+      .limit(10);
 
     res.status(200).json({
       success: true,
-      count: listings.length,
       listings,
       ads,
     });
   } catch (err) {
     console.error("Browse error:", err);
-
-    if (err.name === "CastError") {
-      return next(ErrorHandler(400, "Invalid search parameters"));
-    }
-
-    next(ErrorHandler(500, "Search failed. Please try again."));
+    next(ErrorHandler(500, "Search failed"));
   }
 }

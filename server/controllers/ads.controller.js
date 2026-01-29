@@ -54,7 +54,7 @@ export async function createad(req, res, next) {
       location: location.trim().toLowerCase(),
       projectType: projectType.trim().toLowerCase(),
 
-      unitTypes: unitTypes.map((u) => u.trim().toLowerCase()),
+      unitTypes: unitTypes.map((u) => u.trim()),
 
       priceRange: {
         min: Number(priceRange.min),
@@ -70,16 +70,16 @@ export async function createad(req, res, next) {
       reraRegistered: !!reraRegistered,
       reraNumber: reraNumber ? reraNumber.trim().toLowerCase() : "",
 
-      amenities: amenities ? amenities.map((a) => a.trim().toLowerCase()) : [],
+      amenities: amenities ? amenities.map((a) => a.trim()) : [],
 
       images, // already urls / ids — don’t lowercase
 
       brochure: brochure || null,
 
       projectContacts: projectContacts.map((c) => ({
-        name: c.name.trim().toLowerCase(),
-        phone: c.phone.trim(), // keep digits
-        email: c.email ? c.email.trim().toLowerCase() : "",
+        name: c.name.trim(),
+        phone: c.phone.trim(), 
+        email: c.email ? c.email.trim() : "",
       })),
     };
 

@@ -37,6 +37,9 @@ function FindProperties() {
   function handleview(index) {
     navigate("/listing", { state: properties[index] });
   }
+  function handleadview(index) {
+    navigate("/ad", { state: ads[index] });
+  }
 
   useEffect(() => {
     dispatch(setVisbility());
@@ -61,21 +64,35 @@ function FindProperties() {
       setSearching(true);
       setSeacrhError(false);
 
-      const searchParams = {};
+      const rawParams = {
+        locality: formdata.locality,
+        propertyType: formdata.propertyType,
+        propertyCategory: formdata.propertyCategory,
+        bhk: formdata.bhk,
+        minPrice: formdata.minPrice,
+        maxPrice: formdata.maxPrice,
+        minArea: formdata.minArea,
+        maxArea: formdata.maxArea,
+        Features: formdata.Features,
+      };
 
-      Object.keys(formdata).forEach((key) => {
-        if (formdata[key] && formdata[key].toString().trim()) {
-          if (key === "locality") {
-            searchParams["location.locality"] = formdata[key]
-              .trim()
-              .toLowerCase();
-          } else if (Array.isArray(formdata[key])) {
-            searchParams[key] = formdata[key].map((v) =>
-              v.toString().trim().toLowerCase(),
-            );
-          } else {
-            searchParams[key] = formdata[key].toString().trim().toLowerCase();
-          }
+      const searchParams = {};
+      Object.entries(rawParams).forEach(([key, value]) => {
+        if (value === undefined || value === null || value === "") return;
+
+        if (Array.isArray(value) && value.length) {
+          searchParams[key] = value;
+        } else if (
+          key === "minPrice" ||
+          key === "maxPrice" ||
+          key === "minArea" ||
+          key === "maxArea"
+        ) {
+          searchParams[key] = Number(value);
+        } else if (key === "bhk") {
+          searchParams[key] = value.toString().trim();
+        } else if (typeof value === "string") {
+          searchParams[key] = value.trim().toLowerCase();
         }
       });
 
@@ -514,10 +531,11 @@ function FindProperties() {
               <div
                 key={index}
                 className="bg-white rounded-xl shadow-lg overflow-hidden hover:shadow-xl transition-shadow"
+                onClick={() => handleadview(index)}
               >
                 <div className="h-48 overflow-hidden">
                   <img
-                    src={ad.images[0]}
+                    src={ad.images[0].imageurl}
                     alt={ad.projectName}
                     className="w-full h-full object-cover"
                   />
@@ -568,7 +586,6 @@ function FindProperties() {
                 className="bg-white rounded-xl shadow-lg overflow-hidden hover:shadow-xl transition-shadow cursor-pointer"
                 onClick={() => handleview(index)}
               >
-                {/* Property Image */}
                 <div className="h-48 overflow-hidden">
                   <img
                     src={property.images[0]?.imageurl}
@@ -577,7 +594,6 @@ function FindProperties() {
                   />
                 </div>
 
-                {/* Property Details */}
                 <div className="p-4">
                   {/* Badge for listed by */}
                   <div className="flex justify-between items-start mb-2">

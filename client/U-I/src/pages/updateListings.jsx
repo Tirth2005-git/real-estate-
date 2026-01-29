@@ -29,10 +29,10 @@ function UpdateListing() {
 
   const [propertyCategory, setPropertyCategory] = useState(
     ["flat", "bungalow", "villa", "studio apartment", "builder floor"].includes(
-      propertyType
+      propertyType,
     )
       ? "residential"
-      : "commercial"
+      : "commercial",
   );
 
   const fileref = useRef(0);
@@ -202,8 +202,8 @@ function UpdateListing() {
       setUpdateError(null);
       dispatch(
         UpdateList(
-          listings.map((list, i) => (i !== index ? list : data.updatedlist))
-        )
+          listings.map((list, i) => (i !== index ? list : data.updatedlist)),
+        ),
       );
     } catch (err) {
       setUpdating("idle");
@@ -226,7 +226,7 @@ function UpdateListing() {
 
       const formData = new FormData();
       formdata.newImages.forEach((file) =>
-        formData.append("property-pics", file)
+        formData.append("property-pics", file),
       );
 
       const res = await fetch("/api/mult/uploads", {
@@ -297,6 +297,16 @@ function UpdateListing() {
     "Lower Parel",
     "Worli",
     "Colaba",
+    "Vile Parle",
+    "Dahisar",
+    "Mira Road",
+    "Bhandup",
+    "Mulund",
+    "Vikhroli",
+    "Ghatkopar",
+    "Kurla",
+    "Sion",
+    "Matunga",
   ];
 
   const residentialFeatures = [
@@ -562,7 +572,7 @@ function UpdateListing() {
                             newFeatures.push(feature);
                           } else {
                             newFeatures = newFeatures.filter(
-                              (f) => f !== feature
+                              (f) => f !== feature,
                             );
                           }
                           setFormData({
@@ -605,7 +615,7 @@ function UpdateListing() {
                     />
                     <span className="capitalize">{status}</span>
                   </label>
-                )
+                ),
               )}
             </div>
           </div>
