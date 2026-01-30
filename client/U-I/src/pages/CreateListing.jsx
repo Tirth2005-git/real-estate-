@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { NavLink } from "react-router-dom";
 import { setListing } from "../redux/listingslice.jsx";
+import Select from "react-select";
 
 function CreateListing() {
   const [propertyCategory, setPropertyCategory] = useState("residential");
@@ -238,32 +239,114 @@ function CreateListing() {
 
   const { listings } = useSelector((state) => state.listings);
   const mumbaiLocalities = [
-    "Andheri",
-    "Bandra",
-    "Borivali",
-    "Dadar",
-    "Goregaon",
-    "Malad",
-    "Powai",
-    "Thane",
-    "Chembur",
-    "Kandivali",
-    "Juhu",
-    "Santacruz",
-    "Lower Parel",
-    "Worli",
-    "Colaba",
-    "Vile Parle",
-    "Dahisar",
-    "Mira Road",
-    "Bhandup",
-    "Mulund",
-    "Vikhroli",
-    "Ghatkopar",
-    "Kurla",
-    "Sion",
-    "Matunga",
+    "colaba",
+    "nariman point",
+    "marine lines",
+    "churchgate",
+    "fort",
+    "cuffe parade",
+    "malabar hill",
+    "walkeshwar",
+    "breach candy",
+    "tardeo",
+    "haji ali",
+    "worli",
+    "lower parel",
+    "prabhadevi",
+    "dadar",
+    "mahim",
+    "matunga",
+    "sion",
+
+    "bandra",
+    "khar",
+    "santacruz",
+    "vile parle",
+    "andheri",
+    "jogeshwari",
+    "goregaon",
+    "malad",
+    "kandivali",
+    "borivali",
+    "dahisar",
+
+    "kurla",
+    "vidyavihar",
+    "ghatkopar",
+    "vikroli",
+    "bhandup",
+    "mulund",
+    "thane",
+    "kalyan",
+    "dombivli",
+    "ambernath",
+    "badlapur",
+
+    "mankhurd",
+    "govandi",
+    "chembur",
+    "tilak nagar",
+    "koperkhairane",
+    "navi mumbai",
+    "nerul",
+    "vashi",
+    "sanpada",
+    "seawoods",
+    "belapur",
+    "kharghar",
+    "panvel",
+
+    "byculla",
+    "mazgaon",
+    "parel",
+    "lalbaug",
+    "chinchpokli",
+    "sewri",
+    "wadala",
+    "sion",
+    "king circle",
+    "mumbai central",
+    "grant road",
+    "charni road",
+    "matunga west",
+    "dadar west",
+    "prabhadevi west",
+    "dadar east",
+    "parel east",
+    "mahalakshmi",
+    "mahim west",
+    "bandra west",
+    "bandra east",
+    "khar west",
+    "khar east",
+    "santacruz east",
+    "santacruz west",
+    "vile parle east",
+    "vile parle west",
+    "andheri east",
+    "andheri west",
+    "jogeshwari east",
+    "jogeshwari west",
+    "goregaon east",
+    "goregaon west",
+    "malad east",
+    "malad west",
+    "kandivali east",
+    "kandivali west",
+    "borivali east",
+    "borivali west",
+    "dahisar east",
+    "dahisar west",
+    "mira road",
+    "bhayandar",
+    "naigaon",
+    "vasai",
+    "virar",
   ];
+  const localityOptions = mumbaiLocalities.map((l) => ({
+    value: l,
+    label: l,
+  }));
 
   const residentialTypes = [
     "Flat",
@@ -605,21 +688,17 @@ function CreateListing() {
           <div className="flex flex-col gap-4 w-full">
             <label className="block text-black mb-2">Location Details</label>
             <div className="flex flex-col gap-3">
-              <select
-                id="locality"
-                className="p-2 bg-white text-black rounded-lg"
-                required
-                onChange={(e) =>
-                  setFormData({ ...formdata, [e.target.id]: e.target.value })
-                }
-              >
-                <option value="">Select Mumbai Locality</option>
-                {mumbaiLocalities.map((locality) => (
-                  <option key={locality} value={locality}>
-                    {locality}
-                  </option>
-                ))}
-              </select>
+              <div className="w-full">
+                <label className="block text-black mb-1">Locality</label>
+                <Select
+                  options={localityOptions}
+                  placeholder="Search & select locality..."
+                  className="text-black"
+                  onChange={(opt) =>
+                    setFormData({ ...formdata, locality: opt?.value || "" })
+                  }
+                />
+              </div>
 
               <input
                 type="text"

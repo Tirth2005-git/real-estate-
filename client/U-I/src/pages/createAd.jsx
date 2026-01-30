@@ -2,37 +2,120 @@ import { useState } from "react";
 import { FaTrash, FaFilePdf, FaPlus, FaMinus } from "react-icons/fa";
 import { useDispatch, useSelector } from "react-redux";
 import { addAd } from "../redux/adsslice.jsx";
+import Select from "react-select";
 
 function CreateAdvertisement() {
   const { currentuser } = useSelector((state) => state.user);
   const dispatch = useDispatch();
   const mumbaiLocalities = [
-    "Andheri",
-    "Bandra",
-    "Borivali",
-    "Dadar",
-    "Goregaon",
-    "Malad",
-    "Powai",
-    "Thane",
-    "Chembur",
-    "Kandivali",
-    "Juhu",
-    "Santacruz",
-    "Lower Parel",
-    "Worli",
-    "Colaba",
-    "Vile Parle",
-    "Dahisar",
-    "Mira Road",
-    "Bhandup",
-    "Mulund",
-    "Vikhroli",
-    "Ghatkopar",
-    "Kurla",
-    "Sion",
-    "Matunga",
+    "colaba",
+    "nariman point",
+    "marine lines",
+    "churchgate",
+    "fort",
+    "cuffe parade",
+    "malabar hill",
+    "walkeshwar",
+    "breach candy",
+    "tardeo",
+    "haji ali",
+    "worli",
+    "lower parel",
+    "prabhadevi",
+    "dadar",
+    "mahim",
+    "matunga",
+    "sion",
+
+    "bandra",
+    "khar",
+    "santacruz",
+    "vile parle",
+    "andheri",
+    "jogeshwari",
+    "goregaon",
+    "malad",
+    "kandivali",
+    "borivali",
+    "dahisar",
+
+    "kurla",
+    "vidyavihar",
+    "ghatkopar",
+    "vikroli",
+    "bhandup",
+    "mulund",
+    "thane",
+    "kalyan",
+    "dombivli",
+    "ambernath",
+    "badlapur",
+
+    "mankhurd",
+    "govandi",
+    "chembur",
+    "tilak nagar",
+    "koperkhairane",
+    "navi mumbai",
+    "nerul",
+    "vashi",
+    "sanpada",
+    "seawoods",
+    "belapur",
+    "kharghar",
+    "panvel",
+
+    "byculla",
+    "mazgaon",
+    "parel",
+    "lalbaug",
+    "chinchpokli",
+    "sewri",
+    "wadala",
+    "sion",
+    "king circle",
+    "mumbai central",
+    "grant road",
+    "charni road",
+    "matunga west",
+    "dadar west",
+    "prabhadevi west",
+    "dadar east",
+    "parel east",
+    "mahalakshmi",
+    "mahim west",
+    "bandra west",
+    "bandra east",
+    "khar west",
+    "khar east",
+    "santacruz east",
+    "santacruz west",
+    "vile parle east",
+    "vile parle west",
+    "andheri east",
+    "andheri west",
+    "jogeshwari east",
+    "jogeshwari west",
+    "goregaon east",
+    "goregaon west",
+    "malad east",
+    "malad west",
+    "kandivali east",
+    "kandivali west",
+    "borivali east",
+    "borivali west",
+    "dahisar east",
+    "dahisar west",
+    "mira road",
+    "bhayandar",
+    "naigaon",
+    "vasai",
+    "virar",
   ];
+  const localityOptions = mumbaiLocalities.map((l) => ({
+    value: l,
+    label: l,
+  }));
 
   const residentialUnitTypes = [
     "1 BHK",
@@ -559,18 +642,21 @@ function CreateAdvertisement() {
               <label className="block text-black mb-1">
                 Location (Mumbai) *
               </label>
-              <select
-                value={formData.location}
-                onChange={(e) => handleInputChange("location", e.target.value)}
-                className="p-2 w-full bg-white text-black rounded-lg"
-              >
-                <option value="">Select a locality</option>
-                {mumbaiLocalities.map((locality) => (
-                  <option key={locality} value={locality}>
-                    {locality}
-                  </option>
-                ))}
-              </select>
+              <Select
+                options={localityOptions}
+                placeholder="Search & select a locality..."
+                value={
+                  formData.location
+                    ? { value: formData.location, label: formData.location }
+                    : null
+                }
+                onChange={(opt) =>
+                  handleInputChange("location", opt?.value || "")
+                }
+                className="text-black"
+                classNamePrefix="react-select"
+              />
+
               {errors.location && (
                 <p className="text-red-500 text-sm -mt-2">{errors.location}</p>
               )}

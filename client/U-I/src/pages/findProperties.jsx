@@ -4,6 +4,7 @@ import { setproperties } from "../redux/propertiesSlice.jsx";
 import { useState, useEffect } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { setAds } from "../redux/adsslice.jsx";
+import Select from "react-select";
 
 function FindProperties() {
   const { ads } = useSelector((state) => state.ads);
@@ -17,22 +18,114 @@ function FindProperties() {
   const dispatch = useDispatch();
 
   const mumbaiLocalities = [
-    "Andheri",
-    "Bandra",
-    "Borivali",
-    "Dadar",
-    "Goregaon",
-    "Malad",
-    "Powai",
-    "Thane",
-    "Chembur",
-    "Kandivali",
-    "Juhu",
-    "Santacruz",
-    "Lower Parel",
-    "Worli",
-    "Colaba",
+    "colaba",
+    "nariman point",
+    "marine lines",
+    "churchgate",
+    "fort",
+    "cuffe parade",
+    "malabar hill",
+    "walkeshwar",
+    "breach candy",
+    "tardeo",
+    "haji ali",
+    "worli",
+    "lower parel",
+    "prabhadevi",
+    "dadar",
+    "mahim",
+    "matunga",
+    "sion",
+
+    "bandra",
+    "khar",
+    "santacruz",
+    "vile parle",
+    "andheri",
+    "jogeshwari",
+    "goregaon",
+    "malad",
+    "kandivali",
+    "borivali",
+    "dahisar",
+
+    "kurla",
+    "vidyavihar",
+    "ghatkopar",
+    "vikroli",
+    "bhandup",
+    "mulund",
+    "thane",
+    "kalyan",
+    "dombivli",
+    "ambernath",
+    "badlapur",
+
+    "mankhurd",
+    "govandi",
+    "chembur",
+    "tilak nagar",
+    "koperkhairane",
+    "navi mumbai",
+    "nerul",
+    "vashi",
+    "sanpada",
+    "seawoods",
+    "belapur",
+    "kharghar",
+    "panvel",
+
+    "byculla",
+    "mazgaon",
+    "parel",
+    "lalbaug",
+    "chinchpokli",
+    "sewri",
+    "wadala",
+    "sion",
+    "king circle",
+    "mumbai central",
+    "grant road",
+    "charni road",
+    "matunga west",
+    "dadar west",
+    "prabhadevi west",
+    "dadar east",
+    "parel east",
+    "mahalakshmi",
+    "mahim west",
+    "bandra west",
+    "bandra east",
+    "khar west",
+    "khar east",
+    "santacruz east",
+    "santacruz west",
+    "vile parle east",
+    "vile parle west",
+    "andheri east",
+    "andheri west",
+    "jogeshwari east",
+    "jogeshwari west",
+    "goregaon east",
+    "goregaon west",
+    "malad east",
+    "malad west",
+    "kandivali east",
+    "kandivali west",
+    "borivali east",
+    "borivali west",
+    "dahisar east",
+    "dahisar west",
+    "mira road",
+    "bhayandar",
+    "naigaon",
+    "vasai",
+    "virar",
   ];
+  const localityOptions = mumbaiLocalities.map((l) => ({
+    value: l.toLowerCase(),
+    label: l,
+  }));
 
   function handleview(index) {
     navigate("/listing", { state: properties[index] });
@@ -284,20 +377,20 @@ function FindProperties() {
           <label className="block font-medium text-gray-700 mb-2">
             Mumbai Locality
           </label>
-          <select
-            className="w-full bg-white rounded-lg p-2 mb-4"
-            value={formdata.locality || ""}
-            onChange={(e) =>
-              setformdata((prev) => ({ ...prev, locality: e.target.value }))
+          <Select
+            options={localityOptions}
+            placeholder="Search & select locality..."
+            value={
+              formdata.locality
+                ? { value: formdata.locality, label: formdata.locality }
+                : null
             }
-          >
-            <option value="">Select Locality</option>
-            {mumbaiLocalities.map((locality) => (
-              <option key={locality} value={locality.toLowerCase()}>
-                {locality}
-              </option>
-            ))}
-          </select>
+            onChange={(opt) =>
+              setformdata((prev) => ({ ...prev, locality: opt?.value || "" }))
+            }
+            className="mb-4 text-black"
+            classNamePrefix="react-select"
+          />
 
           <label className="block font-medium text-gray-700 mb-2">
             Price Range (₹)

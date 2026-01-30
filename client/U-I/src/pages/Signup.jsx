@@ -1,16 +1,6 @@
 import { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
-
-const mumbaiLocalities = [
-  "Andheri",
-  "Bandra",
-  "Borivali",
-  "Dadar",
-  "Goregaon",
-  "Malad",
-  "Powai",
-  "Thane",
-];
+import Select from "react-select";
 
 function Signup() {
   const navigate = useNavigate();
@@ -31,6 +21,115 @@ function Signup() {
     companyContactValue: "",
     companyDescription: "",
   });
+  const mumbaiLocalities = [
+    "colaba",
+    "nariman point",
+    "marine lines",
+    "churchgate",
+    "fort",
+    "cuffe parade",
+    "malabar hill",
+    "walkeshwar",
+    "breach candy",
+    "tardeo",
+    "haji ali",
+    "worli",
+    "lower parel",
+    "prabhadevi",
+    "dadar",
+    "mahim",
+    "matunga",
+    "sion",
+
+    "bandra",
+    "khar",
+    "santacruz",
+    "vile parle",
+    "andheri",
+    "jogeshwari",
+    "goregaon",
+    "malad",
+    "kandivali",
+    "borivali",
+    "dahisar",
+
+    "kurla",
+    "vidyavihar",
+    "ghatkopar",
+    "vikroli",
+    "bhandup",
+    "mulund",
+    "thane",
+    "kalyan",
+    "dombivli",
+    "ambernath",
+    "badlapur",
+
+    "mankhurd",
+    "govandi",
+    "chembur",
+    "tilak nagar",
+    "koperkhairane",
+    "navi mumbai",
+    "nerul",
+    "vashi",
+    "sanpada",
+    "seawoods",
+    "belapur",
+    "kharghar",
+    "panvel",
+
+    "byculla",
+    "mazgaon",
+    "parel",
+    "lalbaug",
+    "chinchpokli",
+    "sewri",
+    "wadala",
+    "sion",
+    "king circle",
+    "mumbai central",
+    "grant road",
+    "charni road",
+    "matunga west",
+    "dadar west",
+    "prabhadevi west",
+    "dadar east",
+    "parel east",
+    "mahalakshmi",
+    "mahim west",
+    "bandra west",
+    "bandra east",
+    "khar west",
+    "khar east",
+    "santacruz east",
+    "santacruz west",
+    "vile parle east",
+    "vile parle west",
+    "andheri east",
+    "andheri west",
+    "jogeshwari east",
+    "jogeshwari west",
+    "goregaon east",
+    "goregaon west",
+    "malad east",
+    "malad west",
+    "kandivali east",
+    "kandivali west",
+    "borivali east",
+    "borivali west",
+    "dahisar east",
+    "dahisar west",
+    "mira road",
+    "bhayandar",
+    "naigaon",
+    "vasai",
+    "virar",
+  ];
+  const localityOptions = mumbaiLocalities.map((l) => ({
+    value: l,
+    label: l,
+  }));
 
   const [loading, setloading] = useState(false);
   const [error, seterror] = useState(null);
@@ -70,19 +169,6 @@ function Signup() {
       }
 
       return newState;
-    });
-  }
-
-  function handleLocalityChange(locality) {
-    setdata((prev) => {
-      const exists = prev.localities.includes(locality);
-
-      return {
-        ...prev,
-        localities: exists
-          ? prev.localities.filter((l) => l !== locality)
-          : [...prev.localities, locality],
-      };
     });
   }
 
@@ -218,17 +304,19 @@ function Signup() {
 
         {formdata.role === "dealer" && (
           <div>
-            <p className="font-medium">Select Localities</p>
-            {mumbaiLocalities.map((loc) => (
-              <label key={loc} className="block">
-                <input
-                  type="checkbox"
-                  checked={formdata.localities.includes(loc)}
-                  onChange={() => handleLocalityChange(loc)}
-                />
-                {loc}
-              </label>
-            ))}
+            <p className="font-medium mb-1">Select Localities</p>
+            <Select
+              isMulti
+              options={localityOptions}
+              placeholder="Search & select localities..."
+              className="w-full"
+              onChange={(selected) => {
+                setdata((p) => ({
+                  ...p,
+                  localities: selected.map((s) => s.value),
+                }));
+              }}
+            />
           </div>
         )}
 

@@ -205,3 +205,57 @@ export async function getUserListings(req, res, next) {
     next(ErrorHandler(500, err.message));
   }
 }
+
+export async function browseDealers(req, res, next) {
+  try {
+    const { locality, dealerType } = req.body;
+
+    let filters = { role: "dealer" };
+
+    if (locality) {
+      const locLower = locality.toLowerCase();
+
+      filters.localities = locLower;
+    }
+
+    if (dealerType) {
+      filters.dealerType = dealerType.toLowerCase();
+    }
+
+    const dealers = await User.find(filters)
+      .select("-password")
+      .sort({ createdAt: -1 })
+      .limit(50);
+
+    const transformedDealers = dealers.map((dealer) => ({
+      _id: dealer._id,
+      name: dealer.username,
+      companyName: dealer.companyName,
+      dealerType: dealer.dealerType,
+      localities: dealer.localities,
+
+      location: {
+        locality: dealer.localities[0] || "",
+      },
+
+      contact: {
+        email:
+          dealer.dealerType === "agency"
+            ? dealer.companyContactValue || ""
+            : dealer.personalContactValue || "",
+      },
+
+      pfp: dealer.pfp,
+      companyDescription: dealer.companyDescription,
+    }));
+
+    res.status(200).json({
+      success: true,
+      count: transformedDealers.length,
+      dealers: transformedDealers,
+    });
+  } catch (err) {
+    console.error("Browse Dealers Error:", err);
+    next(ErrorHandler(500, "Failed to fetch dealers"));
+  }
+}
