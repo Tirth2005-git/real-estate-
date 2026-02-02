@@ -23,11 +23,38 @@ export async function updateUser(req, res, next) {
       "pfp",
       "pfpid",
       "companyDescription",
+      "notificationPreferences", // ✅ Add this
     ];
 
-    const hasValidField = allowedFields.some(
-      (field) => req.body[field] && req.body[field].toString().trim(),
-    );
+    // Check if at least one allowed field has value
+    const hasValidField = allowedFields.some((field) => {
+      const value = req.body[field];
+
+      if (!value) return false;
+
+      // For notificationPreferences (object), check if it has any data
+      if (field === "notificationPreferences") {
+        const prefs = value;
+        return (
+          (prefs.localities && prefs.localities.length > 0) ||
+          (prefs.propertyTypes && prefs.propertyTypes.length > 0) ||
+          (prefs.listingTypes && prefs.listingTypes.length > 0)
+        );
+      }
+
+      // For arrays (like localities), check length
+      if (Array.isArray(value)) {
+        return value.length > 0;
+      }
+
+      // For strings, check if not empty after trim
+      if (typeof value === "string") {
+        return value.trim().length > 0;
+      }
+
+      // For other types (like pfp string)
+      return true;
+    });
 
     if (!hasValidField) {
       return next(ErrorHandler(400, "At least one field is required"));
@@ -43,11 +70,28 @@ export async function updateUser(req, res, next) {
 
     let cleanBody = {};
     Object.keys(req.body).forEach((key) => {
-      if (req.body[key] && req.body[key].toString().trim()) {
-        cleanBody[key] = req.body[key];
+      if (req.body[key] !== null && req.body[key] !== undefined) {
+        // Handle different types of values
+        if (typeof req.body[key] === "string") {
+          const trimmed = req.body[key].trim();
+          if (trimmed.length > 0) {
+            cleanBody[key] = trimmed;
+          }
+        } else if (Array.isArray(req.body[key])) {
+          if (req.body[key].length > 0) {
+            cleanBody[key] = req.body[key];
+          }
+        } else if (typeof req.body[key] === "object") {
+          // For objects like notificationPreferences
+          cleanBody[key] = req.body[key];
+        } else {
+          // For other types (numbers, booleans)
+          cleanBody[key] = req.body[key];
+        }
       }
     });
 
+    // Email validation
     if (cleanBody.personalContactValue || cleanBody.companyContactValue) {
       const emailConditions = [];
 
@@ -73,6 +117,7 @@ export async function updateUser(req, res, next) {
       }
     }
 
+    // Username validation
     if (cleanBody.username) {
       const usernameCheck = await User.findOne({
         username: cleanBody.username.trim(),
@@ -84,10 +129,12 @@ export async function updateUser(req, res, next) {
       }
     }
 
+    // Password hashing
     if (cleanBody.password) {
       cleanBody.password = await bcrypt.hash(cleanBody.password, 10);
     }
 
+    // Trim string fields
     const stringFields = [
       "username",
       "personalContactValue",
@@ -102,6 +149,17 @@ export async function updateUser(req, res, next) {
         cleanBody[field] = cleanBody[field].trim();
       }
     });
+
+    // Handle notification preferences for non-builders
+    if (req.user.role !== "builder") {
+      if (req.body.notificationPreferences) {
+        cleanBody.notificationPreferences = {
+          localities: req.body.notificationPreferences.localities || [],
+          propertyTypes: req.body.notificationPreferences.propertyTypes || [],
+          listingTypes: req.body.notificationPreferences.listingTypes || [],
+        };
+      }
+    }
 
     const updatedUser = await User.findByIdAndUpdate(
       req.params.id,
@@ -122,6 +180,7 @@ export async function updateUser(req, res, next) {
       user: userResponse,
     });
   } catch (err) {
+    console.log("Update user error:", err.message);
     next(ErrorHandler(500, err.message));
   }
 }

@@ -131,7 +131,7 @@ export async function updateList(req, res, next) {
     let imagestodel = JSON.parse(req.body["imgstodel"]);
     let newimgs = JSON.parse(req.body["newimgs"]);
     let price = parseInt(req.body["price"]);
-    const listingid = JSON.parse(req.body["listingid"]);
+    const listingid = req.body["listingid"];
     const specialOffer = req.body["specialoffer"]
       ? JSON.parse(req.body["specialoffer"]).trim()
       : "";
@@ -145,6 +145,8 @@ export async function updateList(req, res, next) {
     Object.keys(text_data).forEach((key) => {
       if (text_data[key] && text_data[key].toString().trim()) {
         updatedtextdata[key] = text_data[key];
+      } else if (Array.isArray(text_data[key])) {
+        updatedtextdata[key] = text_data[key];
       }
     });
 
@@ -154,43 +156,37 @@ export async function updateList(req, res, next) {
       images = images.filter((img) => !idsToDelete.includes(img.public_id));
       await delimages(...imagestodel);
       newimgarr.push(...images);
+    } else {
+      newimgarr.push(...listing.images);
     }
 
     if (newimgs.length > 0) {
       newimgarr.push(...newimgs);
     }
 
+    if (newimgarr.length === 0) {
+      return next(ErrorHandler(400, "At least one image is required"));
+    }
+
     const updateData = {
       title: updatedtextdata.title?.trim() || listing.title,
-      listingType:
-        updatedtextdata.listingType?.toLowerCase() || listing.listingType,
-      propertyType:
-        updatedtextdata.propertyType?.toLowerCase() || listing.propertyType,
       description: updatedtextdata.description?.trim() || listing.description,
-
-      bhk: updatedtextdata.bhk || listing.bhk,
       area: updatedtextdata.area ? Number(updatedtextdata.area) : listing.area,
-
-      images: newimgarr.length > 0 ? newimgarr : listing.images,
-
+      images: newimgarr,
       specialOffer: specialOffer || "",
-
-      features: updatedtextdata.features || [],
-
+      features: updatedtextdata.features,
       status: updatedtextdata.status?.toLowerCase() || listing.status,
-
       location: {
-        locality:
-          updatedtextdata.locality?.trim().toLowerCase() ||
-          listing.location?.locality,
+        locality: listing.location.locality,
+
         address: updatedtextdata.address?.trim() || listing.location?.address,
       },
-
       listedBy: {
         userId: listing.listedBy.userId,
         role: listing.listedBy.role,
         dealerType: listing.listedBy.dealerType,
         companyName: listing.listedBy.companyName,
+
         name: updatedtextdata.name?.trim() || listing.listedBy.name,
         contact: {
           email:
@@ -216,13 +212,6 @@ export async function updateList(req, res, next) {
     });
   } catch (err) {
     console.error("Update listing error:", err);
-
-    // Handle validation errors
-    if (err.name === "ValidationError") {
-      const errors = Object.values(err.errors).map((e) => e.message);
-      return next(ErrorHandler(400, errors.join(", ")));
-    }
-
     next(ErrorHandler(500, err.message));
   }
 }

@@ -27,13 +27,15 @@ function UpdateListing() {
     images,
   } = listing;
 
-  const [propertyCategory, setPropertyCategory] = useState(
-    ["flat", "bungalow", "villa", "studio apartment", "builder floor"].includes(
-      propertyType,
-    )
-      ? "residential"
-      : "commercial",
-  );
+  const propertyCategory = [
+    "flat",
+    "bungalow",
+    "villa",
+    "studio apartment",
+    "builder floor",
+  ].includes(propertyType)
+    ? "residential"
+    : "commercial";
 
   const fileref = useRef(0);
   const [formdata, setFormData] = useState({
@@ -43,11 +45,9 @@ function UpdateListing() {
     price: price || "",
     specialOffer: specialOffer || "",
     status: status || "available",
-    propertyType: propertyType || "",
-    listingType: listingType || "",
-    bhk: bhk || "",
+
     area: area || "",
-    locality: propertyLocation?.locality || "",
+
     address: propertyLocation?.address || "",
     name: listedBy?.name || "",
     email: listedBy?.contact?.email || "",
@@ -84,12 +84,14 @@ function UpdateListing() {
 
   async function handleUpdate(e) {
     try {
+      e.preventDefault();
+
       if (Object.keys(formdata).length === 0) {
-        dispatch(updatefailure("Please Enter Credentials To update"));
+        setUpdateError("Please Enter Credentials To update");
         return;
       }
+
       setUpdating("updating");
-      e.preventDefault();
 
       const trimmedData = {};
       Object.keys(formdata).forEach((key) => {
@@ -102,16 +104,16 @@ function UpdateListing() {
         }
       });
 
-      if (trimmedData.newimgURLs.length + oldImages.length === 0) {
+      const totalImages =
+        (trimmedData.newimgURLs?.length || 0) + oldImages.length;
+      if (totalImages === 0) {
         setUpdateError("At least 1 image is required");
         setUpdating("idle");
         return;
       }
 
-      if (
-        trimmedData.email &&
-        trimmedData.email !== listings[index].listedBy.contact.email
-      ) {
+      // Email validation if changed
+      if (trimmedData.email && trimmedData.email !== listedBy?.contact?.email) {
         const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
         if (!emailRegex.test(trimmedData.email)) {
           setUpdateError("Please enter a valid email address");
@@ -155,36 +157,30 @@ function UpdateListing() {
         trimmedData.status = "available";
       }
 
-      setFormData(trimmedData);
-
       const {
         newImages,
         imagesToDel,
         newimgURLs,
         price,
         specialOffer,
-        locality,
         address,
-        bhk,
         area,
         ...rest
       } = trimmedData;
 
       const textData = {
         ...rest,
-        bhk: bhk || null,
-        area: area || 100,
-        locality: locality || "",
+        area: area,
         address: address || "",
+        price: price,
+        specialOffer: specialOffer || "",
       };
-
       const formData = new FormData();
       formData.append("text-data", JSON.stringify(textData));
-      formData.append("newimgs", JSON.stringify(newimgURLs));
-      formData.append("imgstodel", JSON.stringify(imagesToDel));
-      formData.append("price", price);
-      formData.append("listingid", JSON.stringify(listings[index]._id));
-      formData.append("specialoffer", JSON.stringify(specialOffer || ""));
+      formData.append("newimgs", JSON.stringify(newimgURLs || []));
+      formData.append("imgstodel", JSON.stringify(imagesToDel || []));
+      formData.append("listingid", listing._id);
+      console.log(Object.fromEntries(formData));
 
       const res = await fetch(`/api/update/listing/${currentuser._id}`, {
         method: "POST",
@@ -202,7 +198,7 @@ function UpdateListing() {
       setUpdateError(null);
       dispatch(
         UpdateList(
-          listings.map((list, i) => (i !== index ? list : data.updatedlist)),
+          listings.map((list, i) => (i != index ? list : data.updatedlist)),
         ),
       );
     } catch (err) {
@@ -213,16 +209,20 @@ function UpdateListing() {
 
   async function handleUpload() {
     try {
-      setUploading("uploading");
-
-      if (
-        oldImages.length + formdata.newImages.length > 5 ||
-        formdata.newImages.length === 0
-      ) {
+      const totalCurrentImages = oldImages.length + formdata.newImages.length;
+      if (totalCurrentImages > 5) {
         setUploading("idle");
-        setError("Invalid file quanity");
+        setError("Maximum 5 images allowed");
         return;
       }
+
+      if (formdata.newImages.length === 0) {
+        setUploading("idle");
+        setError("Please select images to upload");
+        return;
+      }
+
+      setUploading("uploading");
 
       const formData = new FormData();
       formdata.newImages.forEach((file) =>
@@ -241,7 +241,11 @@ function UpdateListing() {
         return;
       }
 
-      setFormData({ ...formdata, newimgURLs: data.uploadedurls });
+      setFormData({
+        ...formdata,
+        newimgURLs: [...(formdata.newimgURLs || []), ...data.uploadedurls],
+        newImages: [], // Clear after successful upload
+      });
       setUploading("success");
       setError(null);
     } catch (err) {
@@ -266,127 +270,6 @@ function UpdateListing() {
     setOldImages((prev) => prev.filter((_, i) => i !== index));
   }
 
-  const residentialTypes = [
-    "flat",
-    "bungalow",
-    "villa",
-    "studio apartment",
-    "builder floor",
-  ];
-  const commercialTypes = [
-    "office space",
-    "shop",
-    "showroom",
-    "warehouse",
-    "industrial",
-  ];
-
-  const mumbaiLocalities = [
-   "colaba",
-  "nariman point",
-  "marine lines",
-  "churchgate",
-  "fort",
-  "cuffe parade",
-  "malabar hill",
-  "walkeshwar",
-  "breach candy",
-  "tardeo",
-  "haji ali",
-  "worli",
-  "lower parel",
-  "prabhadevi",
-  "dadar",
-  "mahim",
-  "matunga",
-  "sion",
-
-  "bandra",
-  "khar",
-  "santacruz",
-  "vile parle",
-  "andheri",
-  "jogeshwari",
-  "goregaon",
-  "malad",
-  "kandivali",
-  "borivali",
-  "dahisar",
-
-  "kurla",
-  "vidyavihar",
-  "ghatkopar",
-  "vikroli",
-  "bhandup",
-  "mulund",
-  "thane",
-  "kalyan",
-  "dombivli",
-  "ambernath",
-  "badlapur",
-
-  "mankhurd",
-  "govandi",
-  "chembur",
-  "tilak nagar",
-  "koperkhairane",
-  "navi mumbai",
-  "nerul",
-  "vashi",
-  "sanpada",
-  "seawoods",
-  "belapur",
-  "kharghar",
-  "panvel",
-
-  "byculla",
-  "mazgaon",
-  "parel",
-  "lalbaug",
-  "chinchpokli",
-  "sewri",
-  "wadala",
-  "sion",
-  "king circle",
-  "mumbai central",
-  "grant road",
-  "charni road",
-  "matunga west",
-  "dadar west",
-  "prabhadevi west",
-  "dadar east",
-  "parel east",
-  "mahalakshmi",
-  "mahim west",
-  "bandra west",
-  "bandra east",
-  "khar west",
-  "khar east",
-  "santacruz east",
-  "santacruz west",
-  "vile parle east",
-  "vile parle west",
-  "andheri east",
-  "andheri west",
-  "jogeshwari east",
-  "jogeshwari west",
-  "goregaon east",
-  "goregaon west",
-  "malad east",
-  "malad west",
-  "kandivali east",
-  "kandivali west",
-  "borivali east",
-  "borivali west",
-  "dahisar east",
-  "dahisar west",
-  "mira road",
-  "bhayandar",
-  "naigaon",
-  "vasai",
-  "virar",
-  ];
-
   const residentialFeatures = [
     "Swimming Pool",
     "Gym",
@@ -408,6 +291,7 @@ function UpdateListing() {
     "Air Conditioning",
     "Geyser",
   ];
+
   const commercialFeatures = [
     "24/7 Security",
     "Lift/Elevator",
@@ -427,483 +311,489 @@ function UpdateListing() {
     "Bank Nearby",
     "Restaurant Nearby",
   ];
+
   const featuresList =
     propertyCategory === "residential"
       ? residentialFeatures
       : commercialFeatures;
 
   return (
-    <>
-      <h1 className="text-center text-black font-bold mt-4 text-xl sm:text-2xl">
+    <div className="max-w-6xl mx-auto p-4 pt-24">
+      <h1 className="text-2xl md:text-3xl font-bold text-center text-gray-800 mb-8">
         Update Your Listing
       </h1>
 
       <form
-        className="bg-gray-200 mx-auto flex flex-col md:flex-row p-4 sm:p-6 justify-between gap-6 rounded-xl max-w-5xl mt-4"
+        className="bg-white shadow-lg rounded-xl p-4 md:p-8 grid grid-cols-1 lg:grid-cols-2 gap-8"
         onSubmit={handleUpdate}
       >
-        <div className="w-full md:w-1/2">
-          <div className="flex flex-col gap-4 w-full">
+        {/* Left Column - Property Details */}
+        <div className="space-y-6">
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Title *
+            </label>
             <input
               type="text"
-              placeholder="Title"
+              placeholder="Enter property title"
               id="title"
-              className="p-2 w-full bg-white text-black rounded-lg"
+              className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"
               value={formdata.title}
               onChange={(e) =>
                 setFormData({ ...formdata, [e.target.id]: e.target.value })
               }
+              required
             />
+          </div>
 
-            <div className="w-full">
-              <label htmlFor="listingType" className="block text-black mb-1">
-                Listing Type:
+          {/* Locked Fields Section */}
+          <div className="bg-gray-50 p-4 rounded-lg space-y-4">
+            <h3 className="font-medium text-gray-700">Locked Information</h3>
+
+            <div>
+              <label className="block text-sm text-gray-600 mb-2">
+                Listing Type
               </label>
-              <div className="flex flex-wrap gap-4">
-                <label className="flex items-center">
-                  <input
-                    type="radio"
-                    value="rent"
-                    id="listingType"
-                    name="listing-type"
-                    className="mr-2"
-                    checked={formdata.listingType === "rent"}
-                    onChange={(e) =>
-                      setFormData({
-                        ...formdata,
-                        [e.target.id]: e.target.value,
-                      })
-                    }
-                  />
-                  Rent
-                </label>
-                <label className="flex items-center">
-                  <input
-                    type="radio"
-                    value="sale"
-                    id="listingType"
-                    name="listing-type"
-                    className="mr-2"
-                    checked={formdata.listingType === "sale"}
-                    onChange={(e) =>
-                      setFormData({
-                        ...formdata,
-                        [e.target.id]: e.target.value,
-                      })
-                    }
-                  />
-                  Sale
-                </label>
+              <div className="flex gap-6">
+                <span className="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg">
+                  {listingType}
+                </span>
               </div>
             </div>
 
-            <div className="w-full">
-              <label className="block text-sm font-medium text-gray-700 mb-2">
+            <div>
+              <label className="block text-sm text-gray-600 mb-2">
                 Property Category
               </label>
-              <div className="flex flex-wrap gap-4">
-                <label className="flex items-center space-x-2">
-                  <input
-                    type="radio"
-                    name="propertyCategory"
-                    value="residential"
-                    checked={propertyCategory === "residential"}
-                    onChange={(e) => setPropertyCategory(e.target.value)}
-                    className="text-blue-600 focus:ring-blue-500"
-                  />
-                  <span className="text-gray-700">Residential</span>
-                </label>
-                <label className="flex items-center space-x-2">
-                  <input
-                    type="radio"
-                    name="propertyCategory"
-                    value="commercial"
-                    checked={propertyCategory === "commercial"}
-                    onChange={(e) => setPropertyCategory(e.target.value)}
-                    className="text-blue-600 focus:ring-blue-500"
-                  />
-                  <span className="text-gray-700">Commercial</span>
-                </label>
-              </div>
+              <span className="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg capitalize">
+                {propertyCategory}
+              </span>
             </div>
 
-            <div className="w-full">
-              <label className="block text-sm font-medium text-gray-700 mb-2">
+            <div>
+              <label className="block text-sm text-gray-600 mb-2">
                 Property Type
               </label>
-              <div className="flex flex-wrap gap-4">
-                {(propertyCategory === "residential"
-                  ? residentialTypes
-                  : commercialTypes
-                ).map((type) => (
-                  <label key={type} className="flex items-center space-x-2">
-                    <input
-                      type="radio"
-                      name="propertyType"
-                      id="propertyType"
-                      value={type}
-                      checked={formdata.propertyType === type}
-                      onChange={(e) =>
-                        setFormData({
-                          ...formdata,
-                          [e.target.id]: e.target.value,
-                        })
-                      }
-                      className="text-blue-600 focus:ring-blue-500"
-                    />
-                    <span className="capitalize text-gray-700">{type}</span>
-                  </label>
-                ))}
-              </div>
+              <span className="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg capitalize">
+                {propertyType}
+              </span>
             </div>
 
             {propertyCategory === "residential" && (
-              <div className="w-full">
-                <label htmlFor="bhk" className="block text-black mb-1">
-                  BHK Configuration:
+              <div>
+                <label className="block text-sm text-gray-600 mb-2">
+                  BHK Configuration
                 </label>
-                <select
-                  id="bhk"
-                  className="p-2 w-full bg-white text-black rounded-lg"
-                  value={formdata.bhk}
-                  onChange={(e) =>
-                    setFormData({ ...formdata, [e.target.id]: e.target.value })
-                  }
-                >
-                  <option value="">Select BHK</option>
-                  <option value="1 BHK">1 BHK</option>
-                  <option value="2 BHK">2 BHK</option>
-                  <option value="3 BHK">3 BHK</option>
-                  <option value="4 BHK">4 BHK</option>
-                  <option value="Studio">Studio</option>
-                </select>
+                <span className="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg">
+                  {bhk || "Not specified"}
+                </span>
               </div>
             )}
 
+            <div>
+              <label className="block text-sm text-gray-600 mb-2">
+                Locality
+              </label>
+              <span className="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg capitalize">
+                {location.locality}
+              </span>
+            </div>
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Description *
+            </label>
             <textarea
               id="description"
-              placeholder="Enter description of property"
-              className="p-2 w-full h-36 bg-white text-black rounded-lg resize-none"
+              placeholder="Describe your property in detail..."
+              className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none h-32 resize-none"
               value={formdata.description}
               onChange={(e) =>
                 setFormData({ ...formdata, [e.target.id]: e.target.value })
               }
-            ></textarea>
+              required
+            />
+          </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div className="flex flex-col gap-2">
-                <label htmlFor="price" className="text-black mb-1">
-                  Price (₹):
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Price (₹) *
                 </label>
                 <input
                   type="number"
                   id="price"
-                  className="p-2 bg-white text-black rounded-lg"
+                  className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"
                   value={formdata.price}
                   onChange={(e) =>
                     setFormData({ ...formdata, [e.target.id]: e.target.value })
                   }
                   min="1000"
+                  required
                 />
+              </div>
 
-                <label htmlFor="area" className="text-black mb-1">
-                  Area (sq.ft):
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Area (sq.ft) *
                 </label>
                 <input
                   type="number"
                   id="area"
-                  className="p-2 bg-white text-black rounded-lg"
+                  className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"
                   value={formdata.area}
                   onChange={(e) =>
                     setFormData({ ...formdata, [e.target.id]: e.target.value })
                   }
                   min="100"
+                  required
                 />
-
-                <label htmlFor="specialOffer" className="text-black mb-1">
-                  Special Offer:
-                </label>
-                <textarea
-                  id="specialOffer"
-                  className="p-2 bg-white text-black h-24 rounded-lg resize-none"
-                  value={formdata.specialOffer}
-                  onChange={(e) =>
-                    setFormData({ ...formdata, [e.target.id]: e.target.value })
-                  }
-                ></textarea>
-              </div>
-
-              <div>
-                <label className="text-black mb-1 block">Features:</label>
-                <div className="grid grid-cols-2 gap-2 max-h-48 overflow-y-auto p-2 bg-white rounded">
-                  {featuresList.map((feature) => (
-                    <label
-                      key={feature}
-                      className="flex items-center space-x-2"
-                    >
-                      <input
-                        type="checkbox"
-                        checked={formdata.features.includes(feature)}
-                        onChange={(e) => {
-                          let newFeatures = [...formdata.features];
-                          if (e.target.checked) {
-                            newFeatures.push(feature);
-                          } else {
-                            newFeatures = newFeatures.filter(
-                              (f) => f !== feature,
-                            );
-                          }
-                          setFormData({
-                            ...formdata,
-                            features: newFeatures,
-                          });
-                        }}
-                        className="text-blue-600"
-                      />
-                      <span className="text-sm">{feature}</span>
-                    </label>
-                  ))}
-                </div>
-                <p className="text-xs text-gray-500 mt-1">
-                  Selected: {formdata.features.length} features
-                </p>
               </div>
             </div>
 
-            <div className="w-full mt-2">
-              <label className="block text-black mb-1">Status:</label>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Special Offer
+              </label>
+              <textarea
+                id="specialOffer"
+                className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none h-32 resize-none"
+                value={formdata.specialOffer}
+                onChange={(e) =>
+                  setFormData({ ...formdata, [e.target.id]: e.target.value })
+                }
+                placeholder="Any special offers or discounts?"
+              />
+            </div>
+          </div>
+        </div>
+
+        {/* Right Column - Features, Images, Contact */}
+        <div className="space-y-6">
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Features
+            </label>
+            <div className="border border-gray-300 rounded-lg p-4 max-h-64 overflow-y-auto">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                {featuresList.map((feature) => (
+                  <label
+                    key={feature}
+                    className="flex items-center space-x-2 p-1 hover:bg-gray-50 rounded"
+                  >
+                    <input
+                      type="checkbox"
+                      checked={formdata.features.includes(feature)}
+                      onChange={(e) => {
+                        const newFeatures = e.target.checked
+                          ? [...formdata.features, feature]
+                          : formdata.features.filter((f) => f !== feature);
+                        setFormData({ ...formdata, features: newFeatures });
+                      }}
+                      className="h-4 w-4 text-blue-600 rounded focus:ring-blue-500"
+                    />
+                    <span className="text-sm text-gray-700">{feature}</span>
+                  </label>
+                ))}
+              </div>
+            </div>
+            <p className="text-xs text-gray-500 mt-2">
+              Selected: {formdata.features.length} features
+            </p>
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Status *
+            </label>
+            <div className="flex flex-wrap gap-3">
               {["available", "rented", "sold", "under negotiation"].map(
                 (status) => (
-                  <label
-                    key={status}
-                    className="flex items-center space-x-2 mr-4"
-                  >
+                  <label key={status} className="flex items-center space-x-2">
                     <input
                       type="radio"
                       value={status}
                       name="status"
-                      className="mr-2"
                       checked={formdata.status === status}
                       onChange={(e) =>
-                        setFormData({
-                          ...formdata,
-                          status: e.target.value,
-                        })
+                        setFormData({ ...formdata, status: e.target.value })
                       }
+                      className="h-4 w-4 text-blue-600"
                     />
-                    <span className="capitalize">{status}</span>
+                    <span className="capitalize text-gray-700">{status}</span>
                   </label>
                 ),
               )}
             </div>
           </div>
-        </div>
 
-        <div className="w-full md:w-1/2">
-          <div className="flex flex-col gap-4 w-full">
-            <label className="block text-black mb-2">Location Details</label>
-            <div className="flex flex-col gap-3">
-              <select
-                id="locality"
-                className="p-2 bg-white text-black rounded-lg"
-                value={formdata.locality}
-                onChange={(e) =>
-                  setFormData({ ...formdata, [e.target.id]: e.target.value })
-                }
-              >
-                <option value="">Select Mumbai Locality</option>
-                {mumbaiLocalities.map((locality) => (
-                  <option key={locality} value={locality}>
-                    {locality}
-                  </option>
-                ))}
-              </select>
+          {/* Contact Details */}
+          <div className="space-y-4">
+            <h3 className="font-medium text-gray-700">Contact Details</h3>
 
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Your Name
+              </label>
               <input
                 type="text"
-                placeholder="Complete Address"
-                className="p-2 bg-white text-black rounded-lg"
-                id="address"
-                value={formdata.address}
+                id="name"
+                placeholder="Enter your name"
+                className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"
+                value={formdata.name}
                 onChange={(e) =>
                   setFormData({ ...formdata, [e.target.id]: e.target.value })
                 }
               />
             </div>
 
-            <label className="block text-black mb-2 mt-4">
-              Contact Details
-            </label>
-            <input
-              type="text"
-              placeholder="Your Name"
-              id="name"
-              className="p-2 w-full bg-white text-black rounded-lg"
-              value={formdata.name}
-              onChange={(e) =>
-                setFormData({ ...formdata, [e.target.id]: e.target.value })
-              }
-            />
-            <input
-              type="email"
-              placeholder="Email"
-              id="email"
-              className="p-2 w-full bg-white text-black rounded-lg"
-              value={formdata.email}
-              onChange={(e) =>
-                setFormData({ ...formdata, [e.target.id]: e.target.value })
-              }
-            />
-            <input
-              type="tel"
-              placeholder="Phone Number"
-              id="phone"
-              pattern="[0-9]{10}"
-              title="Phone number must be 10 digits"
-              className="p-2 w-full bg-white text-black rounded-lg"
-              value={formdata.phone}
-              onChange={(e) =>
-                setFormData({ ...formdata, [e.target.id]: e.target.value })
-              }
-            />
-
-            {/* Image Upload */}
-            <label htmlFor="images" className="mt-3 text-black block">
-              Upload Images:
-              <span className="text-slate-400 ml-2">Maximum 5 images</span>
-            </label>
-
-            <div className="w-full bg-white rounded-2xl shadow-md p-4">
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                <label
-                  className="text-sm font-medium text-gray-700 hover:underline cursor-pointer"
-                  onClick={() => fileref.current.click()}
-                >
-                  Select images
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Email
                 </label>
-                <p className="text-red-500">
-                  Images:{" "}
-                  <span className="ml-2">
-                    {oldImages.length + formdata.newImages.length}/5
-                  </span>
-                </p>
-                <div className="flex items-center gap-2">
-                  <input
-                    id="images"
-                    type="file"
-                    accept="image/*"
-                    className="hidden"
-                    onChange={(e) =>
-                      setFormData({
-                        ...formdata,
-                        newImages: Array.from(e.target.files),
-                      })
-                    }
-                    multiple
-                    name="property-pics"
-                    ref={fileref}
-                  />
-                  <button
-                    type="button"
-                    className="bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold py-2 px-4 rounded-md"
-                    onClick={handleUpload}
-                    disabled={uploading === "uploading"}
-                  >
-                    {uploading === "uploading" ? "Uploading..." : "Upload"}
-                  </button>
-                </div>
+                <input
+                  type="email"
+                  id="email"
+                  placeholder="your@email.com"
+                  className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"
+                  value={formdata.email}
+                  onChange={(e) =>
+                    setFormData({ ...formdata, [e.target.id]: e.target.value })
+                  }
+                />
               </div>
 
-              {uploading === "uploading" && (
-                <p className="text-yellow-500 mt-2">Uploading...</p>
-              )}
-              {ferror && <p className="text-red-400 mt-2">{ferror}</p>}
-              {uploading === "success" && (
-                <p className="text-green-400 mt-2">✅ Upload successful</p>
-              )}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Phone *
+                </label>
+                <input
+                  type="tel"
+                  id="phone"
+                  placeholder="10-digit number"
+                  className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"
+                  value={formdata.phone}
+                  onChange={(e) =>
+                    setFormData({ ...formdata, [e.target.id]: e.target.value })
+                  }
+                  pattern="[0-9]{10}"
+                  required
+                />
+              </div>
+            </div>
+          </div>
 
-              {formdata.newImages.length > 0 && (
-                <div className="mt-4">
-                  <p className="text-sm font-medium text-gray-700 mb-2">
-                    New Images:
-                  </p>
-                  <div className="flex flex-col gap-2">
-                    {formdata.newImages.map((image, index) => (
-                      <div
-                        key={index}
-                        className="flex justify-between items-center p-3 rounded-lg border border-gray-200 bg-white shadow-sm"
-                      >
-                        <img
-                          src={URL.createObjectURL(image)}
-                          className="w-12 h-12 object-cover rounded"
-                          alt={`new-${index}`}
-                        />
-                        <button
-                          type="button"
-                          onClick={() => handleNewDelete(index)}
-                          className="text-red-500 text-xs font-semibold hover:text-red-600 px-3 py-1 bg-red-50 rounded"
-                        >
-                          Delete
-                        </button>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
+          {/* Address */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Complete Address
+            </label>
+            <textarea
+              id="address"
+              placeholder="Enter full address including landmark, street, etc."
+              className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none h-24 resize-none"
+              value={formdata.address}
+              onChange={(e) =>
+                setFormData({ ...formdata, [e.target.id]: e.target.value })
+              }
+            />
+          </div>
 
-              {oldImages.length > 0 && (
-                <div className="mt-4">
-                  <p className="text-sm font-medium text-gray-700 mb-2">
-                    Existing Images:
-                  </p>
-                  <div className="flex flex-col gap-2">
-                    {oldImages.map((image, index) => (
-                      <div
-                        key={index}
-                        className="flex justify-between items-center p-3 rounded-lg border border-gray-200 bg-white shadow-sm"
-                      >
-                        <img
-                          src={image.imageurl}
-                          className="w-12 h-12 object-cover rounded"
-                          alt={`old-${index}`}
-                        />
-                        <button
-                          type="button"
-                          onClick={() => handleOldDelete(index)}
-                          className="text-red-500 text-xs font-semibold hover:text-red-600 px-3 py-1 bg-red-50 rounded"
-                        >
-                          Delete
-                        </button>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
+          {/* Image Upload */}
+          <div className="space-y-4">
+            <div className="flex justify-between items-center">
+              <label className="block text-sm font-medium text-gray-700">
+                Images ({oldImages.length + (formdata.newimgURLs?.length || 0)}
+                /5)
+              </label>
+              <span className="text-xs text-gray-500">
+                At least 1 image required
+              </span>
             </div>
 
-            {/* Submit Button */}
-            <div className="flex flex-col items-center gap-3 mt-6">
-              <button
-                type="submit"
-                className="bg-green-800 rounded-lg w-72 p-2 text-white hover:opacity-90 transition-transform duration-150 active:scale-110 disabled:opacity-50"
-                disabled={update === "updating"}
-              >
-                {update === "updating" ? "Updating..." : "Update Listing"}
-              </button>
+            <div className="border border-gray-300 rounded-lg p-4">
+              <div className="flex items-center justify-between mb-4">
+                <button
+                  type="button"
+                  onClick={() => fileref.current.click()}
+                  className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition text-sm font-medium"
+                >
+                  Add Images
+                </button>
+                <button
+                  type="button"
+                  onClick={handleUpload}
+                  disabled={
+                    uploading === "uploading" || formdata.newImages.length === 0
+                  }
+                  className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {uploading === "uploading" ? "Uploading..." : "Upload Images"}
+                </button>
+              </div>
 
-              {update === "success" && (
-                <p className="text-green-500">
-                  ✅ Listing Updated Successfully!
+              <input
+                type="file"
+                accept="image/*"
+                className="hidden"
+                onChange={(e) => {
+                  const files = Array.from(e.target.files);
+                  const totalAfterNew =
+                    oldImages.length +
+                    (formdata.newimgURLs?.length || 0) +
+                    files.length;
+
+                  if (totalAfterNew > 5) {
+                    setError(
+                      `Maximum 5 images allowed. You have ${oldImages.length + (formdata.newimgURLs?.length || 0)} existing.`,
+                    );
+                    return;
+                  }
+
+                  setFormData({
+                    ...formdata,
+                    newImages: [...formdata.newImages, ...files],
+                  });
+                }}
+                multiple
+                ref={fileref}
+              />
+
+              {ferror && <p className="text-red-500 text-sm mb-2">{ferror}</p>}
+              {uploading === "success" && (
+                <p className="text-green-500 text-sm mb-2">
+                  ✅ Upload successful
                 </p>
               )}
-              {updateerror && (
-                <p className="text-red-500 text-center">{updateerror}</p>
-              )}
+
+              {/* Image Previews */}
+              <div className="space-y-3">
+                {/* Existing Images */}
+                {oldImages.length > 0 && (
+                  <div>
+                    <p className="text-sm font-medium text-gray-700 mb-2">
+                      Existing Images
+                    </p>
+                    <div className="space-y-2">
+                      {oldImages.map((image, index) => (
+                        <div
+                          key={index}
+                          className="flex items-center justify-between p-2 bg-gray-50 rounded"
+                        >
+                          <div className="flex items-center gap-3">
+                            <img
+                              src={image.imageurl}
+                              alt={`existing-${index}`}
+                              className="w-12 h-12 object-cover rounded"
+                            />
+                            <span className="text-sm text-gray-600">
+                              Existing image {index + 1}
+                            </span>
+                          </div>
+                          <button
+                            type="button"
+                            onClick={() => handleOldDelete(index)}
+                            className="text-red-500 hover:text-red-700 text-sm font-medium px-3 py-1 bg-red-50 rounded"
+                          >
+                            Remove
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* New Images (not yet uploaded) */}
+                {formdata.newImages.length > 0 && (
+                  <div>
+                    <p className="text-sm font-medium text-gray-700 mb-2">
+                      New Images to Upload
+                    </p>
+                    <div className="space-y-2">
+                      {formdata.newImages.map((image, index) => (
+                        <div
+                          key={index}
+                          className="flex items-center justify-between p-2 bg-blue-50 rounded"
+                        >
+                          <div className="flex items-center gap-3">
+                            <img
+                              src={URL.createObjectURL(image)}
+                              alt={`new-${index}`}
+                              className="w-12 h-12 object-cover rounded"
+                            />
+                            <span className="text-sm text-gray-600">
+                              {image.name}
+                            </span>
+                          </div>
+                          <button
+                            type="button"
+                            onClick={() => handleNewDelete(index)}
+                            className="text-red-500 hover:text-red-700 text-sm font-medium px-3 py-1 bg-red-50 rounded"
+                          >
+                            Remove
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* Already Uploaded New Images */}
+                {formdata.newimgURLs && formdata.newimgURLs.length > 0 && (
+                  <div>
+                    <p className="text-sm font-medium text-gray-700 mb-2">
+                      Newly Uploaded Images
+                    </p>
+                    <div className="space-y-2">
+                      {formdata.newimgURLs.map((image, index) => (
+                        <div
+                          key={index}
+                          className="flex items-center justify-between p-2 bg-green-50 rounded"
+                        >
+                          <div className="flex items-center gap-3">
+                            <img
+                              src={image.imageurl}
+                              alt={`uploaded-${index}`}
+                              className="w-12 h-12 object-cover rounded"
+                            />
+                            <span className="text-sm text-gray-600">
+                              Uploaded image {index + 1}
+                            </span>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
             </div>
+          </div>
+
+          {/* Submit Button */}
+          <div className="pt-4 border-t">
+            <button
+              type="submit"
+              disabled={update === "updating"}
+              className="w-full bg-green-600 text-white py-3 rounded-lg hover:bg-green-700 transition font-medium disabled:opacity-70 disabled:cursor-not-allowed"
+            >
+              {update === "updating" ? "Updating..." : "Update Listing"}
+            </button>
+
+            {update === "success" && (
+              <p className="text-green-600 text-center mt-2">
+                ✅ Listing updated successfully!
+              </p>
+            )}
+            {updateerror && (
+              <p className="text-red-500 text-center mt-2">{updateerror}</p>
+            )}
           </div>
         </div>
       </form>
-    </>
+    </div>
   );
 }
 

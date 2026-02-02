@@ -13,6 +13,21 @@ import { clearProperties } from "../redux/propertiesSlice.jsx";
 import Select from "react-select";
 
 function Profile() {
+  const PROPERTY_TYPES = [
+    "Flat",
+    "Bungalow",
+    "Villa",
+    "Studio Apartment",
+    "Builder Floor",
+    "Office Space",
+    "Shop",
+    "Showroom",
+    "Warehouse",
+    "Industrial",
+  ];
+
+  const LISTING_TYPES = ["rent", "sale"];
+
   const mumbaiLocalities = [
     "colaba",
     "nariman point",
@@ -133,6 +148,11 @@ function Profile() {
   const [ferror, setError] = useState(null);
   const [formData, setFormData] = useState({});
   const [success, setSuccess] = useState(false);
+  const [notificationPrefs, setNotificationPrefs] = useState({
+    localities: currentuser.notificationPreferences?.localities || [],
+    propertyTypes: currentuser.notificationPreferences?.propertyTypes || [],
+    listingTypes: currentuser.notificationPreferences?.listingTypes || [],
+  });
 
   useEffect(() => {
     if (success) {
@@ -196,10 +216,56 @@ function Profile() {
 
   async function handleSubmit(e) {
     e.preventDefault();
+    const cleanPayload = {};
+    Object.keys(formData).forEach((key) => {
+      const value = formData[key];
+      if (value !== null && value !== undefined) {
+        if (
+          typeof value === "string" ||
+          typeof value === "number" ||
+          Array.isArray(value)
+        ) {
+          cleanPayload[key] = value;
+        }
+      }
+    });
+    const payload = {
+      ...cleanPayload,
+    };
 
-    if (Object.keys(formData).length === 0) {
-      dispatch(updatefailure("Please Enter Credentials To update"));
+    if (currentuser.role !== "builder") {
+      payload.notificationPreferences = {
+        localities: notificationPrefs.localities || [],
+        propertyTypes: notificationPrefs.propertyTypes || [],
+        listingTypes: notificationPrefs.listingTypes || [],
+      };
+    }
+
+    const hasProfileUpdates = Object.keys(formData).length > 0;
+
+    const hasNotificationUpdates =
+      currentuser.role !== "builder" &&
+      notificationPrefs &&
+      (notificationPrefs.localities?.length ||
+        notificationPrefs.propertyTypes?.length ||
+        notificationPrefs.listingTypes?.length);
+
+    if (!hasProfileUpdates && !hasNotificationUpdates) {
+      dispatch(updatefailure("Nothing to update"));
       return;
+    }
+    if (hasNotificationUpdates) {
+      if (
+        !notificationPrefs.localities ||
+        notificationPrefs.localities.length === 0
+      ) {
+        dispatch(
+          updatefailure(
+            "Please select at least one locality for notifications",
+          ),
+        );
+        return;
+      }
     }
 
     const allowedDomains = [
@@ -235,7 +301,7 @@ function Profile() {
         return;
       }
 
-      formData.personalContactValue = trimmedEmail;
+      payload.personalContactValue = trimmedEmail;
     }
 
     if (formData.companyContactValue) {
@@ -258,7 +324,7 @@ function Profile() {
         );
         return;
       }
-      formData.companyContactValue = trimmedCompanyEmail;
+      payload.companyContactValue = trimmedCompanyEmail;
     }
 
     if (currentuser.role === "dealer" && formData.localities) {
@@ -278,7 +344,7 @@ function Profile() {
         dispatch(updatefailure("Username must be more than 3 characters"));
         return;
       }
-      formData.username = trimmedUsername;
+      payload.username = trimmedUsername;
     }
 
     if (
@@ -301,19 +367,21 @@ function Profile() {
 
     try {
       dispatch(updatestart());
-      console.log("Sending update data:", formData);
+
+      console.log("Payload to send:", JSON.stringify(payload, null, 2));
 
       const res = await fetch(`/api/update/${currentuser._id}`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(formData),
+        body: JSON.stringify(payload),
       });
+
       const data = await res.json();
       if (!res.ok) {
         dispatch(updatefailure(data.message));
         return;
       }
-
+      console.log(payload);
       dispatch(updatesucccess(data.user));
       setFormData({});
       setSuccess(true);
@@ -521,6 +589,118 @@ function Profile() {
               }
               rows="3"
             />
+          </div>
+        )}
+        {currentuser.role != "builder" && (
+          <div className="w-full border-t border-gray-300 pt-4 mt-4">
+            <h2 className="text-lg font-semibold mb-2">
+              Notification Preferences
+            </h2>
+
+            {/* Localities */}
+            <div className="mb-4">
+              <label className="text-sm text-gray-600">
+                Preferred Localities
+              </label>
+              <Select
+                isMulti
+                options={localityOptions}
+                defaultValue={localityOptions.filter((opt) =>
+                  currentuser.notificationPreferences?.localities?.includes(
+                    opt.value,
+                  ),
+                )}
+                placeholder="Select localities for notifications"
+                className="w-full"
+                onChange={(selected) => {
+                  const localities = selected
+                    ? selected.map((s) => s.value)
+                    : [];
+                  setNotificationPrefs((p) => ({
+                    ...p,
+                    localities: localities,
+                  }));
+                }}
+              />
+            </div>
+
+            {/* Listing Type */}
+            <div className="mb-4">
+              <label className="text-sm text-gray-600 block mb-1">
+                Listing Type
+              </label>
+              <div className="flex gap-4">
+                {LISTING_TYPES.map((type) => (
+                  <label key={type} className="flex items-center gap-2">
+                    <input
+                      type="checkbox"
+                      defaultChecked={currentuser.notificationPreferences?.listingTypes?.includes(
+                        type,
+                      )}
+                      onChange={(e) => {
+                        const isChecked = e.target.checked;
+                        setNotificationPrefs((p) => {
+                          const currentTypes = p.listingTypes || [];
+                          let newTypes;
+
+                          if (isChecked) {
+                            newTypes = [...currentTypes, type];
+                          } else {
+                            newTypes = currentTypes.filter((t) => t !== type);
+                          }
+
+                          return {
+                            ...p,
+                            listingTypes: newTypes,
+                          };
+                        });
+                      }}
+                    />
+                    <span className="capitalize">{type}</span>
+                  </label>
+                ))}
+              </div>
+            </div>
+
+            {/* Property Type */}
+            <div>
+              <label className="text-sm text-gray-600 block mb-1">
+                Property Type
+              </label>
+              <div className="grid grid-cols-2 gap-2">
+                {PROPERTY_TYPES.map((type) => (
+                  <label key={type} className="flex items-center gap-2">
+                    <input
+                      type="checkbox"
+                      defaultChecked={currentuser.notificationPreferences?.propertyTypes?.includes(
+                        type,
+                      )}
+                      onChange={(e) => {
+                        const isChecked = e.target.checked;
+                        setNotificationPrefs((p) => {
+                          const currentTypes = p.propertyTypes || [];
+                          let newTypes;
+
+                          if (isChecked) {
+                            // Add type if checked
+                            newTypes = [...currentTypes, type];
+                          } else {
+                            // Remove type if unchecked
+                            newTypes = currentTypes.filter((t) => t !== type);
+                          }
+
+                          return {
+                            ...p,
+                            propertyTypes: newTypes,
+                          };
+                        });
+                      }}
+                    />
+                    <span className="capitalize">{type}</span>
+                  </label>
+                ))}
+              </div>
+            </div>
           </div>
         )}
 

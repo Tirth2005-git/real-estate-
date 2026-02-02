@@ -66,6 +66,20 @@ const userschema = new mongoose.Schema(
     pfpid: {
       type: String,
     },
+    notificationPreferences: {
+      localities: {
+        type: [String],
+        default: [],
+      },
+      propertyTypes: {
+        type: [String],
+        default: [],
+      },
+      listingTypes: {
+        type: [String],
+        default: [],
+      },
+    },
   },
   { timestamps: true },
 );
