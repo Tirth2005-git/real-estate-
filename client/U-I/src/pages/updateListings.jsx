@@ -145,9 +145,9 @@ function UpdateListing() {
       }
 
       if (trimmedData.phone) {
-        const phoneRegex = /^[0-9]{10}$/;
+        const phoneRegex = /^[6-9]\d{9}$/;
         if (!phoneRegex.test(trimmedData.phone.replace(/\D/g, ""))) {
-          setUpdateError("Phone number must be 10 digits");
+          setUpdateError("Proper Indian Phone numer is required");
           setUpdating("idle");
           return;
         }
@@ -170,17 +170,25 @@ function UpdateListing() {
 
       const textData = {
         ...rest,
-        area: area,
-        address: address || "",
-        price: price,
+        area: area || listing.area,
+        address: address || listing.location?.address || "",
+        price: price || listing.price,
         specialOffer: specialOffer || "",
       };
+
       const formData = new FormData();
       formData.append("text-data", JSON.stringify(textData));
       formData.append("newimgs", JSON.stringify(newimgURLs || []));
       formData.append("imgstodel", JSON.stringify(imagesToDel || []));
+      formData.append("price", price || listing.price);
+      formData.append("specialoffer", JSON.stringify(specialOffer || ""));
       formData.append("listingid", listing._id);
-      console.log(Object.fromEntries(formData));
+
+      console.log("Frontend sending:", {
+        textData,
+        price: price || listing.price,
+        specialOffer: specialOffer || "",
+      });
 
       const res = await fetch(`/api/update/listing/${currentuser._id}`, {
         method: "POST",
@@ -198,7 +206,7 @@ function UpdateListing() {
       setUpdateError(null);
       dispatch(
         UpdateList(
-          listings.map((list, i) => (i != index ? list : data.updatedlist)),
+          listings.map((list, i) => (i !== index ? list : data.updatedlist)),
         ),
       );
     } catch (err) {
@@ -395,7 +403,7 @@ function UpdateListing() {
                 Locality
               </label>
               <span className="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg capitalize">
-                {location.locality}
+                {propertyLocation.locality}
               </span>
             </div>
           </div>

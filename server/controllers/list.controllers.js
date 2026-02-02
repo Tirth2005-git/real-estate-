@@ -168,6 +168,9 @@ export async function updateList(req, res, next) {
       return next(ErrorHandler(400, "At least one image is required"));
     }
 
+    console.log("Backend received text_data:", text_data);
+    console.log("Backend received price:", req.body["price"]);
+    console.log("Backend received specialoffer:", req.body["specialoffer"]);
     const updateData = {
       title: updatedtextdata.title?.trim() || listing.title,
       description: updatedtextdata.description?.trim() || listing.description,

@@ -125,9 +125,9 @@ function CreateListing() {
 
       // 5. Phone validation
       if (trimmedData.phone) {
-        const phoneRegex = /^[0-9]{10}$/;
+        const phoneRegex = /^[6-9]\d{9}$/;
         if (!phoneRegex.test(trimmedData.phone.replace(/\D/g, ""))) {
-          setCreateError("Phone number must be 10 digits");
+          setCreateError("Proper Indian Phone number is required");
           return;
         }
       }
