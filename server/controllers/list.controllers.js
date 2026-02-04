@@ -2,6 +2,8 @@ import Advertisement from "../models/advertisement.model.js";
 import { ErrorHandler } from "../utils/error.js";
 import Listing from "../models/listing.model.js";
 import { delimages } from "./fileuplds.controller.js";
+import { sendEmail } from "../utils/sendEmail.js";
+import  User  from "../models/users.model.js";
 export async function listController(req, res, next) {
   try {
     if (req.user.userid !== req.params.id) {
@@ -79,6 +81,44 @@ export async function listController(req, res, next) {
     });
 
     await newlisting.save();
+    const matchedUsers = await User.find({
+      role: { $ne: "builder" },
+
+      "notificationPreferences.localities": newlisting.location.locality,
+
+      $and: [
+        {
+          $or: [
+            { "notificationPreferences.propertyTypes": { $size: 0 } },
+            { "notificationPreferences.propertyTypes": newlisting.propertyType },
+          ],
+        },
+        {
+          $or: [
+            { "notificationPreferences.listingTypes": { $size: 0 } },
+            { "notificationPreferences.listingTypes": newlisting.listingType },
+          ],
+        },
+      ],
+    });
+    for (const user of matchedUsers) {
+      const email = user.personalContactValue || user.companyContactValue;
+
+      if (!email) continue;
+
+      await sendEmail(
+        email,
+        "New Property Matching Your Preference",
+        `
+      <h3>New Property Listed</h3>
+      <p><strong>Title:</strong> ${newlisting.title}</p>
+      <p><strong>Location:</strong> ${newlisting.location.locality}</p>
+      <p><strong>Type:</strong> ${newlisting.propertyType}</p>
+      <p><strong>For:</strong> ${newlisting.listingType}</p>
+      <p><strong>Price:</strong> ₹${newlisting.price}</p>
+    `,
+      );
+    }
 
     res.status(201).json({
       success: true,

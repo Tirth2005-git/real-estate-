@@ -5,6 +5,7 @@ import jwt from "jsonwebtoken";
 import Listing from "../models/listing.model.js";
 import  Advertisement from "../models/advertisement.model.js"
 
+
 export async function signUp(req, res, next) {
   try {
     let {

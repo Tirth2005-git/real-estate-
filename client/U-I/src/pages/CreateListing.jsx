@@ -188,6 +188,7 @@ function CreateListing() {
 
       if (!res.ok) {
         setCreateError(data.message || "Failed to create listing");
+        setCreateUploading("idle")
         return;
       }
 
