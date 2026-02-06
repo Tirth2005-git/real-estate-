@@ -129,7 +129,7 @@ export async function updateUser(req, res, next) {
       }
     }
 
-    // Password hashing
+    
     if (cleanBody.password) {
       cleanBody.password = await bcrypt.hash(cleanBody.password, 10);
     }
@@ -150,7 +150,7 @@ export async function updateUser(req, res, next) {
       }
     });
 
-    // Handle notification preferences for non-builders
+    
     if (req.user.role !== "builder") {
       if (req.body.notificationPreferences) {
         cleanBody.notificationPreferences = {

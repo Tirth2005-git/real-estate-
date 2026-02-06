@@ -3,8 +3,7 @@ import bcrypt from "bcryptjs";
 import { ErrorHandler } from "../utils/error.js";
 import jwt from "jsonwebtoken";
 import Listing from "../models/listing.model.js";
-import  Advertisement from "../models/advertisement.model.js"
-
+import Advertisement from "../models/advertisement.model.js";
 
 export async function signUp(req, res, next) {
   try {
@@ -27,21 +26,32 @@ export async function signUp(req, res, next) {
     dealerType = dealerType?.trim();
     companyName = companyName?.trim();
     companyAddress = companyAddress?.trim();
-    companyContactValue = companyContactValue?.trim();
-    personalContactValue = personalContactValue?.trim();
     companyDescription = companyDescription?.trim();
+
+    personalContactValue = personalContactValue?.trim().toLowerCase();
+    companyContactValue = companyContactValue?.trim().toLowerCase();
 
     if (!username || !password || !role) {
       return next(ErrorHandler(400, "Invalid signup data"));
     }
 
     const hashedPassword = await bcrypt.hash(password, 10);
-
     let newsignup = null;
 
     if (role === "user") {
       if (!personalContactValue) {
         return next(ErrorHandler(400, "Email required"));
+      }
+
+      const existingEmail = await User.findOne({
+        $or: [
+          { personalContactValue },
+          { companyContactValue: personalContactValue },
+        ],
+      });
+
+      if (existingEmail) {
+        return next(ErrorHandler(409, "Email is already registered"));
       }
 
       newsignup = {
@@ -50,14 +60,29 @@ export async function signUp(req, res, next) {
         role,
         personalContactValue,
       };
-    } else if (role === "dealer") {
+    }
+
+    
+    else if (role === "dealer") {
       if (!localities || localities.length === 0) {
         return next(ErrorHandler(400, "Dealer localities required"));
       }
 
+      
       if (dealerType === "agency") {
         if (!companyName || !companyAddress || !companyContactValue) {
           return next(ErrorHandler(400, "Company details required"));
+        }
+
+        const existingEmail = await User.findOne({
+          $or: [
+            { personalContactValue: companyContactValue },
+            { companyContactValue },
+          ],
+        });
+
+        if (existingEmail) {
+          return next(ErrorHandler(409, "Email is already registered"));
         }
 
         newsignup = {
@@ -71,9 +96,23 @@ export async function signUp(req, res, next) {
           companyContactValue,
           ...(companyDescription && { companyDescription }),
         };
-      } else {
+      }
+
+    
+      else {
         if (!personalContactValue) {
           return next(ErrorHandler(400, "Email required"));
+        }
+
+        const existingEmail = await User.findOne({
+          $or: [
+            { personalContactValue },
+            { companyContactValue: personalContactValue },
+          ],
+        });
+
+        if (existingEmail) {
+          return next(ErrorHandler(409, "Email is already registered"));
         }
 
         newsignup = {
@@ -85,9 +124,23 @@ export async function signUp(req, res, next) {
           personalContactValue,
         };
       }
-    } else if (role === "builder") {
+    }
+
+    
+    else if (role === "builder") {
       if (!companyName || !companyAddress || !companyContactValue) {
         return next(ErrorHandler(400, "Company details required"));
+      }
+
+      const existingEmail = await User.findOne({
+        $or: [
+          { personalContactValue: companyContactValue },
+          { companyContactValue },
+        ],
+      });
+
+      if (existingEmail) {
+        return next(ErrorHandler(409, "Email is already registered"));
       }
 
       newsignup = {
@@ -106,12 +159,10 @@ export async function signUp(req, res, next) {
     }
 
     await User.create(newsignup);
-
     res.sendStatus(201);
   } catch (err) {
     if (err.code === 11000) {
       const field = Object.keys(err.keyValue)[0];
-
       let message = "Duplicate value";
 
       if (field === "username") {
@@ -125,6 +176,7 @@ export async function signUp(req, res, next) {
 
       return next(ErrorHandler(409, message));
     }
+
     next(ErrorHandler(500, err.message));
   }
 }
@@ -159,7 +211,6 @@ export async function signIn(req, res, next) {
 
     let payload = { user: userObj };
 
-    
     if (validuser.role === "builder") {
       const ads = await Advertisement.find({ builderId: validuser._id });
       payload.ads = ads;

@@ -26,6 +26,10 @@ function UpdateListing() {
     area,
     images,
   } = listing;
+  const [selectedFeatures, setSelectedFeatures] = useState([]);
+  useEffect(() => {
+    setSelectedFeatures(listing.features || []);
+  }, [listing._id]);
 
   const propertyCategory = [
     "flat",
@@ -38,24 +42,7 @@ function UpdateListing() {
     : "commercial";
 
   const fileref = useRef(0);
-  const [formdata, setFormData] = useState({
-    title: title || "",
-    description: description || "",
-    features: features || [],
-    price: price || "",
-    specialOffer: specialOffer || "",
-    status: status || "available",
-
-    area: area || "",
-
-    address: propertyLocation?.address || "",
-    name: listedBy?.name || "",
-    email: listedBy?.contact?.email || "",
-    phone: listedBy?.contact?.phone || "",
-    newImages: [],
-    imagesToDel: [],
-    newimgURLs: [],
-  });
+  const [formdata, setFormData] = useState({});
 
   const dispatch = useDispatch();
   const [ferror, setError] = useState();
@@ -85,9 +72,36 @@ function UpdateListing() {
   async function handleUpdate(e) {
     try {
       e.preventDefault();
+      const cleanedFormData = {};
+      Object.keys(formdata).forEach((key) => {
+        const value = formdata[key];
 
-      if (Object.keys(formdata).length === 0) {
-        setUpdateError("Please Enter Credentials To update");
+        if (typeof value === "string") {
+          const trimmed = value.trim();
+          if (trimmed !== "") {
+            cleanedFormData[key] = trimmed;
+          }
+        } else if (Array.isArray(value)) {
+          if (value.length > 0) {
+            cleanedFormData[key] = value;
+          }
+        } else if (value !== null && value !== undefined) {
+          cleanedFormData[key] = value;
+        }
+      });
+
+      const hasTextChanges = Object.keys(cleanedFormData).length > 0;
+      const hasFeatureChanges =
+        selectedFeatures.length !== listing.features.length ||
+        !selectedFeatures.every((f) => listing.features.includes(f));
+
+      const hasImageChanges =
+        (formdata.newImages && formdata.newImages.length > 0) ||
+        (formdata.newimgURLs && formdata.newimgURLs.length > 0) ||
+        (formdata.imagesToDel && formdata.imagesToDel.length > 0);
+
+      if (!hasTextChanges && !hasFeatureChanges && !hasImageChanges) {
+        setUpdateError("No changes detected");
         return;
       }
 
@@ -112,7 +126,6 @@ function UpdateListing() {
         return;
       }
 
-      // Email validation if changed
       if (trimmedData.email && trimmedData.email !== listedBy?.contact?.email) {
         const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
         if (!emailRegex.test(trimmedData.email)) {
@@ -167,13 +180,18 @@ function UpdateListing() {
         area,
         ...rest
       } = trimmedData;
+      const payloadFeatures = selectedFeatures;
 
       const textData = {
         ...rest,
+        features: payloadFeatures,
         area: area || listing.area,
         address: address || listing.location?.address || "",
         price: price || listing.price,
-        specialOffer: specialOffer || "",
+        specialOffer:
+          typeof specialOffer === "string"
+            ? specialOffer.trim()
+            : listing.specialOffer || "",
       };
 
       const formData = new FormData();
@@ -217,7 +235,9 @@ function UpdateListing() {
 
   async function handleUpload() {
     try {
-      const totalCurrentImages = oldImages.length + formdata.newImages.length;
+      const totalCurrentImages =
+        oldImages.length + (formdata.newImages?.length || 0);
+
       if (totalCurrentImages > 5) {
         setUploading("idle");
         setError("Maximum 5 images allowed");
@@ -265,16 +285,18 @@ function UpdateListing() {
   function handleNewDelete(index) {
     setFormData((prev) => ({
       ...prev,
-      newImages: prev.newImages.filter((_, i) => i !== index),
+      newImages: (prev.newImages || []).filter((_, i) => i !== index),
     }));
   }
 
   function handleOldDelete(index) {
     const imageToDelete = oldImages[index];
+
     setFormData((prev) => ({
       ...prev,
-      imagesToDel: [...prev.imagesToDel, imageToDelete],
+      imagesToDel: [...(prev.imagesToDel || []), imageToDelete],
     }));
+
     setOldImages((prev) => prev.filter((_, i) => i !== index));
   }
 
@@ -335,7 +357,6 @@ function UpdateListing() {
         className="bg-white shadow-lg rounded-xl p-4 md:p-8 grid grid-cols-1 lg:grid-cols-2 gap-8"
         onSubmit={handleUpdate}
       >
-        {/* Left Column - Property Details */}
         <div className="space-y-6">
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -346,7 +367,7 @@ function UpdateListing() {
               placeholder="Enter property title"
               id="title"
               className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"
-              value={formdata.title}
+              defaultValue={title}
               onChange={(e) =>
                 setFormData({ ...formdata, [e.target.id]: e.target.value })
               }
@@ -354,7 +375,6 @@ function UpdateListing() {
             />
           </div>
 
-          {/* Locked Fields Section */}
           <div className="bg-gray-50 p-4 rounded-lg space-y-4">
             <h3 className="font-medium text-gray-700">Locked Information</h3>
 
@@ -416,11 +436,11 @@ function UpdateListing() {
               id="description"
               placeholder="Describe your property in detail..."
               className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none h-32 resize-none"
-              value={formdata.description}
+              defaultValue={description}
+              required
               onChange={(e) =>
                 setFormData({ ...formdata, [e.target.id]: e.target.value })
               }
-              required
             />
           </div>
 
@@ -434,7 +454,7 @@ function UpdateListing() {
                   type="number"
                   id="price"
                   className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"
-                  value={formdata.price}
+                  defaultValue={price}
                   onChange={(e) =>
                     setFormData({ ...formdata, [e.target.id]: e.target.value })
                   }
@@ -451,7 +471,7 @@ function UpdateListing() {
                   type="number"
                   id="area"
                   className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"
-                  value={formdata.area}
+                  defaultValue={area}
                   onChange={(e) =>
                     setFormData({ ...formdata, [e.target.id]: e.target.value })
                   }
@@ -467,18 +487,16 @@ function UpdateListing() {
               </label>
               <textarea
                 id="specialOffer"
+                value={formdata.specialOffer ?? specialOffer ?? ""}
                 className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none h-32 resize-none"
-                value={formdata.specialOffer}
                 onChange={(e) =>
-                  setFormData({ ...formdata, [e.target.id]: e.target.value })
+                  setFormData((p) => ({ ...p, specialOffer: e.target.value }))
                 }
-                placeholder="Any special offers or discounts?"
               />
             </div>
           </div>
         </div>
 
-        {/* Right Column - Features, Images, Contact */}
         <div className="space-y-6">
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -493,12 +511,13 @@ function UpdateListing() {
                   >
                     <input
                       type="checkbox"
-                      checked={formdata.features.includes(feature)}
+                      checked={selectedFeatures.includes(feature)}
                       onChange={(e) => {
-                        const newFeatures = e.target.checked
-                          ? [...formdata.features, feature]
-                          : formdata.features.filter((f) => f !== feature);
-                        setFormData({ ...formdata, features: newFeatures });
+                        setSelectedFeatures((prev) =>
+                          e.target.checked
+                            ? [...prev, feature]
+                            : prev.filter((f) => f !== feature),
+                        );
                       }}
                       className="h-4 w-4 text-blue-600 rounded focus:ring-blue-500"
                     />
@@ -508,7 +527,7 @@ function UpdateListing() {
               </div>
             </div>
             <p className="text-xs text-gray-500 mt-2">
-              Selected: {formdata.features.length} features
+              Selected: {selectedFeatures.length} features
             </p>
           </div>
 
@@ -518,26 +537,25 @@ function UpdateListing() {
             </label>
             <div className="flex flex-wrap gap-3">
               {["available", "rented", "sold", "under negotiation"].map(
-                (status) => (
-                  <label key={status} className="flex items-center space-x-2">
+                (stat) => (
+                  <label key={stat} className="flex items-center space-x-2">
                     <input
                       type="radio"
-                      value={status}
+                      value={stat}
                       name="status"
-                      checked={formdata.status === status}
+                      checked={(formdata.status ?? status) === stat}
                       onChange={(e) =>
                         setFormData({ ...formdata, status: e.target.value })
                       }
                       className="h-4 w-4 text-blue-600"
                     />
-                    <span className="capitalize text-gray-700">{status}</span>
+                    <span className="capitalize text-gray-700">{stat}</span>
                   </label>
                 ),
               )}
             </div>
           </div>
 
-          {/* Contact Details */}
           <div className="space-y-4">
             <h3 className="font-medium text-gray-700">Contact Details</h3>
 
@@ -547,10 +565,10 @@ function UpdateListing() {
               </label>
               <input
                 type="text"
-                id="name"
                 placeholder="Enter your name"
                 className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"
-                value={formdata.name}
+                id="name"
+                defaultValue={listedBy?.name}
                 onChange={(e) =>
                   setFormData({ ...formdata, [e.target.id]: e.target.value })
                 }
@@ -565,12 +583,11 @@ function UpdateListing() {
                 <input
                   type="email"
                   id="email"
-                  placeholder="your@email.com"
-                  className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"
-                  value={formdata.email}
+                  defaultValue={listedBy?.contact?.email}
                   onChange={(e) =>
                     setFormData({ ...formdata, [e.target.id]: e.target.value })
                   }
+                  required
                 />
               </div>
 
@@ -583,7 +600,7 @@ function UpdateListing() {
                   id="phone"
                   placeholder="10-digit number"
                   className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"
-                  value={formdata.phone}
+                  defaultValue={listedBy?.contact?.phone}
                   onChange={(e) =>
                     setFormData({ ...formdata, [e.target.id]: e.target.value })
                   }
@@ -594,7 +611,6 @@ function UpdateListing() {
             </div>
           </div>
 
-          {/* Address */}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
               Complete Address
@@ -603,14 +619,14 @@ function UpdateListing() {
               id="address"
               placeholder="Enter full address including landmark, street, etc."
               className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none h-24 resize-none"
-              value={formdata.address}
+              defaultValue={propertyLocation.address}
               onChange={(e) =>
                 setFormData({ ...formdata, [e.target.id]: e.target.value })
               }
+              required
             />
           </div>
 
-          {/* Image Upload */}
           <div className="space-y-4">
             <div className="flex justify-between items-center">
               <label className="block text-sm font-medium text-gray-700">
@@ -635,7 +651,7 @@ function UpdateListing() {
                   type="button"
                   onClick={handleUpload}
                   disabled={
-                    uploading === "uploading" || formdata.newImages.length === 0
+                    uploading === "uploading" || !formdata.newImages?.length
                   }
                   className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed"
                 >
@@ -663,7 +679,7 @@ function UpdateListing() {
 
                   setFormData({
                     ...formdata,
-                    newImages: [...formdata.newImages, ...files],
+                    newImages: [...(formdata.newImages || []), ...files],
                   });
                 }}
                 multiple
@@ -677,9 +693,7 @@ function UpdateListing() {
                 </p>
               )}
 
-              {/* Image Previews */}
               <div className="space-y-3">
-                {/* Existing Images */}
                 {oldImages.length > 0 && (
                   <div>
                     <p className="text-sm font-medium text-gray-700 mb-2">
@@ -714,14 +728,13 @@ function UpdateListing() {
                   </div>
                 )}
 
-                {/* New Images (not yet uploaded) */}
-                {formdata.newImages.length > 0 && (
+                {formdata.newImages?.length > 0 && (
                   <div>
                     <p className="text-sm font-medium text-gray-700 mb-2">
                       New Images to Upload
                     </p>
                     <div className="space-y-2">
-                      {formdata.newImages.map((image, index) => (
+                      {formdata.newImages?.map((image, index) => (
                         <div
                           key={index}
                           className="flex items-center justify-between p-2 bg-blue-50 rounded"
@@ -749,7 +762,6 @@ function UpdateListing() {
                   </div>
                 )}
 
-                {/* Already Uploaded New Images */}
                 {formdata.newimgURLs && formdata.newimgURLs.length > 0 && (
                   <div>
                     <p className="text-sm font-medium text-gray-700 mb-2">
