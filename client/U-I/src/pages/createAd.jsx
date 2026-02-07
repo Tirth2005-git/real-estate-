@@ -507,7 +507,7 @@ function CreateAdvertisement() {
     if (!formData.possessionDate)
       return setSubmitError("Possession date is required");
 
-    if (formData.reraRegistered && isEmpty(formData.reraNumber))
+    if (!formData.reraNumber.trim())
       return setSubmitError("RERA number is required");
 
     if (formData.images.length < 3)
@@ -543,7 +543,7 @@ function CreateAdvertisement() {
       projectName: formData.projectName.trim(),
       description: formData.description.trim(),
       location: formData.location.trim(),
-      reraNumber: formData.reraNumber ? formData.reraNumber.trim() : "",
+      reraNumber: formData.reraNumber.trim(),
       priceRange: {
         min: Number(formData.priceRange.min),
         max: Number(formData.priceRange.max),
@@ -783,40 +783,24 @@ function CreateAdvertisement() {
             )}
 
             {/* RERA */}
-            <div className="flex items-center gap-2">
-              <input
-                type="checkbox"
-                id="reraRegistered"
-                checked={formData.reraRegistered}
-                onChange={(e) =>
-                  handleInputChange("reraRegistered", e.target.checked)
-                }
-                className="h-4 w-4"
-              />
-              <label htmlFor="reraRegistered" className="text-black">
-                RERA Registered
-              </label>
-            </div>
 
-            {formData.reraRegistered && (
-              <div>
-                <label className="block text-black mb-1">RERA Number *</label>
-                <input
-                  type="text"
-                  placeholder="RERA Number"
-                  value={formData.reraNumber}
-                  onChange={(e) =>
-                    handleInputChange("reraNumber", e.target.value)
-                  }
-                  className="p-2 w-full bg-white text-black rounded-lg"
-                />
-                {errors.reraNumber && (
-                  <p className="text-red-500 text-sm -mt-2">
-                    {errors.reraNumber}
-                  </p>
-                )}
-              </div>
-            )}
+            <div>
+              <label className="block text-black mb-1">RERA Number *</label>
+              <input
+                type="text"
+                placeholder="RERA Number"
+                value={formData.reraNumber}
+                onChange={(e) =>
+                  handleInputChange("reraNumber", e.target.value)
+                }
+                className="p-2 w-full bg-white text-black rounded-lg"
+              />
+              {errors.reraNumber && (
+                <p className="text-red-500 text-sm -mt-2">
+                  {errors.reraNumber}
+                </p>
+              )}
+            </div>
 
             {/* Possession Date */}
             <div>

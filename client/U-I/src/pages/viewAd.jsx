@@ -22,7 +22,6 @@ function ViewAd() {
     priceRange,
     areaRange,
     possessionDate,
-    reraRegistered,
     reraNumber,
     amenities,
     images,
@@ -137,17 +136,11 @@ function ViewAd() {
 
       {/* RERA */}
       <div className="mb-6 bg-slate-50 p-4 rounded-lg">
-        <p className="font-medium text-gray-700">
-          RERA Status:{" "}
-          <span className={reraRegistered ? "text-green-600" : "text-red-600"}>
-            {reraRegistered ? "Registered" : "Not Registered"}
-          </span>
+        <p className="font-medium text-gray-700">RERA Status: Registered</p>
+
+        <p className="text-sm text-gray-600 mt-1">
+          RERA No: <span className="font-mono">{reraNumber}</span>
         </p>
-        {reraRegistered && reraNumber && (
-          <p className="text-sm text-gray-600 mt-1">
-            RERA No: <span className="font-mono">{reraNumber}</span>
-          </p>
-        )}
       </div>
 
       {/* Brochure */}

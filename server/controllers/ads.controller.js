@@ -18,7 +18,6 @@ export async function createad(req, res, next) {
       priceRange,
       areaRange,
       possessionDate,
-      reraRegistered,
       reraNumber,
       amenities,
       images,
@@ -42,11 +41,10 @@ export async function createad(req, res, next) {
       return res.status(400).json({ message: "Missing required fields" });
     }
 
-    if (reraRegistered && !reraNumber) {
+    if (!reraNumber) {
       return res.status(400).json({ message: "RERA number is required" });
     }
 
-    
     const normalizedAd = {
       builderId: req.user.userid,
       projectName: projectName.trim(),
@@ -67,18 +65,17 @@ export async function createad(req, res, next) {
       },
 
       possessionDate: possessionDate || null,
-      reraRegistered: !!reraRegistered,
-      reraNumber: reraNumber ? reraNumber.trim().toLowerCase() : "",
+      reraNumber: reraNumber.trim().toLowerCase(),
 
       amenities: amenities ? amenities.map((a) => a.trim()) : [],
 
-      images, // already urls / ids — don’t lowercase
+      images,
 
       brochure: brochure || null,
 
       projectContacts: projectContacts.map((c) => ({
         name: c.name.trim(),
-        phone: c.phone.trim(), 
+        phone: c.phone.trim(),
         email: c.email ? c.email.trim() : "",
       })),
     };

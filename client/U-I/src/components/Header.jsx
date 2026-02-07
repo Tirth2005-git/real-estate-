@@ -86,29 +86,27 @@ function Header() {
             </>
           )}
 
-          <li>
-            {(!currentuser || currentuser.role !== "builder") && (
-              <li>
-                <NavLink
-                  className="hover:underline text-lg text-gray-700"
-                  to="/find-properties"
-                >
-                  BrowseListings
-                </NavLink>
-              </li>
-            )}
+          {(!currentuser || currentuser.role !== "builder") && (
+            <li>
+              <NavLink
+                className="hover:underline text-lg text-gray-700"
+                to="/find-properties"
+              >
+                BrowseListings
+              </NavLink>
+            </li>
+          )}
 
-            {currentuser && currentuser.role === "builder" && (
-              <li>
-                <NavLink
-                  className="hover:underline text-lg text-gray-700"
-                  to="/browse-dealers"
-                >
-                  BrowseDealers
-                </NavLink>
-              </li>
-            )}
-          </li>
+          {currentuser && (
+            <li>
+              <NavLink
+                className="hover:underline text-lg text-gray-700"
+                to="/browse-dealers"
+              >
+                FindDealers
+              </NavLink>
+            </li>
+          )}
 
           <li>
             <NavLink className="hover:underline text-lg text-gray-700" to="/">
@@ -203,31 +201,27 @@ function Header() {
             </NavLink>
           </li>
 
-          <li>
-            {(!currentuser || currentuser.role !== "builder") && (
-              <li>
-                <NavLink
-                  className="hover:underline text-base text-gray-700"
-                  to="/find-properties"
-                  onClick={() => setToggle(true)}
-                >
-                  BrowseListings
-                </NavLink>
-              </li>
-            )}
+          {(!currentuser || currentuser.role !== "builder") && (
+            <li>
+              <NavLink
+                className="hover:underline text-base text-gray-700"
+                to="/find-properties"
+              >
+                BrowseListings
+              </NavLink>
+            </li>
+          )}
 
-            {currentuser && currentuser.role === "builder" && (
-              <li>
-                <NavLink
-                  className="hover:underline text-base text-gray-700"
-                  to="/browse-dealers"
-                  onClick={() => setToggle(true)}
-                >
-                  BrowseDealers
-                </NavLink>
-              </li>
-            )}
-          </li>
+          {currentuser && (
+            <li>
+              <NavLink
+                className="hover:underline text-base text-gray-700"
+                to="/browse-dealers"
+              >
+                FindDealers
+              </NavLink>
+            </li>
+          )}
 
           <li>
             <NavLink

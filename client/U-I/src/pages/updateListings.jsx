@@ -89,6 +89,9 @@ function UpdateListing() {
           cleanedFormData[key] = value;
         }
       });
+      const specialOfferChanged =
+        (formdata.specialOffer ?? "").trim() !==
+        (listing.specialOffer ?? "").trim();
 
       const hasTextChanges = Object.keys(cleanedFormData).length > 0;
       const hasFeatureChanges =
@@ -100,7 +103,12 @@ function UpdateListing() {
         (formdata.newimgURLs && formdata.newimgURLs.length > 0) ||
         (formdata.imagesToDel && formdata.imagesToDel.length > 0);
 
-      if (!hasTextChanges && !hasFeatureChanges && !hasImageChanges) {
+      if (
+        !hasTextChanges &&
+        !hasFeatureChanges &&
+        !hasImageChanges &&
+        !specialOfferChanged
+      ) {
         setUpdateError("No changes detected");
         return;
       }
@@ -166,10 +174,6 @@ function UpdateListing() {
         }
       }
 
-      if (!trimmedData.status || trimmedData.status === "") {
-        trimmedData.status = "available";
-      }
-
       const {
         newImages,
         imagesToDel,
@@ -188,10 +192,10 @@ function UpdateListing() {
         area: area || listing.area,
         address: address || listing.location?.address || "",
         price: price || listing.price,
-        specialOffer:
-          typeof specialOffer === "string"
-            ? specialOffer.trim()
-            : listing.specialOffer || "",
+
+        ...(formdata.hasOwnProperty("specialOffer") && {
+          specialOffer: (formdata.specialOffer ?? "").trim(),
+        }),
       };
 
       const formData = new FormData();
@@ -199,7 +203,6 @@ function UpdateListing() {
       formData.append("newimgs", JSON.stringify(newimgURLs || []));
       formData.append("imgstodel", JSON.stringify(imagesToDel || []));
       formData.append("price", price || listing.price);
-      formData.append("specialoffer", JSON.stringify(specialOffer || ""));
       formData.append("listingid", listing._id);
 
       console.log("Frontend sending:", {
@@ -561,7 +564,7 @@ function UpdateListing() {
 
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
-                Your Name
+                Your Name *
               </label>
               <input
                 type="text"
@@ -572,13 +575,14 @@ function UpdateListing() {
                 onChange={(e) =>
                   setFormData({ ...formdata, [e.target.id]: e.target.value })
                 }
+                required
               />
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Email
+                  Email *
                 </label>
                 <input
                   type="email"
@@ -613,7 +617,7 @@ function UpdateListing() {
 
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
-              Complete Address
+              Complete Address *
             </label>
             <textarea
               id="address"

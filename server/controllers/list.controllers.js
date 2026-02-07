@@ -3,7 +3,7 @@ import { ErrorHandler } from "../utils/error.js";
 import Listing from "../models/listing.model.js";
 import { delimages } from "./fileuplds.controller.js";
 import { sendEmail } from "../utils/sendEmail.js";
-import  User  from "../models/users.model.js";
+import User from "../models/users.model.js";
 export async function listController(req, res, next) {
   try {
     if (req.user.userid !== req.params.id) {
@@ -90,7 +90,9 @@ export async function listController(req, res, next) {
         {
           $or: [
             { "notificationPreferences.propertyTypes": { $size: 0 } },
-            { "notificationPreferences.propertyTypes": newlisting.propertyType },
+            {
+              "notificationPreferences.propertyTypes": newlisting.propertyType,
+            },
           ],
         },
         {
@@ -172,9 +174,6 @@ export async function updateList(req, res, next) {
     let newimgs = JSON.parse(req.body["newimgs"]);
     let price = parseInt(req.body["price"]);
     const listingid = req.body["listingid"];
-    const specialOffer = req.body["specialoffer"]
-      ? JSON.parse(req.body["specialoffer"]).trim()
-      : "";
 
     const listing = await Listing.findById(listingid);
     if (!listing) {
@@ -183,10 +182,28 @@ export async function updateList(req, res, next) {
 
     let updatedtextdata = {};
     Object.keys(text_data).forEach((key) => {
-      if (text_data[key] && text_data[key].toString().trim()) {
-        updatedtextdata[key] = text_data[key];
-      } else if (Array.isArray(text_data[key])) {
-        updatedtextdata[key] = text_data[key];
+      const value = text_data[key];
+
+      // SPECIAL OFFER: allow empty string
+      if (key === "specialOffer") {
+        if (typeof value === "string") {
+          updatedtextdata.specialOffer = value.trim();
+        }
+        return;
+      }
+
+      // Arrays (features, etc.)
+      if (Array.isArray(value)) {
+        updatedtextdata[key] = value;
+        return;
+      }
+
+      if (
+        value !== null &&
+        value !== undefined &&
+        value.toString().trim() !== ""
+      ) {
+        updatedtextdata[key] = value;
       }
     });
 
@@ -208,26 +225,28 @@ export async function updateList(req, res, next) {
       return next(ErrorHandler(400, "At least one image is required"));
     }
 
-  
     const updateData = {
       title: updatedtextdata.title?.trim() || listing.title,
       description: updatedtextdata.description?.trim() || listing.description,
       area: updatedtextdata.area ? Number(updatedtextdata.area) : listing.area,
       images: newimgarr,
-      specialOffer: specialOffer || "",
       features: updatedtextdata.features,
       status: updatedtextdata.status?.toLowerCase() || listing.status,
+
+      ...(updatedtextdata.hasOwnProperty("specialOffer") && {
+        specialOffer: updatedtextdata.specialOffer,
+      }),
+
       location: {
         locality: listing.location.locality,
-
         address: updatedtextdata.address?.trim() || listing.location?.address,
       },
+
       listedBy: {
         userId: listing.listedBy.userId,
         role: listing.listedBy.role,
         dealerType: listing.listedBy.dealerType,
         companyName: listing.listedBy.companyName,
-
         name: updatedtextdata.name?.trim() || listing.listedBy.name,
         contact: {
           email:
