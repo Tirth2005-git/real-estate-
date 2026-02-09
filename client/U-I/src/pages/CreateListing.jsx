@@ -188,7 +188,7 @@ function CreateListing() {
 
       if (!res.ok) {
         setCreateError(data.message || "Failed to create listing");
-        setCreateUploading("idle")
+        setCreateUploading("idle");
         return;
       }
 
@@ -752,7 +752,6 @@ function CreateListing() {
               }
             />
 
-            {/* Image Upload */}
             <label htmlFor="images" className="mt-3 text-black block">
               Upload your Images:
               <span className="text-slate-400 ml-2">Only 5 images</span>
@@ -786,7 +785,7 @@ function CreateListing() {
                     onClick={handleUpload}
                     disabled={uploading === "uploading"}
                   >
-                    {uploading === "uploading" ? "Uploading..." : "Upload"}
+                    Upload
                   </button>
                 </div>
               </div>

@@ -4,7 +4,7 @@ import listingReducer from "./listingslice.jsx";
 import formReducer from "./formslice.jsx";
 import propertyReducer from "./propertiesSlice.jsx";
 import adsReducer from "./adsslice.jsx";
-
+import dealerProfileReducer from "./dealerProfileSlice.jsx";
 import storageSession from "redux-persist/lib/storage/session";
 import { persistStore, persistReducer } from "redux-persist";
 
@@ -21,6 +21,7 @@ const rootReducer = combineReducers({
   formToggle: formReducer,
   properties: propertyReducer,
   ads: adsReducer,
+  dealerProfile: dealerProfileReducer,
 });
 
 const persistedReducer = persistReducer(persistConfig, rootReducer);
@@ -32,7 +33,7 @@ export const store = configureStore({
       serializableCheck: false,
     }),
   devTools: {
-    name: "YourRealEstate-App", 
+    name: "YourRealEstate-App",
   },
 });
 

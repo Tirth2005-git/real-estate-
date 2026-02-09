@@ -129,7 +129,6 @@ export async function updateUser(req, res, next) {
       }
     }
 
-    
     if (cleanBody.password) {
       cleanBody.password = await bcrypt.hash(cleanBody.password, 10);
     }
@@ -150,7 +149,6 @@ export async function updateUser(req, res, next) {
       }
     });
 
-    
     if (req.user.role !== "builder") {
       if (req.body.notificationPreferences) {
         cleanBody.notificationPreferences = {
@@ -316,5 +314,51 @@ export async function browseDealers(req, res, next) {
   } catch (err) {
     console.error("Browse Dealers Error:", err);
     next(ErrorHandler(500, "Failed to fetch dealers"));
+  }
+}
+
+export async function getDealerProfile(req, res, next) {
+  try {
+    const { dealerId } = req.params;
+
+    const dealer = await User.findById(dealerId).select(
+      "username dealerType companyName companyDescription localities pfp personalContactValue companyContactValue role",
+    );
+
+    if (!dealer || dealer.role !== "dealer") {
+      return next(ErrorHandler(404, "Dealer not found"));
+    }
+
+    const listings = await Listing.find({
+      "listedBy.userId": dealerId,
+    })
+      .sort({ createdAt: -1 })
+      .select(
+        "title price listingType propertyType bhk area status images location features listedBy",
+      );
+
+    const dealerPayload = {
+      _id: dealer._id,
+      name: dealer.username,
+      dealerType: dealer.dealerType,
+      companyName: dealer.companyName,
+      companyDescription: dealer.companyDescription,
+      localities: dealer.localities,
+      pfp: dealer.pfp,
+      contact: {
+        email:
+          dealer.dealerType === "agency"
+            ? dealer.companyContactValue
+            : dealer.personalContactValue,
+      },
+    };
+
+    res.status(200).json({
+      success: true,
+      dealer: dealerPayload,
+      listings,
+    });
+  } catch (err) {
+    next(ErrorHandler(500, err.message));
   }
 }

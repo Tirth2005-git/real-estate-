@@ -1,6 +1,9 @@
 import { useState } from "react";
 import Select from "react-select";
-
+import { useNavigate } from "react-router-dom";
+import { useSelector } from "react-redux";
+import { fetchDealerSuccess } from "../redux/dealerProfileSlice";
+import { useDispatch } from "react-redux";
 const mumbaiLocalities = [
   "colaba",
   "nariman point",
@@ -118,11 +121,43 @@ const dealerTypeOptions = [
 ];
 
 function FindDealers() {
+  const [loadingDealerId, setLoadingDealerId] = useState(null);
   const [locality, setLocality] = useState("");
   const [dealerType, setDealerType] = useState("");
   const [dealers, setDealers] = useState([]);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState("");
+  const [Dloading, setLoading] = useState(false);
+  const [Derror, setError] = useState("");
+  const navigate = useNavigate();
+  const { currentuser } = useSelector((state) => state.user);
+  const dispatch = useDispatch();
+
+  async function handleViewProfile(dealerId) {
+    try {
+      setLoadingDealerId(dealerId);
+      setError("");
+
+      const res = await fetch(`/api/dealers/${dealerId}`);
+      const data = await res.json();
+
+      if (!res.ok) {
+        setError(data.message || "Failed to load dealer");
+        return;
+      }
+
+      dispatch(
+        fetchDealerSuccess({
+          dealer: data.dealer,
+          listings: data.listings || [],
+        }),
+      );
+
+      navigate("/dealer-profile");
+    } catch {
+      setError("Something went wrong");
+    } finally {
+      setLoadingDealerId(null);
+    }
+  }
 
   async function handleSearchDealers() {
     try {
@@ -194,13 +229,13 @@ function FindDealers() {
           onClick={handleSearchDealers}
           className="bg-blue-600 text-white rounded-lg px-6 py-3 hover:bg-blue-700 transition"
         >
-          {loading ? "Searching..." : "Search Dealers"}
+          {Dloading ? "Searching..." : "Search Dealers"}
         </button>
       </div>
 
-      {error && <p className="text-red-500 text-center mb-6">{error}</p>}
+      {Derror && <p className="text-red-500 text-center mb-6">{Derror}</p>}
 
-      {loading && (
+      {Dloading && (
         <p className="text-center text-gray-500">Loading dealers...</p>
       )}
 
@@ -210,7 +245,6 @@ function FindDealers() {
             key={dealer._id}
             className="bg-white rounded-2xl shadow-md hover:shadow-xl transition-all duration-300 p-5 flex flex-col justify-between"
           >
-            {/* Header */}
             <div className="flex items-center gap-4 mb-4">
               <div className="h-14 w-14 rounded-full bg-gray-200 overflow-hidden flex items-center justify-center">
                 {dealer.pfp ? (
@@ -237,7 +271,6 @@ function FindDealers() {
               </div>
             </div>
 
-            {/* Localities */}
             <div className="flex flex-wrap gap-1 mb-3">
               {dealer.localities?.map((loc) => (
                 <span
@@ -249,16 +282,52 @@ function FindDealers() {
               ))}
             </div>
 
-            {/* Description */}
             {dealer.companyDescription && (
               <p className="text-sm text-gray-600 mb-4 line-clamp-3">
                 {dealer.companyDescription}
               </p>
             )}
 
-            {/* Contact (EMAIL ONLY) */}
             {dealer.contact?.email && (
               <p className="text-sm text-gray-600">📧 {dealer.contact.email}</p>
+            )}
+            {currentuser && currentuser.role !== "builder" && (
+              <button
+                onClick={() => handleViewProfile(dealer._id)}
+                disabled={loadingDealerId === dealer._id}
+                className={`mt-4 w-full text-sm py-2 rounded-lg transition ${
+                  loadingDealerId === dealer._id
+                    ? "bg-gray-400 cursor-not-allowed"
+                    : "bg-gray-800 text-white hover:bg-gray-900"
+                }`}
+              >
+                {loadingDealerId === dealer._id ? (
+                  <span className="flex items-center justify-center">
+                    <svg
+                      className="animate-spin h-4 w-4 mr-2 text-white"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                    >
+                      <circle
+                        className="opacity-25"
+                        cx="12"
+                        cy="12"
+                        r="10"
+                        stroke="currentColor"
+                        strokeWidth="4"
+                      />
+                      <path
+                        className="opacity-75"
+                        fill="currentColor"
+                        d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                      />
+                    </svg>
+                    Loading...
+                  </span>
+                ) : (
+                  "View Profile"
+                )}
+              </button>
             )}
           </div>
         ))}

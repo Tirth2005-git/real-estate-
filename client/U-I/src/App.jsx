@@ -1,6 +1,6 @@
+import "./index.css";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import Home from "./pages/Home.jsx";
-import { useEffect } from "react";
 import Profile from "./pages/Profile.jsx";
 import Signup from "./pages/Signup.jsx";
 import Signin from "./pages/Signin.jsx";
@@ -18,8 +18,8 @@ import FindProperties from "./pages/findProperties.jsx";
 import ViewAd from "./pages/viewad.jsx";
 import BuilderAds from "./pages/builderAd.jsx";
 import FindDealers from "./pages/findDealers.jsx";
-import "./index.css";
 import CreateAdvertisement from "./pages/createAd.jsx";
+import DealerProfile from "./pages/DealerProfile.jsx";
 function App() {
   return (
     <>
@@ -49,6 +49,7 @@ function App() {
                 <Route path="/builder-ads" element={<BuilderAds />}></Route>
                 <Route path="/ad" element={<ViewAd />}></Route>
                 <Route path="/browse-dealers" element={<FindDealers />}></Route>
+                <Route path="/dealer-profile" element={<DealerProfile />} />
               </Route>
 
               <Route element={<PvtRoute2 />}>
