@@ -9,7 +9,21 @@ import Select from "react-select";
 function FindProperties() {
   const { ads } = useSelector((state) => state.ads);
 
-  const [formdata, setformdata] = useState({});
+  const [formdata, setformdata] = useState({
+    listingTypes: [],
+    propertyCategory: "",
+    propertyType: "",
+    bhks: [],
+    locality: "",
+    minPrice: "",
+    maxPrice: "",
+    minArea: "",
+    maxArea: "",
+    listedByRoles: [],
+    dealerTypes: [],
+    Features: [],
+  });
+
   const [searching, setSearching] = useState(false);
   const [searcherror, setSeacrhError] = useState(false);
   const { showForm } = useSelector((state) => state.formToggle);
@@ -136,7 +150,7 @@ function FindProperties() {
 
   useEffect(() => {
     dispatch(setVisbility());
-  }, [properties]);
+  }, [properties, dispatch]);
 
   async function handleSubmit(e) {
     try {
@@ -159,9 +173,12 @@ function FindProperties() {
 
       const rawParams = {
         locality: formdata.locality,
-        propertyType: formdata.propertyType,
         propertyCategory: formdata.propertyCategory,
-        bhk: formdata.bhk,
+        propertyType: formdata.propertyType,
+        listingTypes: formdata.listingTypes,
+        bhks: formdata.bhks,
+        listedByRoles: formdata.listedByRoles,
+        dealerTypes: formdata.dealerTypes,
         minPrice: formdata.minPrice,
         maxPrice: formdata.maxPrice,
         minArea: formdata.minArea,
@@ -182,16 +199,10 @@ function FindProperties() {
           key === "maxArea"
         ) {
           searchParams[key] = Number(value);
-        } else if (key === "bhk") {
-          searchParams[key] = value.toString().trim();
         } else if (typeof value === "string") {
           searchParams[key] = value.trim().toLowerCase();
         }
       });
-
-      if (formdata.selectedFeatures?.length > 0) {
-        searchParams.selectedFeatures = formdata.selectedFeatures;
-      }
 
       const res = await fetch("/api/browse/listing", {
         method: "POST",
@@ -222,7 +233,7 @@ function FindProperties() {
 
       setSearching(false);
       setSeacrhError(false);
-      setformdata({});
+    
     } catch (err) {
       setSearching(false);
       setSeacrhError(err.message || "Search failed");
@@ -245,18 +256,16 @@ function FindProperties() {
             {["rent", "sale"].map((type) => (
               <label key={type} className="flex items-center">
                 <input
-                  type="radio"
-                  name="listingType"
-                  value={type}
-                  checked={formdata.listingType === type}
+                  type="checkbox"
+                  checked={formdata.listingTypes.includes(type)}
                   onChange={(e) => {
-                    setformdata((prev) => ({
-                      ...prev,
-                      listingType:
-                        prev.listingType === e.target.value
-                          ? ""
-                          : e.target.value,
-                    }));
+                    setformdata((prev) => {
+                      const updated = prev.listingTypes.includes(type)
+                        ? prev.listingTypes.filter((t) => t !== type)
+                        : [...prev.listingTypes, type];
+
+                      return { ...prev, listingTypes: updated };
+                    });
                   }}
                   className="accent-blue-500"
                 />
@@ -352,16 +361,16 @@ function FindProperties() {
                 {["1 BHK", "2 BHK", "3 BHK", "4 BHK", "Studio"].map((bhk) => (
                   <label key={bhk} className="flex items-center">
                     <input
-                      type="radio"
-                      name="bhk"
-                      value={bhk}
-                      checked={formdata.bhk === bhk}
-                      onChange={(e) => {
-                        setformdata((prev) => ({
-                          ...prev,
-                          bhk:
-                            prev.bhk === e.target.value ? "" : e.target.value,
-                        }));
+                      type="checkbox"
+                      checked={formdata.bhks.includes(bhk)}
+                      onChange={() => {
+                        setformdata((prev) => {
+                          const updated = prev.bhks.includes(bhk)
+                            ? prev.bhks.filter((b) => b !== bhk)
+                            : [...prev.bhks, bhk];
+
+                          return { ...prev, bhks: updated };
+                        });
                       }}
                       className="accent-blue-500"
                     />
@@ -453,12 +462,15 @@ function FindProperties() {
             <label className="flex items-center">
               <input
                 type="checkbox"
-                checked={formdata.listedByRole === "user"}
-                onChange={(e) => {
-                  setformdata((prev) => ({
-                    ...prev,
-                    listedByRole: e.target.checked ? "user" : "",
-                  }));
+                checked={formdata.listedByRoles?.includes("user")}
+                onChange={() => {
+                  setformdata((prev) => {
+                    const updated = prev.listedByRoles.includes("user")
+                      ? prev.listedByRoles.filter((r) => r !== "user")
+                      : [...prev.listedByRoles, "user"];
+
+                    return { ...prev, listedByRoles: updated };
+                  });
                 }}
                 className="accent-blue-500"
               />
@@ -468,43 +480,54 @@ function FindProperties() {
             <label className="flex items-center">
               <input
                 type="checkbox"
-                checked={formdata.listedByRole === "dealer"}
-                onChange={(e) => {
-                  setformdata((prev) => ({
-                    ...prev,
-                    listedByRole: e.target.checked ? "dealer" : "",
-                  }));
+                checked={formdata.listedByRoles?.includes("dealer")}
+                onChange={() => {
+                  setformdata((prev) => {
+                    const updated = prev.listedByRoles.includes("dealer")
+                      ? prev.listedByRoles.filter((r) => r !== "dealer")
+                      : [...prev.listedByRoles, "dealer"];
+
+                    return { ...prev, listedByRoles: updated };
+                  });
                 }}
                 className="accent-blue-500"
               />
               <span className="text-gray-700 ml-2">Dealers</span>
             </label>
 
-            {formdata.listedByRole === "dealer" && (
+            {/* Dealer Types */}
+            {formdata.listedByRoles?.includes("dealer") && (
               <div className="ml-6 flex flex-col gap-1">
                 <label className="flex items-center">
                   <input
                     type="checkbox"
-                    checked={formdata.dealerType === "individual"}
-                    onChange={(e) => {
-                      setformdata((prev) => ({
-                        ...prev,
-                        dealerType: e.target.checked ? "individual" : "",
-                      }));
+                    checked={formdata.dealerTypes?.includes("individual")}
+                    onChange={() => {
+                      setformdata((prev) => {
+                        const updated = prev.dealerTypes.includes("individual")
+                          ? prev.dealerTypes.filter((t) => t !== "individual")
+                          : [...prev.dealerTypes, "individual"];
+
+                        return { ...prev, dealerTypes: updated };
+                      });
                     }}
                     className="accent-green-500"
                   />
                   <span className="text-gray-700 ml-2">Individual Dealers</span>
                 </label>
+
                 <label className="flex items-center">
                   <input
                     type="checkbox"
-                    checked={formdata.dealerType === "agency"}
-                    onChange={(e) => {
-                      setformdata((prev) => ({
-                        ...prev,
-                        dealerType: e.target.checked ? "agency" : "",
-                      }));
+                    checked={formdata.dealerTypes?.includes("agency")}
+                    onChange={() => {
+                      setformdata((prev) => {
+                        const updated = prev.dealerTypes.includes("agency")
+                          ? prev.dealerTypes.filter((t) => t !== "agency")
+                          : [...prev.dealerTypes, "agency"];
+
+                        return { ...prev, dealerTypes: updated };
+                      });
                     }}
                     className="accent-green-500"
                   />
