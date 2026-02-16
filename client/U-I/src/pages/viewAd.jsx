@@ -34,7 +34,6 @@ function ViewAd() {
 
   return (
     <div className="max-w-4xl mx-auto p-5 bg-white rounded-2xl shadow-lg mt-6">
-      {/* Image Slider */}
       <div className="relative w-full h-60 sm:h-72 rounded-xl overflow-hidden mb-6">
         <img
           src={images[current]?.imageurl}
@@ -59,7 +58,6 @@ function ViewAd() {
         )}
       </div>
 
-      {/* Header */}
       <div className="mb-4">
         <h1 className="text-2xl sm:text-3xl font-bold text-gray-800">
           {projectName}
@@ -69,7 +67,6 @@ function ViewAd() {
         </p>
       </div>
 
-      {/* Ranges */}
       <div className="grid grid-cols-2 sm:grid-cols-3 gap-4 mb-6">
         <div className="bg-slate-50 p-3 rounded-lg">
           <p className="text-xs text-gray-500">Price Range</p>
@@ -94,7 +91,6 @@ function ViewAd() {
         </div>
       </div>
 
-      {/* Unit Types */}
       <div className="mb-5">
         <h3 className="font-medium text-gray-700 mb-2">Unit Types</h3>
         <div className="flex flex-wrap gap-2">
@@ -109,7 +105,6 @@ function ViewAd() {
         </div>
       </div>
 
-      {/* Amenities */}
       <div className="mb-5">
         <h3 className="font-medium text-gray-700 mb-2">Amenities</h3>
         {amenities && amenities.length > 0 ? (
@@ -128,13 +123,11 @@ function ViewAd() {
         )}
       </div>
 
-      {/* Description */}
       <div className="mb-6">
         <h3 className="font-medium text-gray-700 mb-2">About the Project</h3>
         <p className="text-gray-600 text-sm leading-relaxed">{description}</p>
       </div>
 
-      {/* RERA */}
       <div className="mb-6 bg-slate-50 p-4 rounded-lg">
         <p className="font-medium text-gray-700">RERA Status: Registered</p>
 
@@ -143,7 +136,6 @@ function ViewAd() {
         </p>
       </div>
 
-      {/* Brochure */}
       {brochure?.pdfurl && (
         <div className="mb-6">
           <a
@@ -152,12 +144,11 @@ function ViewAd() {
             rel="noopener noreferrer"
             className="inline-block bg-indigo-600 text-white px-4 py-2 rounded-lg hover:bg-indigo-700"
           >
-            📄 View Brochure
+            View Brochure
           </a>
         </div>
       )}
 
-      {/* Contacts */}
       <div className="mt-6 border-t pt-4">
         <h3 className="font-medium text-gray-700 mb-3">Contact Details</h3>
         <div className="space-y-3">

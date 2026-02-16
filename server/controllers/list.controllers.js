@@ -295,56 +295,56 @@ export async function browseList(req, res, next) {
 
     const listingFilters = { status: "available" };
 
-    // Locality
+  
     if (locality) {
       listingFilters["location.locality"] = locality.toLowerCase();
     }
 
-    // Property Type (kept mandatory in frontend)
+    
     if (propertyType) {
       listingFilters.propertyType = propertyType.toLowerCase();
     }
 
-    // Listing Types (rent/sale)
+    
     if (listingTypes?.length) {
       listingFilters.listingType = { $in: listingTypes };
     }
 
-    // BHK multiple
+    
     if (bhks?.length) {
       listingFilters.bhk = { $in: bhks };
     }
 
-    // Price Range
+    
     if (minPrice || maxPrice) {
       listingFilters.price = {};
       if (minPrice) listingFilters.price.$gte = Number(minPrice);
       if (maxPrice) listingFilters.price.$lte = Number(maxPrice);
     }
 
-    // Area Range
+    
     if (minArea || maxArea) {
       listingFilters.area = {};
       if (minArea) listingFilters.area.$gte = Number(minArea);
       if (maxArea) listingFilters.area.$lte = Number(maxArea);
     }
 
-    // Features (must include all selected)
+    
     if (Features?.length) {
       listingFilters.features = { $all: Features };
     }
 
-    // Listed By Roles (user/dealer)
+    
     if (listedByRoles?.length) {
       listingFilters["listedBy.role"] = { $in: listedByRoles };
     }
 
-    // Dealer Types (only if dealer selected)
+    
     if (dealerTypes?.length) {
       listingFilters["listedBy.dealerType"] = { $in: dealerTypes };
     }
 
-    // ---- Ads Filter ----
+  
     const adFilters = {};
 
     if (locality) {
@@ -354,7 +354,7 @@ export async function browseList(req, res, next) {
     if (propertyCategory) {
       adFilters.projectType = propertyCategory.toLowerCase();
     }
-    console.log(listingFilters);
+   
 
     const listings = await Listing.find(listingFilters)
       .sort({ createdAt: -1 })

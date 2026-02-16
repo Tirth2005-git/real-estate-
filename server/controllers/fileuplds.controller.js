@@ -158,9 +158,10 @@ export async function uploadPdf(req, res, next) {
       const uploadStream = cloudinary.uploader.upload_stream(
         {
           folder: "realestate/brochures",
-          resource_type: "raw",
-          format: "pdf",
+          resource_type: "auto",
+          access_mode: "public",
         },
+
         (error, result) => {
           if (error) {
             reject(error);

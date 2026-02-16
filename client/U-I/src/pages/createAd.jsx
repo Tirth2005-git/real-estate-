@@ -231,7 +231,7 @@ function CreateAdvertisement() {
   };
   const handlePdfSelect = (e) => {
     const file = e.target.files[0];
-    setPdferror(""); // clear previous PDF errors
+    setPdferror(""); 
 
     if (!file) return;
 
@@ -446,17 +446,17 @@ function CreateAdvertisement() {
         throw new Error(data.message || "PDF upload failed");
       }
 
-      const pdfUrl = data.uploadedurls;
-
       setFormData((prev) => ({
         ...prev,
-        brochure: pdfUrl,
+        brochure: {
+          pdfurl: data.uploadedurls.pdfurl,
+          public_id: data.uploadedurls.public_id,
+        },
       }));
 
       setSelectedPdf(null);
-      setPdferror(""); // clear error on success
+      setPdferror("");
     } catch (error) {
-      console.error("PDF upload error:", error);
       setPdferror(error.message || "Failed to upload PDF");
     } finally {
       setPdfUploading(false);
@@ -593,10 +593,8 @@ function CreateAdvertisement() {
         className="bg-gray-200 mx-auto flex flex-col md:flex-row p-4 sm:p-6 justify-between gap-6 rounded-xl max-w-5xl mt-4"
         onSubmit={handleSubmit}
       >
-        {/* LEFT COLUMN */}
         <div className="w-full md:w-1/2">
           <div className="flex flex-col gap-4 w-full">
-            {/* Project Name */}
             <input
               type="text"
               placeholder="Project Name *"
@@ -608,7 +606,6 @@ function CreateAdvertisement() {
               <p className="text-red-500 text-sm -mt-2">{errors.projectName}</p>
             )}
 
-            {/* Project Type */}
             <div className="w-full">
               <label className="block text-black mb-1">Project Type *</label>
               <div className="flex flex-wrap gap-4">
@@ -637,7 +634,6 @@ function CreateAdvertisement() {
               </div>
             </div>
 
-            {/* Location */}
             <div className="w-full">
               <label className="block text-black mb-1">
                 Location (Mumbai) *
@@ -662,7 +658,6 @@ function CreateAdvertisement() {
               )}
             </div>
 
-            {/* Description */}
             <div className="w-full">
               <label className="block text-black mb-1">Description *</label>
               <textarea
@@ -684,7 +679,6 @@ function CreateAdvertisement() {
               </p>
             </div>
 
-            {/* Unit Types */}
             <div className="w-full">
               <label className="block text-black mb-2">
                 {formData.projectType === "Commercial"
@@ -712,7 +706,6 @@ function CreateAdvertisement() {
               )}
             </div>
 
-            {/* Price Range */}
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <label className="block text-black mb-1">Min Price (₹) *</label>
@@ -745,7 +738,6 @@ function CreateAdvertisement() {
               <p className="text-red-500 text-sm -mt-2">{errors.priceRange}</p>
             )}
 
-            {/* Area Range */}
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <label className="block text-black mb-1">
@@ -782,8 +774,6 @@ function CreateAdvertisement() {
               <p className="text-red-500 text-sm -mt-2">{errors.areaRange}</p>
             )}
 
-            {/* RERA */}
-
             <div>
               <label className="block text-black mb-1">RERA Number *</label>
               <input
@@ -802,7 +792,6 @@ function CreateAdvertisement() {
               )}
             </div>
 
-            {/* Possession Date */}
             <div>
               <label className="block text-black mb-1">Possession Date</label>
               <input
@@ -817,10 +806,8 @@ function CreateAdvertisement() {
           </div>
         </div>
 
-        {/* RIGHT COLUMN */}
         <div className="w-full md:w-1/2">
           <div className="flex flex-col gap-4 w-full">
-            {/* Amenities */}
             <div className="w-full">
               <label className="block text-black mb-2">
                 {formData.projectType} Amenities (Optional)
@@ -840,7 +827,6 @@ function CreateAdvertisement() {
               </div>
             </div>
 
-            {/* Images Upload */}
             <div className="w-full">
               <label className="block text-black mb-2">
                 Project Images * (Minimum 3)
@@ -877,7 +863,6 @@ function CreateAdvertisement() {
 
                 {ferror && <p className="text-red-400 mt-2">{ferror}</p>}
 
-                {/* Selected Files Preview */}
                 {selectedFiles.length > 0 && (
                   <div className="flex flex-col gap-2 mt-4">
                     {selectedFiles.map((file, index) => (
@@ -902,7 +887,6 @@ function CreateAdvertisement() {
                   </div>
                 )}
 
-                {/* Uploaded Images */}
                 {formData.images.length > 0 && (
                   <div className="mt-4">
                     <p className="text-sm text-gray-600 mb-2">
@@ -924,10 +908,9 @@ function CreateAdvertisement() {
               </div>
             </div>
 
-            {/* PDF Upload */}
             <div className="w-full">
               <label className="block text-black mb-2">
-                Project Brochure (Optional)
+                Project Brochure 
               </label>
               <div className="bg-white rounded-2xl shadow-md p-4">
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
@@ -976,10 +959,32 @@ function CreateAdvertisement() {
                     </button>
                   </div>
                 )}
+
+                {formData.brochure?.pdfurl && (
+                  <div className="flex items-center justify-between p-3 border rounded-lg mt-4 bg-gray-50">
+                    <div className="flex items-center gap-3">
+                      <FaFilePdf className="text-red-500 text-2xl" />
+
+                      <div className="flex flex-col">
+                        <span className="text-sm font-medium text-gray-800">
+                          Project Brochure Uploaded
+                        </span>
+
+                        <a
+                          href={formData.brochure.pdfurl}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-blue-600 text-sm hover:underline"
+                        >
+                          View Brochure
+                        </a>
+                      </div>
+                    </div>
+                  </div>
+                )}
               </div>
             </div>
 
-            {/* Project Contacts */}
             <div className="w-full">
               <label className="block text-black mb-2">Contact Persons *</label>
               {formData.projectContacts.map((contact, index) => (

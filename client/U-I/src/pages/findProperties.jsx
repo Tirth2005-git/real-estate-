@@ -168,6 +168,24 @@ function FindProperties() {
         return;
       }
 
+      if (
+        formdata.minPrice &&
+        formdata.maxPrice &&
+        Number(formdata.minPrice) > Number(formdata.maxPrice)
+      ) {
+        setSeacrhError("Minimum price cannot be greater than maximum price");
+        return;
+      }
+
+      if (
+        formdata.minArea &&
+        formdata.maxArea &&
+        Number(formdata.minArea) > Number(formdata.maxArea)
+      ) {
+        setSeacrhError("Minimum area cannot be greater than maximum area");
+        return;
+      }
+
       setSearching(true);
       setSeacrhError(false);
 
@@ -233,7 +251,6 @@ function FindProperties() {
 
       setSearching(false);
       setSeacrhError(false);
-    
     } catch (err) {
       setSearching(false);
       setSeacrhError(err.message || "Search failed");
