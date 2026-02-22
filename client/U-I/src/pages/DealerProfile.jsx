@@ -16,183 +16,184 @@ export default function DealerProfile() {
   }
 
   return (
-    <div className="max-w-6xl mx-auto p-6 pt-24">
-      <div className="bg-white shadow-lg rounded-2xl p-6 sm:p-8 mb-10">
-        <div className="flex flex-col sm:flex-row gap-6 items-center">
-          {/* Profile Image */}
-          <div className="relative">
-            <div className="h-28 w-28 rounded-full bg-gradient-to-br from-blue-100 to-blue-200 p-1">
-              <div className="h-full w-full rounded-full bg-gray-200 overflow-hidden">
-                {dealer?.pfp ? (
-                  <img
-                    src={dealer.pfp}
-                    alt="Dealer profile"
-                    className="h-full w-full object-cover"
-                  />
-                ) : null}
+    <div className="max-w-7xl mx-auto pt-24 px-4">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        <div className="lg:col-span-1">
+          <div className="bg-white rounded-2xl shadow-md border border-gray-100 p-6 lg:sticky lg:top-24">
+            <div className="flex flex-col items-center text-center">
+              <div className="relative">
+                <div className="h-24 w-24 rounded-full bg-gradient-to-br from-blue-100 to-indigo-200 p-[2px]">
+                  <div className="h-full w-full rounded-full bg-gray-200 overflow-hidden">
+                    {dealer?.pfp && (
+                      <img
+                        src={dealer.pfp}
+                        alt="Dealer"
+                        className="h-full w-full object-cover"
+                      />
+                    )}
+                  </div>
+                </div>
+
+                <span className="absolute -bottom-2 left-1/2 -translate-x-1/2 text-xs px-3 py-0.5 rounded-full bg-gray-900 text-white capitalize">
+                  {dealer.dealerType}
+                </span>
               </div>
+
+              <h1 className="mt-4 text-xl font-semibold text-gray-900">
+                {dealer.dealerType === "agency"
+                  ? dealer.companyName
+                  : dealer.name}
+              </h1>
+
+              {dealer.contact?.email && (
+                <p className="text-sm text-gray-500 mt-1 break-all">
+                  {dealer.contact.email}
+                </p>
+              )}
             </div>
 
-            {/* Dealer Type Badge */}
-            <span className="absolute -bottom-2 left-1/2 -translate-x-1/2 text-xs px-3 py-0.5 rounded-full bg-gray-900 text-white capitalize shadow">
-              {dealer.dealerType}
-            </span>
-          </div>
+            {dealer.localities?.length > 0 && (
+              <div className="mt-6">
+                <p className="text-xs font-semibold text-gray-500 mb-2 text-center">
+                  Operating Localities
+                </p>
 
-          {/* Info Section */}
-          <div className="flex-1 text-center sm:text-left">
-            <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">
-              {dealer.dealerType === "agency"
-                ? dealer.companyName
-                : dealer.name}
-            </h1>
-
-            {/* Contact */}
-            {dealer.contact?.email && (
-              <p className="mt-1 text-sm text-gray-500">
-                {dealer.contact.email}
-              </p>
+                <div className="flex flex-wrap justify-center gap-2">
+                  {dealer.localities.map((l) => (
+                    <span
+                      key={l}
+                      className="text-xs bg-blue-50 text-blue-700 px-3 py-1 rounded-full capitalize"
+                    >
+                      {l}
+                    </span>
+                  ))}
+                </div>
+              </div>
             )}
 
-            {/* Localities */}
-            <div className="flex flex-wrap justify-center sm:justify-start gap-2 mt-3">
-              {dealer.localities.map((l) => (
-                <span
-                  key={l}
-                  className="text-xs sm:text-sm bg-blue-50 text-blue-700 px-3 py-1 rounded-full border border-blue-100 capitalize"
-                >
-                  {l}
-                </span>
-              ))}
-            </div>
-
-            {/* Description */}
             {dealer.companyDescription && (
-              <p className="mt-4 text-gray-600 max-w-2xl leading-relaxed">
+              <p className="mt-6 text-sm text-gray-600 text-center leading-relaxed">
                 {dealer.companyDescription}
               </p>
             )}
           </div>
         </div>
-      </div>
 
-      {listings.length > 0 ? (
-        <>
-          <h1 className="text-xl sm:text-2xl text-black font-bold text-center mt-4">
-            Listings by this Dealer
-          </h1>
-
-          <div className="flex flex-col gap-4 mt-3 items-center px-4">
-            {listings.map((list, index) => (
-              <div
-                key={list._id}
-                className="flex flex-col sm:flex-row gap-4 p-4 rounded-lg bg-white w-full max-w-3xl shadow-md items-center"
-              >
-                {/* Image */}
-                <div className="w-full sm:w-auto">
-                  <img
-                    src={list.images[0]?.imageurl}
-                    alt="Property"
-                    className="w-full sm:w-36 h-32 object-cover rounded-md"
-                  />
-                </div>
-
-                {/* Property Details */}
-                <div className="flex-1 flex flex-col gap-2 text-center sm:text-left">
-                  <p className="text-lg sm:text-2xl font-semibold text-black">
-                    {list.title}
-                  </p>
-
-                  {/* Location */}
-                  <div className="flex flex-col text-gray-500 text-sm sm:text-base">
-                    <p className="font-medium capitalize">
-                      {list.location?.locality}
-                    </p>
-                    <p>{list.location?.address}</p>
-                  </div>
-
-                  <div className="flex flex-col sm:flex-row flex-wrap gap-2 sm:gap-4 text-sm sm:text-base">
-                    <p className="mt-2">
-                      <span className="text-black font-medium">Price: </span>
-                      <span className="text-red-500 font-semibold">
-                        ₹{list.price?.toLocaleString()}
-                        {list.listingType === "rent" && "/month"}
-                      </span>
-                    </p>
-
-                    <p className="mt-2">
-                      <span className="text-black font-medium">Type: </span>
-                      <span className="text-red-500 font-semibold capitalize">
-                        {list.listingType}
-                      </span>
-                    </p>
-
-                    <p className="mt-2">
-                      <span className="text-black font-medium">Property: </span>
-                      <span className="text-red-500 font-semibold capitalize">
-                        {list.propertyType}
-                      </span>
-                    </p>
-
-                    {list.bhk && (
-                      <p className="mt-2">
-                        <span className="text-black font-medium">BHK: </span>
-                        <span className="text-blue-500 font-semibold">
-                          {list.bhk}
-                        </span>
-                      </p>
-                    )}
-
-                    <p className="mt-2">
-                      <span className="text-black font-medium">Area: </span>
-                      <span className="text-green-500 font-semibold">
-                        {list.area} sq.ft
-                      </span>
-                    </p>
-
-                    <p className="mt-2">
-                      <span className="text-black font-medium">Status: </span>
-                      <span
-                        className={
-                          list.status === "available"
-                            ? "text-green-500 font-semibold"
-                            : "text-red-500 font-semibold"
-                        }
-                      >
-                        {list.status}
-                      </span>
-                    </p>
-
-                    {list.features?.length > 0 && (
-                      <p className="mt-2">
-                        <span className="text-black font-medium">
-                          Features:{" "}
-                        </span>
-                        <span className="text-purple-500 font-semibold">
-                          {list.features.length}
-                        </span>
-                      </p>
-                    )}
-                  </div>
-                </div>
-
-                <div className="flex sm:flex-col gap-3 justify-center sm:justify-between text-center sm:text-right">
-                  <button
-                    onClick={() => handleView(list)}
-                    className="text-blue-600 hover:underline"
-                  >
-                    View Listing
-                  </button>
-                </div>
+        <div className="lg:col-span-2">
+          {listings.length > 0 ? (
+            <>
+              <div className="mb-6">
+                <h1 className="text-xl sm:text-2xl font-bold text-gray-800">
+                  Listings by this Dealer
+                </h1>
+                <p className="text-gray-500 text-sm">
+                  Properties currently available
+                </p>
               </div>
-            ))}
-          </div>
-        </>
-      ) : (
-        <p className="text-center text-gray-500 mt-10">
-          No listings posted by this dealer
-        </p>
-      )}
+
+              <div className="flex flex-col gap-6">
+                {listings.map((list) => (
+                  <div
+                    key={list._id}
+                    className="bg-white rounded-2xl shadow-md hover:shadow-xl transition-all overflow-hidden"
+                  >
+                    <div className="flex flex-col sm:flex-row">
+                      <div className="sm:w-64 w-full h-48">
+                        <img
+                          src={list.images[0]?.imageurl}
+                          className="w-full h-full object-cover"
+                        />
+                      </div>
+
+                      <div className="flex-1 p-6">
+                        <div className="flex justify-between items-start">
+                          <h2 className="text-lg sm:text-xl font-semibold text-gray-800 leading-snug">
+                            {list.title}
+                          </h2>
+
+                          <span
+                            className={`px-3 py-1 text-xs rounded-full ${
+                              list.status === "available"
+                                ? "bg-green-100 text-green-700"
+                                : "bg-red-100 text-red-600"
+                            }`}
+                          >
+                            {list.status}
+                          </span>
+                        </div>
+
+                        <p className="text-sm text-gray-500 mt-1 capitalize">
+                          {list.location?.locality}
+                        </p>
+
+                        <div className="flex flex-wrap gap-2 mt-4 text-sm">
+                          <span className="bg-gray-100 px-3 py-1 rounded-full">
+                            {list.propertyType}
+                          </span>
+
+                          {list.bhk && (
+                            <span className="bg-blue-50 text-blue-700 px-3 py-1 rounded-full">
+                              {list.bhk}
+                            </span>
+                          )}
+
+                          <span className="bg-green-50 text-green-700 px-3 py-1 rounded-full">
+                            {list.area} sq.ft
+                          </span>
+
+                          <span className="bg-yellow-50 text-yellow-700 px-3 py-1 rounded-full capitalize">
+                            For {list.listingType}
+                          </span>
+                        </div>
+
+                        {list.features?.length > 0 && (
+                          <div className="flex flex-wrap gap-2 mt-4">
+                            {list.features.slice(0, 4).map((f, i) => (
+                              <span
+                                key={i}
+                                className="text-xs bg-purple-50 text-purple-700 px-3 py-1 rounded-full"
+                              >
+                                {f}
+                              </span>
+                            ))}
+                          </div>
+                        )}
+
+                        <div className="flex justify-between items-center mt-6">
+                          <p className="text-lg sm:text-xl font-bold text-red-600">
+                            ₹{list.price?.toLocaleString()}
+                            {list.listingType === "rent" && (
+                              <span className="text-xs sm:text-sm text-gray-500 ml-1">
+                                /month
+                              </span>
+                            )}
+                          </p>
+
+                          <button
+                            onClick={() => handleView(list)}
+                            className="w-full sm:w-auto px-4 sm:px-6 py-2.5 sm:py-3 text-sm md:text-base font-medium rounded-lg bg-blue-600 text-white hover:bg-blue-700 transition-colors duration-200"
+                          >
+                            View Listing
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </>
+          ) : (
+            <div className="text-center pt-24">
+              <h2 className="text-2xl font-semibold text-gray-800">
+                No Listings Yet
+              </h2>
+              <p className="text-gray-500">
+                This dealer has not posted any properties yet.
+              </p>
+            </div>
+          )}
+        </div>
+      </div>
     </div>
   );
 }

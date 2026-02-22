@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import { useDispatch, useSelector } from "react-redux";
-import { NavLink } from "react-router-dom";
+import { NavLink, useNavigate } from "react-router-dom";
 import { setListing } from "../redux/listingslice.jsx";
 import Select from "react-select";
 
@@ -51,7 +51,7 @@ function CreateListing() {
       return () => clearTimeout(timer);
     }
   }, [Cuploading]);
-
+  const navigate = useNavigate();
   async function handleSubmit(e) {
     e.preventDefault();
 
@@ -123,7 +123,6 @@ function CreateListing() {
         }
       }
 
-      // 5. Phone validation
       if (trimmedData.phone) {
         const phoneRegex = /^[6-9]\d{9}$/;
         if (!phoneRegex.test(trimmedData.phone.replace(/\D/g, ""))) {
@@ -132,10 +131,8 @@ function CreateListing() {
         }
       }
 
-      // 6. Prepare data for API
       setFormData(trimmedData);
 
-      // Add structured data
       trimmedData.bhk = trimmedData.bhk || null;
       trimmedData.area = Number(trimmedData.area);
       trimmedData.price = Number(trimmedData.price);
@@ -143,13 +140,11 @@ function CreateListing() {
       trimmedData.features = trimmedData.features || [];
       trimmedData.specialOffer = trimmedData.specialOffer || "";
 
-      // Add location object
       trimmedData.location = {
         locality: trimmedData.locality,
         address: trimmedData.address,
       };
 
-      // Add listedBy object with role/company data
       trimmedData.listedBy = {
         userId: currentuser._id,
         role: currentuser.role,
@@ -195,6 +190,15 @@ function CreateListing() {
       setCreateUploading("success");
       setCreateError(null);
       dispatch(setListing(data.newlisting));
+      setFormData({
+        images: [],
+        features: [],
+      });
+      setTimeout(() => {
+        navigate("/listing", {
+          state: data.newlisting,
+        });
+      }, 600);
     } catch (err) {
       setCreateError(err.message || "Something went wrong");
     }
@@ -594,7 +598,8 @@ function CreateListing() {
                   onChange={(e) =>
                     setFormData({ ...formdata, [e.target.id]: e.target.value })
                   }
-                  min="1000"
+                  min="5000"
+                  step="1000"
                 />
 
                 <label htmlFor="area" className="text-black mb-1">
@@ -605,7 +610,8 @@ function CreateListing() {
                   id="area"
                   className="p-2 bg-white text-black rounded-lg"
                   required
-                  min="1000"
+                  min="150"
+                  step="10"
                   onChange={(e) =>
                     setFormData({ ...formdata, [e.target.id]: e.target.value })
                   }

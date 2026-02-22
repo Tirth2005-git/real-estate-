@@ -42,81 +42,98 @@ function BuilderAds() {
     <>
       {ads.length > 0 ? (
         <>
-          <h1 className="text-xl sm:text-2xl text-black font-bold text-center mt-4">
-            Your Advertisements
-          </h1>
+          <div className="pt-6 text-center">
+            <h1 className="text-2xl sm:text-3xl font-bold text-gray-800">
+              Your Advertisements
+            </h1>
+            <p className="text-gray-500 mt-1 text-sm sm:text-base">
+              Projects promoted by you
+            </p>
+          </div>
 
-          <div className="flex flex-col gap-4 mt-3 items-center px-4">
+          <div className="flex flex-col gap-6 mt-8 items-center px-4 pb-10">
             {ads.map((ad, index) => (
               <div
                 key={index}
-                className="flex flex-col sm:flex-row gap-4 p-4 rounded-lg bg-white w-full max-w-3xl shadow-md items-center"
+                className="w-full max-w-4xl bg-white rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300 overflow-hidden"
               >
-                {/* Image */}
-                <img
-                  src={ad.images?.[0]?.imageurl}
-                  alt="Project"
-                  className="w-full sm:w-36 h-32 object-cover rounded-md"
-                />
-
-                {/* Details */}
-                <div className="flex-1 flex flex-col gap-2 text-center sm:text-left">
-                  <p className="text-lg sm:text-2xl font-semibold text-black">
-                    {ad.projectName}
-                  </p>
-
-                  <p className="text-gray-500 text-sm sm:text-base">
-                    {ad.location}
-                  </p>
-
-                  <div className="flex flex-wrap gap-3 text-sm sm:text-base">
-                    <p>
-                      <span className="font-medium">Type: </span>
-                      {ad.projectType}
-                    </p>
-
-                    <p>
-                      <span className="font-medium">Units: </span>
-                      {ad.unitTypes.join(", ")}
-                    </p>
-
-                    <p>
-                      <span className="font-medium">Price: </span>₹
-                      {ad.priceRange.min.toLocaleString()} – ₹
-                      {ad.priceRange.max.toLocaleString()}
-                    </p>
+                <div className="flex flex-col sm:flex-row">
+                  {/* IMAGE */}
+                  <div className="sm:w-60 w-full h-48 sm:h-auto">
+                    <img
+                      src={ad.images?.[0]?.imageurl}
+                      alt="Project"
+                      className="w-full h-full object-cover"
+                    />
                   </div>
-                </div>
 
-                {/* Actions */}
-                <div className="flex gap-3">
-                  <button
-                    className="text-sm text-blue-600 hover:underline px-2 py-1 hover:bg-blue-50 rounded"
-                    onClick={() => handleView(index)}
-                  >
-                    View
-                  </button>
+                  {/* CONTENT */}
+                  <div className="flex-1 p-6 flex flex-col justify-between">
+                    {/* Title */}
+                    <div>
+                      <h2 className="text-xl sm:text-2xl font-semibold text-gray-800">
+                        {ad.projectName}
+                      </h2>
 
-                  <button
-                    className="text-sm text-red-600 hover:underline px-2 py-1 hover:bg-red-50 rounded"
-                    onClick={() => handleDelete(index)}
-                    disabled={del === index}
-                  >
-                    {del === index ? "Deleting..." : "Delete"}
-                  </button>
+                      <p className="text-sm text-gray-500 mt-1 capitalize">
+                        {ad.location}
+                      </p>
+                    </div>
+
+                    {/* INFO BADGES */}
+                    <div className="flex flex-wrap gap-2 mt-4 text-sm">
+                      <span className="bg-purple-50 text-purple-700 px-3 py-1 rounded-full capitalize">
+                        {ad.projectType}
+                      </span>
+
+                      {ad.unitTypes?.map((unit, i) => (
+                        <span
+                          key={i}
+                          className="bg-blue-50 text-blue-700 px-3 py-1 rounded-full"
+                        >
+                          {unit}
+                        </span>
+                      ))}
+                    </div>
+
+                    {/* PRICE */}
+                    <div className="mt-4 text-xl font-bold text-red-600">
+                      ₹{ad.priceRange.min.toLocaleString()} – ₹
+                      {ad.priceRange.max.toLocaleString()}
+                    </div>
+
+                    {/* ACTIONS */}
+                    <div className="mt-6 flex gap-3">
+                      <button
+                        onClick={() => handleView(index)}
+                        className="px-5 py-2 rounded-lg bg-blue-600 text-white hover:bg-blue-700 transition text-sm"
+                      >
+                        View Project
+                      </button>
+
+                      <button
+                        onClick={() => handleDelete(index)}
+                        disabled={del === index}
+                        className="px-5 py-2 rounded-lg bg-red-50 text-red-600 hover:bg-red-100 transition text-sm"
+                      >
+                        {del === index ? "Deleting..." : "Delete"}
+                      </button>
+                    </div>
+                  </div>
                 </div>
               </div>
             ))}
           </div>
         </>
       ) : (
-        <div className="text-center mt-10 px-4">
-          <h1 className="font-bold text-lg sm:text-2xl mb-4">
-            You have not created any advertisements yet.
-          </h1>
+        <div className="flex flex-col items-center justify-center pt-24 pb-20 text-center">
+          <h2 className="text-2xl font-semibold text-gray-800 mb-3">
+            No Advertisements Yet
+          </h2>
+
           <NavLink
-            className="text-green-500 text-base sm:text-lg cursor-pointer hover:underline inline-block px-6 py-2 bg-green-50 rounded-lg"
             to="/create-ad"
+            className="px-6 py-2 rounded-lg bg-green-600 text-white hover:bg-green-700 transition"
           >
             Create Your First Ad
           </NavLink>

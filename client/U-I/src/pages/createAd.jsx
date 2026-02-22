@@ -3,9 +3,10 @@ import { FaTrash, FaFilePdf, FaPlus, FaMinus } from "react-icons/fa";
 import { useDispatch, useSelector } from "react-redux";
 import { addAd } from "../redux/adsslice.jsx";
 import Select from "react-select";
-
+import { useNavigate, NavLink } from "react-router-dom";
 function CreateAdvertisement() {
   const { currentuser } = useSelector((state) => state.user);
+  const { ads } = useSelector((state) => state.ads);
   const dispatch = useDispatch();
   const mumbaiLocalities = [
     "colaba",
@@ -231,7 +232,7 @@ function CreateAdvertisement() {
   };
   const handlePdfSelect = (e) => {
     const file = e.target.files[0];
-    setPdferror(""); 
+    setPdferror("");
 
     if (!file) return;
 
@@ -478,10 +479,10 @@ function CreateAdvertisement() {
     const cleaned = phone.replace(/\D/g, "");
     return /^[6-9]\d{9}$/.test(cleaned);
   };
+  const navigate = useNavigate();
   async function handleSubmit(e) {
     e.preventDefault();
     if (uploading) return;
-
     setSubmitError("");
     if (isEmpty(formData.projectName))
       return setSubmitError("Project name is required");
@@ -573,10 +574,32 @@ function CreateAdvertisement() {
       if (!response.ok) throw new Error(data.message || "Failed to create ad");
 
       dispatch(addAd(data.advertisement));
+      setFormData({
+        projectName: "",
+        description: "",
+        location: "",
+        projectType: "Residential",
 
-      alert("Advertisement submitted successfully!");
+        unitTypes: [],
+        priceRange: { min: "", max: "" },
+        areaRange: { min: "", max: "" },
+        possessionDate: "",
+        reraRegistered: false,
+        reraNumber: "",
+
+        amenities: [],
+
+        images: [],
+        brochure: "",
+
+        projectContacts: [{ name: "", phone: "", email: "" }],
+      });
+      setTimeout(() => {
+        navigate("/ad", {
+          state: data.advertisement,
+        });
+      }, 600);
     } catch (err) {
-      console.error(err);
       setSubmitError(err.message || "Submission failed");
     } finally {
       setUploading(false);
@@ -588,7 +611,17 @@ function CreateAdvertisement() {
       <h1 className="text-center text-black font-bold mt-4 text-xl sm:text-2xl">
         Create Advertisement
       </h1>
-
+      {ads.length > 0 && (
+        <p className="text-green-600 text-base sm:text-xl font-semibold flex justify-center mt-4 text-center px-3">
+          You already have active advertisements
+          <NavLink
+            to="/builder-ads"
+            className="ml-2 text-green-800 font-bold hover:underline"
+          >
+            View them here
+          </NavLink>
+        </p>
+      )}
       <form
         className="bg-gray-200 mx-auto flex flex-col md:flex-row p-4 sm:p-6 justify-between gap-6 rounded-xl max-w-5xl mt-4"
         onSubmit={handleSubmit}
@@ -708,30 +741,39 @@ function CreateAdvertisement() {
 
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <label className="block text-black mb-1">Min Price (₹) *</label>
-                <input
-                  type="number"
-                  placeholder="Min"
-                  value={formData.priceRange.min}
-                  onChange={(e) =>
-                    handleNestedChange("priceRange", "min", e.target.value)
-                  }
-                  className="p-2 w-full bg-white text-black rounded-lg"
-                  min="1"
-                />
-              </div>
-              <div>
-                <label className="block text-black mb-1">Max Price (₹) *</label>
-                <input
-                  type="number"
-                  placeholder="Max"
-                  value={formData.priceRange.max}
-                  onChange={(e) =>
-                    handleNestedChange("priceRange", "max", e.target.value)
-                  }
-                  className="p-2 w-full bg-white text-black rounded-lg"
-                  min="1"
-                />
+                <div>
+                  <label className="block text-black mb-1">
+                    Min Price (₹) *
+                  </label>
+                  <input
+                    type="number"
+                    placeholder="Min"
+                    value={formData.priceRange.min}
+                    onChange={(e) =>
+                      handleNestedChange("priceRange", "min", e.target.value)
+                    }
+                    className="p-2 w-full bg-white text-black rounded-lg"
+                    min="500000"
+                    step="50000"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-black mb-1">
+                    Max Price (₹) *
+                  </label>
+                  <input
+                    type="number"
+                    placeholder="Max"
+                    value={formData.priceRange.max}
+                    onChange={(e) =>
+                      handleNestedChange("priceRange", "max", e.target.value)
+                    }
+                    className="p-2 w-full bg-white text-black rounded-lg"
+                    min="500000"
+                    step="50000"
+                  />
+                </div>
               </div>
             </div>
             {errors.priceRange && (
@@ -740,34 +782,39 @@ function CreateAdvertisement() {
 
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <label className="block text-black mb-1">
-                  Min Area (sq ft) *
-                </label>
-                <input
-                  type="number"
-                  placeholder="Min"
-                  value={formData.areaRange.min}
-                  onChange={(e) =>
-                    handleNestedChange("areaRange", "min", e.target.value)
-                  }
-                  className="p-2 w-full bg-white text-black rounded-lg"
-                  min="1"
-                />
-              </div>
-              <div>
-                <label className="block text-black mb-1">
-                  Max Area (sq ft) *
-                </label>
-                <input
-                  type="number"
-                  placeholder="Max"
-                  value={formData.areaRange.max}
-                  onChange={(e) =>
-                    handleNestedChange("areaRange", "max", e.target.value)
-                  }
-                  className="p-2 w-full bg-white text-black rounded-lg"
-                  min="1"
-                />
+                <div>
+                  <label className="block text-black mb-1">
+                    Min Area (sq ft) *
+                  </label>
+                  <input
+                    type="number"
+                    placeholder="Min"
+                    value={formData.areaRange.min}
+                    onChange={(e) =>
+                      handleNestedChange("areaRange", "min", e.target.value)
+                    }
+                    className="p-2 w-full bg-white text-black rounded-lg"
+                    min="150"
+                    step="10"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-black mb-1">
+                    Max Area (sq ft) *
+                  </label>
+                  <input
+                    type="number"
+                    placeholder="Max"
+                    value={formData.areaRange.max}
+                    onChange={(e) =>
+                      handleNestedChange("areaRange", "max", e.target.value)
+                    }
+                    className="p-2 w-full bg-white text-black rounded-lg"
+                    min="150"
+                    step="10"
+                  />
+                </div>
               </div>
             </div>
             {errors.areaRange && (
@@ -909,9 +956,7 @@ function CreateAdvertisement() {
             </div>
 
             <div className="w-full">
-              <label className="block text-black mb-2">
-                Project Brochure 
-              </label>
+              <label className="block text-black mb-2">Project Brochure</label>
               <div className="bg-white rounded-2xl shadow-md p-4">
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                   <input

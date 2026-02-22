@@ -186,12 +186,16 @@ export async function uploadPdf(req, res, next) {
   }
 }
 export async function delpdf(public_id) {
-  if (!public_id) return;
+  if (!public_id) return null;
+
   try {
-    await cloudinary.uploader.destroy(public_id, {
-      resource_type: "raw",
+    const result = await cloudinary.uploader.destroy(public_id, {
+      resource_type: "image",
     });
+
+    return result;
   } catch (err) {
-    next(ErrorHandler(500, err.message));
+    console.error("PDF delete failed:", err.message);
+    throw new Error("Failed to delete brochure");
   }
 }
