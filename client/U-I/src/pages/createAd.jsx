@@ -508,8 +508,24 @@ function CreateAdvertisement() {
     if (!formData.possessionDate)
       return setSubmitError("Possession date is required");
 
-    if (!formData.reraNumber.trim())
-      return setSubmitError("RERA number is required");
+    if (!formData.reraNumber.trim()) {
+      return setSubmitError("Rera number is required");
+    }
+    if (formData.reraNumber.trim()) {
+      const rera = formData.reraNumber.trim().toUpperCase();
+
+      if (!rera) {
+        return setSubmitError("RERA number is required");
+      }
+
+      const mahaReraRegex = /^P518\d{6,10}$/;
+
+      if (!mahaReraRegex.test(rera)) {
+        return setSubmitError(
+          "Enter a valid MahaRERA number (Example: P51800012345)",
+        );
+      }
+    }
 
     if (formData.images.length < 3)
       return setSubmitError("Upload at least 3 images");
@@ -535,7 +551,7 @@ function CreateAdvertisement() {
 
       if (!isValidEmail(c.email))
         return setSubmitError(
-          `Contact ${i + 1}: Enter valid email or valid domain`,
+          `Contact ${i + 1}: Please Enter Valid Email with a valid domain`,
         );
     }
 

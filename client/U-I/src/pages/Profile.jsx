@@ -11,6 +11,7 @@ import { clearAds } from "../redux/adsslice.jsx";
 import { clearListings } from "../redux/listingslice.jsx";
 import { clearProperties } from "../redux/propertiesSlice.jsx";
 import Select from "react-select";
+import { clearDealerProfile } from "../redux/dealerProfileSlice.jsx";
 
 function Profile() {
   const PROPERTY_TYPES = [
@@ -243,25 +244,27 @@ function Profile() {
 
     const hasProfileUpdates = Object.keys(formData).length > 0;
 
+    const prefs = notificationPrefs || {};
+
+    const allEmpty =
+      (!prefs.localities || prefs.localities.length === 0) &&
+      (!prefs.propertyTypes || prefs.propertyTypes.length === 0) &&
+      (!prefs.listingTypes || prefs.listingTypes.length === 0);
+
     const hasNotificationUpdates =
       currentuser.role !== "builder" &&
-      notificationPrefs &&
-      (notificationPrefs.localities?.length ||
-        notificationPrefs.propertyTypes?.length ||
-        notificationPrefs.listingTypes?.length);
+      JSON.stringify(prefs) !==
+        JSON.stringify(currentuser.notificationPreferences || {});
 
     if (!hasProfileUpdates && !hasNotificationUpdates) {
       dispatch(updatefailure("Nothing to update"));
       return;
     }
-    if (hasNotificationUpdates) {
-      if (
-        !notificationPrefs.localities ||
-        notificationPrefs.localities.length === 0
-      ) {
+    if (hasNotificationUpdates && !allEmpty) {
+      if (!prefs.localities || prefs.localities.length === 0) {
         dispatch(
           updatefailure(
-            "Please select at least one locality for notifications",
+            "Please select at least one locality to enable notifications",
           ),
         );
         return;
@@ -396,6 +399,7 @@ function Profile() {
     dispatch(clearAds());
     dispatch(clearListings());
     dispatch(clearProperties());
+    dispatch(clearDealerProfile());
   }
   async function handledelete() {
     try {
@@ -419,6 +423,7 @@ function Profile() {
       } else {
         dispatch(clearListings());
         dispatch(clearProperties());
+        dispatch(clearDealerProfile());
       }
 
       setdeleting(false);
@@ -597,7 +602,6 @@ function Profile() {
               Notification Preferences
             </h2>
 
-            {/* Localities */}
             <div className="mb-4">
               <label className="text-sm text-gray-600">
                 Preferred Localities
@@ -624,7 +628,6 @@ function Profile() {
               />
             </div>
 
-            {/* Listing Type */}
             <div className="mb-4">
               <label className="text-sm text-gray-600 block mb-1">
                 Listing Type
@@ -635,7 +638,7 @@ function Profile() {
                     <input
                       type="checkbox"
                       defaultChecked={currentuser.notificationPreferences?.listingTypes?.includes(
-                        type,
+                        type.toLowerCase(),
                       )}
                       onChange={(e) => {
                         const isChecked = e.target.checked;
@@ -644,9 +647,11 @@ function Profile() {
                           let newTypes;
 
                           if (isChecked) {
-                            newTypes = [...currentTypes, type];
+                            newTypes = [...currentTypes, type.toLowerCase()];
                           } else {
-                            newTypes = currentTypes.filter((t) => t !== type);
+                            newTypes = currentTypes.filter(
+                              (t) => t !== type.toLowerCase(),
+                            );
                           }
 
                           return {
@@ -662,7 +667,6 @@ function Profile() {
               </div>
             </div>
 
-            {/* Property Type */}
             <div>
               <label className="text-sm text-gray-600 block mb-1">
                 Property Type
@@ -673,7 +677,7 @@ function Profile() {
                     <input
                       type="checkbox"
                       defaultChecked={currentuser.notificationPreferences?.propertyTypes?.includes(
-                        type,
+                        type.toLowerCase(),
                       )}
                       onChange={(e) => {
                         const isChecked = e.target.checked;
@@ -682,11 +686,12 @@ function Profile() {
                           let newTypes;
 
                           if (isChecked) {
-                            // Add type if checked
-                            newTypes = [...currentTypes, type];
+                            const value = type.toLowerCase();
+                            newTypes = [...currentTypes, value];
                           } else {
-                            // Remove type if unchecked
-                            newTypes = currentTypes.filter((t) => t !== type);
+                            newTypes = currentTypes.filter(
+                              (t) => t !== type.toLowerCase(),
+                            );
                           }
 
                           return {

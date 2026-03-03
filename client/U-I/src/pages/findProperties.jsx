@@ -332,11 +332,11 @@ function FindProperties() {
                       "flat",
                       "bungalow",
                       "villa",
-                      "studio-apartment",
+                      "studio apartment",
                       "builder floor",
                     ]
                   : [
-                      "office-space",
+                      "office space",
                       "shop",
                       "showroom",
                       "warehouse",

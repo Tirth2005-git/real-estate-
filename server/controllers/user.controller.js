@@ -26,33 +26,24 @@ export async function updateUser(req, res, next) {
       "notificationPreferences", // ✅ Add this
     ];
 
-    // Check if at least one allowed field has value
     const hasValidField = allowedFields.some((field) => {
       const value = req.body[field];
 
       if (!value) return false;
 
-      // For notificationPreferences (object), check if it has any data
       if (field === "notificationPreferences") {
-        const prefs = value;
-        return (
-          (prefs.localities && prefs.localities.length > 0) ||
-          (prefs.propertyTypes && prefs.propertyTypes.length > 0) ||
-          (prefs.listingTypes && prefs.listingTypes.length > 0)
-        );
+        return true; 
       }
 
-      // For arrays (like localities), check length
       if (Array.isArray(value)) {
         return value.length > 0;
       }
 
-      // For strings, check if not empty after trim
       if (typeof value === "string") {
         return value.trim().length > 0;
       }
 
-      // For other types (like pfp string)
+      
       return true;
     });
 
@@ -71,7 +62,6 @@ export async function updateUser(req, res, next) {
     let cleanBody = {};
     Object.keys(req.body).forEach((key) => {
       if (req.body[key] !== null && req.body[key] !== undefined) {
-        // Handle different types of values
         if (typeof req.body[key] === "string") {
           const trimmed = req.body[key].trim();
           if (trimmed.length > 0) {
@@ -82,16 +72,13 @@ export async function updateUser(req, res, next) {
             cleanBody[key] = req.body[key];
           }
         } else if (typeof req.body[key] === "object") {
-          // For objects like notificationPreferences
           cleanBody[key] = req.body[key];
         } else {
-          // For other types (numbers, booleans)
           cleanBody[key] = req.body[key];
         }
       }
     });
 
-    // Email validation
     if (cleanBody.personalContactValue || cleanBody.companyContactValue) {
       const emailConditions = [];
 
@@ -117,7 +104,6 @@ export async function updateUser(req, res, next) {
       }
     }
 
-    // Username validation
     if (cleanBody.username) {
       const usernameCheck = await User.findOne({
         username: cleanBody.username.trim(),
@@ -133,7 +119,6 @@ export async function updateUser(req, res, next) {
       cleanBody.password = await bcrypt.hash(cleanBody.password, 10);
     }
 
-    // Trim string fields
     const stringFields = [
       "username",
       "personalContactValue",

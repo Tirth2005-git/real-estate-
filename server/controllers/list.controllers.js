@@ -108,18 +108,47 @@ export async function listController(req, res, next) {
 
       if (!email) continue;
 
-      await sendEmail(
-        email,
-        "New Property Matching Your Preference",
-        `
-      <h3>New Property Listed</h3>
-      <p><strong>Title:</strong> ${newlisting.title}</p>
-      <p><strong>Location:</strong> ${newlisting.location.locality}</p>
-      <p><strong>Type:</strong> ${newlisting.propertyType}</p>
-      <p><strong>For:</strong> ${newlisting.listingType}</p>
-      <p><strong>Price:</strong> ₹${newlisting.price}</p>
-    `,
-      );
+   await sendEmail(
+  email,
+  "New Property Matching Your Preference",
+  `
+    <h3>New Property Listed</h3>
+
+    <p style="font-size:18px;font-weight:bold;">
+      ${newlisting.title}
+    </p>
+
+    ${
+      newlisting.images?.[0]?.imageurl
+        ? `<img src="${newlisting.images[0].imageurl}" 
+             style="width:100%;max-width:500px;border-radius:8px;margin:10px 0;" />`
+        : ""
+    }
+
+    <p>
+      📍 ${newlisting.location.locality}, 
+      ${newlisting.location.address}
+    </p>
+
+    <p>
+      🏠 ${newlisting.propertyType}
+      ${newlisting.bhk ? ` • ${newlisting.bhk}` : ""}
+      • ${newlisting.area} sq.ft
+      • For ${newlisting.listingType}
+    </p>
+
+    <p style="font-size:16px;font-weight:bold;">
+      💰 ₹${newlisting.price.toLocaleString()}
+      ${newlisting.listingType === "rent" ? " / month" : ""}
+    </p>
+
+    <hr/>
+
+    <p style="font-size:12px;color:gray;">
+      You are receiving this because it matches your notification preferences.
+    </p>
+  `
+);
     }
 
     res.status(201).json({
@@ -295,56 +324,46 @@ export async function browseList(req, res, next) {
 
     const listingFilters = { status: "available" };
 
-  
     if (locality) {
       listingFilters["location.locality"] = locality.toLowerCase();
     }
 
-    
     if (propertyType) {
       listingFilters.propertyType = propertyType.toLowerCase();
     }
 
-    
     if (listingTypes?.length) {
       listingFilters.listingType = { $in: listingTypes };
     }
 
-    
     if (bhks?.length) {
       listingFilters.bhk = { $in: bhks };
     }
 
-    
     if (minPrice || maxPrice) {
       listingFilters.price = {};
       if (minPrice) listingFilters.price.$gte = Number(minPrice);
       if (maxPrice) listingFilters.price.$lte = Number(maxPrice);
     }
 
-    
     if (minArea || maxArea) {
       listingFilters.area = {};
       if (minArea) listingFilters.area.$gte = Number(minArea);
       if (maxArea) listingFilters.area.$lte = Number(maxArea);
     }
 
-    
     if (Features?.length) {
       listingFilters.features = { $all: Features };
     }
 
-    
     if (listedByRoles?.length) {
       listingFilters["listedBy.role"] = { $in: listedByRoles };
     }
 
-    
     if (dealerTypes?.length) {
       listingFilters["listedBy.dealerType"] = { $in: dealerTypes };
     }
 
-  
     const adFilters = {};
 
     if (locality) {
@@ -354,7 +373,6 @@ export async function browseList(req, res, next) {
     if (propertyCategory) {
       adFilters.projectType = propertyCategory.toLowerCase();
     }
-   
 
     const listings = await Listing.find(listingFilters)
       .sort({ createdAt: -1 })

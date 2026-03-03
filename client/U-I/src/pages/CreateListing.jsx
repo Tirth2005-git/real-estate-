@@ -531,10 +531,10 @@ function CreateListing() {
                       type="radio"
                       name="propertyType"
                       id="propertyType"
-                      value={type.toLowerCase().replace(" ", "-")}
+                      value={type.toLowerCase()}
                       checked={
                         formdata.propertyType ===
-                        type.toLowerCase().replace(" ", "-")
+                        type.toLowerCase()
                       }
                       onChange={(e) =>
                         setFormData({
