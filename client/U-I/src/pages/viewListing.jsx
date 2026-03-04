@@ -17,7 +17,7 @@ function ListingView() {
     bhk,
     area,
   } = listing;
-  console.log(listing);
+  
 
   const [current, setCurrent] = useState(0);
   const nextSlide = () => setCurrent((prev) => (prev + 1) % images.length);

@@ -512,7 +512,7 @@ function FindProperties() {
               <span className="text-gray-700 ml-2">Dealers</span>
             </label>
 
-            {/* Dealer Types */}
+            
             {formdata.listedByRoles?.includes("dealer") && (
               <div className="ml-6 flex flex-col gap-1">
                 <label className="flex items-center">
@@ -653,58 +653,6 @@ function FindProperties() {
           )}
         </div>
       </form>
-      {ads.length > 0 && (
-        <div className="pt-28 px-4">
-          <h1 className="text-2xl font-bold text-center mb-6 text-purple-700">
-            Featured Projects in This Area
-          </h1>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 max-w-7xl mx-auto mb-12">
-            {ads.map((ad, index) => (
-              <div
-                key={index}
-                className="bg-white rounded-xl shadow-lg overflow-hidden hover:shadow-xl transition-shadow"
-                onClick={() => handleadview(index)}
-              >
-                <div className="h-48 overflow-hidden">
-                  <img
-                    src={ad.images[0].imageurl}
-                    alt={ad.projectName}
-                    className="w-full h-full object-cover"
-                  />
-                </div>
-
-                <div className="p-4">
-                  <span className="inline-block bg-purple-100 text-purple-800 text-xs px-2 py-1 rounded mb-2">
-                    🏗 Sponsored Project
-                  </span>
-
-                  <h3 className="text-lg font-bold text-gray-800 mb-1">
-                    {ad.projectName}
-                  </h3>
-
-                  <p className="text-sm text-gray-600 mb-2">
-                    📍 {ad.location.locality}, Mumbai
-                  </p>
-
-                  <p className="text-sm text-gray-500 mb-3">
-                    {ad.projectType} • {ad.unitTypes.join(", ")}
-                  </p>
-
-                  <p className="text-green-700 font-semibold">
-                    ₹{ad.priceRange.min.toLocaleString()} – ₹
-                    {ad.priceRange.max.toLocaleString()}
-                  </p>
-
-                  <div className="pt-3 border-t text-sm text-blue-600">
-                    📞 {ad.projectContacts[0]?.phone}
-                  </div>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
 
       {properties.length > 0 ? (
         <div className="pt-24 px-4">
@@ -713,138 +661,245 @@ function FindProperties() {
           </h1>
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 max-w-7xl mx-auto">
-            {properties.map((property, index) => (
-              <div
-                key={index}
-                className="bg-white rounded-xl shadow-lg overflow-hidden hover:shadow-xl transition-shadow cursor-pointer"
-                onClick={() => handleview(index)}
-              >
-                <div className="h-48 overflow-hidden">
-                  <img
-                    src={property.images[0]?.imageurl}
-                    alt={property.title}
-                    className="w-full h-full object-cover hover:scale-105 transition-transform duration-300"
-                  />
-                </div>
+            {(() => {
+              const items = [];
+              let adIndex = 0;
 
-                <div className="p-4">
-                  {/* Badge for listed by */}
-                  <div className="flex justify-between items-start mb-2">
-                    <span
-                      className={`px-3 py-1 rounded-full text-xs font-medium ${
-                        property.listedBy.role === "dealer"
-                          ? property.listedBy.dealerType === "agency"
-                            ? "bg-purple-100 text-purple-800"
-                            : "bg-blue-100 text-blue-800"
-                          : "bg-gray-100 text-gray-800"
-                      }`}
-                    >
-                      {property.listedBy.role === "dealer"
-                        ? `🏢 ${
-                            property.listedBy.dealerType === "agency"
-                              ? "Agency"
-                              : "Individual"
-                          } Dealer`
-                        : "👤 Individual User"}
-                      {property.listedBy.companyName &&
-                        ` • ${property.listedBy.companyName}`}
-                    </span>
+              for (let i = 0; i < properties.length; i++) {
+                items.push(
+                  <div
+                    key={`property-${i}`}
+                    className="bg-white rounded-xl shadow-lg overflow-hidden hover:shadow-xl transition-shadow cursor-pointer"
+                    onClick={() => handleview(i)}
+                  >
+                    <div className="h-48 overflow-hidden">
+                      <img
+                        src={properties[i].images[0]?.imageurl}
+                        alt={properties[i].title}
+                        className="w-full h-full object-cover hover:scale-105 transition-transform duration-300"
+                      />
+                    </div>
 
-                    <span
-                      className={`px-2 py-1 rounded text-xs font-medium ${
-                        property.status === "available"
-                          ? "bg-green-100 text-green-800"
-                          : "bg-red-100 text-red-800"
-                      }`}
-                    >
-                      {property.status}
-                    </span>
-                  </div>
+                    <div className="p-4">
+                      <div className="flex justify-between items-start mb-2">
+                        <span
+                          className={`px-3 py-1 rounded-full text-xs font-medium ${
+                            properties[i].listedBy.role === "dealer"
+                              ? properties[i].listedBy.dealerType === "agency"
+                                ? "bg-purple-100 text-purple-800"
+                                : "bg-blue-100 text-blue-800"
+                              : "bg-gray-100 text-gray-800"
+                          }`}
+                        >
+                          {properties[i].listedBy.role === "dealer"
+                            ? `🏢 ${
+                                properties[i].listedBy.dealerType === "agency"
+                                  ? "Agency"
+                                  : "Individual"
+                              } Dealer`
+                            : "👤 Individual User"}
+                          {properties[i].listedBy.companyName &&
+                            ` • ${properties[i].listedBy.companyName}`}
+                        </span>
 
-                  {/* Title */}
-                  <h3 className="text-lg font-bold text-gray-800 mb-1">
-                    {property.title}
-                  </h3>
+                        <span
+                          className={`px-2 py-1 rounded text-xs font-medium ${
+                            properties[i].status === "available"
+                              ? "bg-green-100 text-green-800"
+                              : "bg-red-100 text-red-800"
+                          }`}
+                        >
+                          {properties[i].status}
+                        </span>
+                      </div>
 
-                  {/* Location */}
-                  <p className="text-gray-600 text-sm mb-2 flex items-center">
-                    📍 {property.location?.locality}, Mumbai
-                  </p>
+                      <h3 className="text-lg font-bold text-gray-800 mb-1">
+                        {properties[i].title}
+                      </h3>
 
-                  {/* Quick Info */}
-                  <div className="flex flex-wrap gap-2 mb-3">
-                    <span className="bg-gray-100 text-gray-700 px-2 py-1 rounded text-xs">
-                      {property.propertyType}
-                    </span>
-                    {property.bhk && (
-                      <span className="bg-blue-50 text-blue-700 px-2 py-1 rounded text-xs">
-                        {property.bhk}
-                      </span>
-                    )}
-                    <span className="bg-green-50 text-green-700 px-2 py-1 rounded text-xs">
-                      {property.area} sq.ft
-                    </span>
-                    <span className="bg-yellow-50 text-yellow-700 px-2 py-1 rounded text-xs">
-                      For {property.listingType}
-                    </span>
-                  </div>
+                      <p className="text-gray-600 text-sm mb-2 flex items-center">
+                        📍 {properties[i].location?.locality}, Mumbai
+                      </p>
 
-                  {/* Price */}
-                  <div className="mb-3">
-                    <p className="text-2xl font-bold text-red-600">
-                      ₹{property.price?.toLocaleString()}
-                      {property.listingType === "rent" && (
-                        <span className="text-sm text-gray-500"> /month</span>
-                      )}
-                    </p>
-                  </div>
-
-                  {/* Features Preview */}
-                  {property.features && property.features.length > 0 && (
-                    <div className="mb-3">
-                      <p className="text-sm text-gray-500 mb-1">Features:</p>
-                      <div className="flex flex-wrap gap-1">
-                        {property.features.slice(0, 3).map((feature, idx) => (
-                          <span
-                            key={idx}
-                            className="bg-gray-100 text-gray-700 px-2 py-1 rounded text-xs"
-                          >
-                            {feature}
-                          </span>
-                        ))}
-                        {property.features.length > 3 && (
-                          <span className="text-gray-500 text-xs">
-                            +{property.features.length - 3} more
+                      <div className="flex flex-wrap gap-2 mb-3">
+                        <span className="bg-gray-100 text-gray-700 px-2 py-1 rounded text-xs">
+                          {properties[i].propertyType}
+                        </span>
+                        {properties[i].bhk && (
+                          <span className="bg-blue-50 text-blue-700 px-2 py-1 rounded text-xs">
+                            {properties[i].bhk}
                           </span>
                         )}
+                        <span className="bg-green-50 text-green-700 px-2 py-1 rounded text-xs">
+                          {properties[i].area} sq.ft
+                        </span>
+                        <span className="bg-yellow-50 text-yellow-700 px-2 py-1 rounded text-xs">
+                          For {properties[i].listingType}
+                        </span>
+                      </div>
+
+                      <div className="mb-3">
+                        <p className="text-2xl font-bold text-red-600">
+                          ₹{properties[i].price?.toLocaleString()}
+                          {properties[i].listingType === "rent" && (
+                            <span className="text-sm text-gray-500">
+                              {" "}
+                              /month
+                            </span>
+                          )}
+                        </p>
+                      </div>
+
+                      {properties[i].features &&
+                        properties[i].features.length > 0 && (
+                          <div className="mb-3">
+                            <p className="text-sm text-gray-500 mb-1">
+                              Features:
+                            </p>
+                            <div className="flex flex-wrap gap-1">
+                              {properties[i].features
+                                .slice(0, 3)
+                                .map((feature, idx) => (
+                                  <span
+                                    key={idx}
+                                    className="bg-gray-100 text-gray-700 px-2 py-1 rounded text-xs"
+                                  >
+                                    {feature}
+                                  </span>
+                                ))}
+                              {properties[i].features.length > 3 && (
+                                <span className="text-gray-500 text-xs">
+                                  +{properties[i].features.length - 3} more
+                                </span>
+                              )}
+                            </div>
+                          </div>
+                        )}
+
+                      <div className="pt-3 border-t border-gray-200">
+                        <div className="flex justify-between text-sm">
+                          <a
+                            href={`mailto:${properties[i].listedBy.contact?.email}`}
+                            className="text-blue-600 hover:text-blue-800 flex items-center gap-1"
+                            onClick={(e) => e.stopPropagation()}
+                          >
+                            📧 Email
+                          </a>
+                          <a
+                            href={`https://wa.me/91${properties[i].listedBy.contact?.phone}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-green-600 hover:text-green-800 flex items-center gap-1"
+                            onClick={(e) => e.stopPropagation()}
+                          >
+                            📞 WhatsApp
+                          </a>
+                        </div>
                       </div>
                     </div>
-                  )}
+                  </div>,
+                );
 
-                  {/* Contact Info (smaller) */}
-                  <div className="pt-3 border-t border-gray-200">
-                    <div className="flex justify-between text-sm">
-                      <a
-                        href={`mailto:${property.listedBy.contact?.email}`}
-                        className="text-blue-600 hover:text-blue-800 flex items-center gap-1"
-                        onClick={(e) => e.stopPropagation()}
-                      >
-                        📧 Email
-                      </a>
-                      <a
-                        href={`https://wa.me/91${property.listedBy.contact?.phone}`}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="text-green-600 hover:text-green-800 flex items-center gap-1"
-                        onClick={(e) => e.stopPropagation()}
-                      >
-                        📞 WhatsApp
-                      </a>
+                if ((i + 1) % 3 === 0 && adIndex < ads.length) {
+                  const currentAdIndex = adIndex;
+                  items.push(
+                    
+                    <div
+                      key={`ad-${adIndex}`}
+                      className="bg-white rounded-xl shadow-lg overflow-hidden hover:shadow-xl transition-shadow border-2 border-purple-200"
+                      onClick={() => handleadview(currentAdIndex)}
+                    >
+                      <div className="h-48 overflow-hidden">
+                        <img
+                          src={ads[adIndex].images[0].imageurl}
+                          alt={ads[adIndex].projectName}
+                          className="w-full h-full object-cover"
+                        />
+                      </div>
+
+                      <div className="p-4">
+                        <span className="inline-block bg-purple-100 text-purple-800 text-xs px-2 py-1 rounded mb-2">
+                          🏗 Sponsored Project
+                        </span>
+
+                        <h3 className="text-lg font-bold text-gray-800 mb-1">
+                          {ads[adIndex].projectName}
+                        </h3>
+
+                        <p className="text-sm text-gray-600 mb-2">
+                          📍 {ads[adIndex].location}, Mumbai
+                        </p>
+
+                        <p className="text-sm text-gray-500 mb-3">
+                          {ads[adIndex].projectType} •{" "}
+                          {ads[adIndex].unitTypes.join(", ")}
+                        </p>
+
+                        <p className="text-green-700 font-semibold">
+                          ₹{ads[adIndex].priceRange.min.toLocaleString()} – ₹
+                          {ads[adIndex].priceRange.max.toLocaleString()}
+                        </p>
+
+                        <div className="pt-3 border-t text-sm text-blue-600">
+                          📞 {ads[adIndex].projectContacts[0]?.phone}
+                        </div>
+                      </div>
+                    </div>,
+                  );
+                  adIndex++;
+                }
+              }
+
+              while (adIndex < ads.length) {
+                const currentAdIndex = adIndex;
+                items.push(
+                  <div
+                    key={`ad-${adIndex}`}
+                    className="bg-white rounded-xl shadow-lg overflow-hidden hover:shadow-xl transition-shadow border-2 border-purple-200"
+                    onClick={() => handleadview(currentAdIndex)}
+                  >
+                    <div className="h-48 overflow-hidden">
+                      <img
+                        src={ads[adIndex].images[0].imageurl}
+                        alt={ads[adIndex].projectName}
+                        className="w-full h-full object-cover"
+                      />
                     </div>
-                  </div>
-                </div>
-              </div>
-            ))}
+
+                    <div className="p-4">
+                      <span className="inline-block bg-purple-100 text-purple-800 text-xs px-2 py-1 rounded mb-2">
+                        🏗 Sponsored Project
+                      </span>
+
+                      <h3 className="text-lg font-bold text-gray-800 mb-1">
+                        {ads[adIndex].projectName}
+                      </h3>
+
+                      <p className="text-sm text-gray-600 mb-2">
+                        📍 {ads[adIndex].location}, Mumbai
+                      </p>
+
+                      <p className="text-sm text-gray-500 mb-3">
+                        {ads[adIndex].projectType} •{" "}
+                        {ads[adIndex].unitTypes.join(", ")}
+                      </p>
+
+                      <p className="text-green-700 font-semibold">
+                        ₹{ads[adIndex].priceRange.min.toLocaleString()} – ₹
+                        {ads[adIndex].priceRange.max.toLocaleString()}
+                      </p>
+
+                      <div className="pt-3 border-t text-sm text-blue-600">
+                        📞 {ads[adIndex].projectContacts[0]?.phone}
+                      </div>
+                    </div>
+                  </div>,
+                );
+                adIndex++;
+              }
+
+              return items;
+            })()}
           </div>
         </div>
       ) : (
