@@ -231,6 +231,7 @@ function CreateListing() {
 
       setFormData({ ...formdata, images: data.uploadedurls });
       setUploading("success");
+      setFile([]);
       setError(null);
     } catch (err) {
       setError(err.message);
@@ -532,10 +533,7 @@ function CreateListing() {
                       name="propertyType"
                       id="propertyType"
                       value={type.toLowerCase()}
-                      checked={
-                        formdata.propertyType ===
-                        type.toLowerCase()
-                      }
+                      checked={formdata.propertyType === type.toLowerCase()}
                       onChange={(e) =>
                         setFormData({
                           ...formdata,
@@ -825,6 +823,28 @@ function CreateListing() {
                       </button>
                     </div>
                   ))}
+                </div>
+              )}
+              {formdata.images && formdata.images.length > 0 && (
+                <div className="mt-6">
+                  <p className="text-sm text-gray-600 mb-2">
+                    Uploaded Images ({formdata.images.length})
+                  </p>
+
+                  <div className="grid grid-cols-3 sm:grid-cols-4 gap-3">
+                    {formdata.images.map((img, index) => (
+                      <div
+                        key={index}
+                        className="rounded-lg overflow-hidden border border-gray-200 shadow-sm"
+                      >
+                        <img
+                          src={img.imageurl}
+                          alt={`uploaded-${index}`}
+                          className="w-full h-24 object-cover"
+                        />
+                      </div>
+                    ))}
+                  </div>
                 </div>
               )}
             </div>

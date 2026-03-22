@@ -404,7 +404,7 @@ function CreateAdvertisement() {
         setErrors(newErrors);
       }
     } catch (error) {
-      console.error("Upload error:", error);
+     
       setFerror(error.message || "Failed to upload images. Please try again.");
     } finally {
       setFUploading(false);

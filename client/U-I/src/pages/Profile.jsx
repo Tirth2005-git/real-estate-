@@ -308,7 +308,7 @@ function Profile() {
     }
 
     if (formData.companyContactValue) {
-      console.log(formData.companyContactValue);
+    
 
       const trimmedCompanyEmail = formData.companyContactValue
         .trim()
@@ -350,6 +350,16 @@ function Profile() {
       payload.username = trimmedUsername;
     }
 
+     if (formData.password) {
+      const trimmedpassword = formData.password.trim();
+      if (!trimmedpassword) {
+        dispatch(updatefailure("password must be proper"));
+        return;
+      }
+     
+      
+    }
+
     if (
       formData.companyName ||
       formData.companyAddress ||
@@ -371,7 +381,7 @@ function Profile() {
     try {
       dispatch(updatestart());
 
-      console.log("Payload to send:", JSON.stringify(payload, null, 2));
+      
 
       const res = await fetch(`/api/update/${currentuser._id}`, {
         method: "POST",
@@ -384,7 +394,7 @@ function Profile() {
         dispatch(updatefailure(data.message));
         return;
       }
-      console.log(payload);
+  
       dispatch(updatesucccess(data.user));
       setFormData({});
       setSuccess(true);

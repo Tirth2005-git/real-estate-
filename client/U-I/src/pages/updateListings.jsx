@@ -205,11 +205,7 @@ function UpdateListing() {
       formData.append("price", price || listing.price);
       formData.append("listingid", listing._id);
 
-      console.log("Frontend sending:", {
-        textData,
-        price: price || listing.price,
-        specialOffer: specialOffer || "",
-      });
+      
 
       const res = await fetch(`/api/update/listing/${currentuser._id}`, {
         method: "POST",
@@ -462,6 +458,7 @@ function UpdateListing() {
                     setFormData({ ...formdata, [e.target.id]: e.target.value })
                   }
                   min="1000"
+                  step="1000"
                   required
                 />
               </div>
@@ -479,6 +476,7 @@ function UpdateListing() {
                     setFormData({ ...formdata, [e.target.id]: e.target.value })
                   }
                   min="100"
+                  step="10"
                   required
                 />
               </div>

@@ -33,7 +33,7 @@ function BuilderAds() {
       dispatch(deleteAd(newAds));
       setDel(null);
     } catch (err) {
-      console.error(err);
+     
       setDel(null);
     }
   }

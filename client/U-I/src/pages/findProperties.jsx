@@ -260,9 +260,13 @@ function FindProperties() {
   return (
     <>
       <form
-        className={`w-full max-w-4xl bg-gray-200 rounded-xl p-5 z-30 flex flex-col lg:flex-row gap-6 fixed left-1/2 -translate-x-1/2 transition-all duration-500 ${
-          showForm ? "top-10" : "-top-full"
-        }`}
+        className={`w-[95%] sm:w-[92%] md:w-[90%] lg:w-full max-w-6xl 
+  bg-gray-200 rounded-xl p-4 sm:p-5 z-30 
+  flex flex-col lg:flex-row gap-4 sm:gap-6 
+  fixed left-1/2 -translate-x-1/2 
+  transition-all duration-500 
+  max-h-[90vh] overflow-y-auto
+  ${showForm ? "top-3 sm:top-6 md:top-10" : "-top-full"}`}
         onSubmit={handleSubmit}
       >
         <div className="flex-1">
@@ -271,7 +275,7 @@ function FindProperties() {
           </label>
           <div className="flex flex-wrap gap-3 mb-4">
             {["rent", "sale"].map((type) => (
-              <label key={type} className="flex items-center">
+              <label key={type} className="flex items-center cursor-pointer">
                 <input
                   type="checkbox"
                   checked={formdata.listingTypes.includes(type)}
@@ -284,9 +288,11 @@ function FindProperties() {
                       return { ...prev, listingTypes: updated };
                     });
                   }}
-                  className="accent-blue-500"
+                  className="accent-blue-500 w-4 h-4"
                 />
-                <span className="text-gray-700 ml-2 capitalize">{type}</span>
+                <span className="text-gray-700 ml-2 capitalize text-sm sm:text-base">
+                  {type}
+                </span>
               </label>
             ))}
           </div>
@@ -296,7 +302,10 @@ function FindProperties() {
           </label>
           <div className="flex flex-wrap gap-3 mb-4">
             {["residential", "commercial"].map((category) => (
-              <label key={category} className="flex items-center">
+              <label
+                key={category}
+                className="flex items-center cursor-pointer"
+              >
                 <input
                   type="radio"
                   name="propertyCategory"
@@ -312,9 +321,9 @@ function FindProperties() {
                       propertyType: "",
                     }));
                   }}
-                  className="accent-blue-500"
+                  className="accent-blue-500 w-4 h-4"
                 />
-                <span className="text-gray-700 ml-2 capitalize">
+                <span className="text-gray-700 ml-2 capitalize text-sm sm:text-base">
                   {category}
                 </span>
               </label>
@@ -326,7 +335,7 @@ function FindProperties() {
               <label className="block font-medium text-gray-700 mb-2">
                 Property Type
               </label>
-              <div className="flex flex-wrap gap-2 mb-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 mb-4">
                 {(formdata.propertyCategory === "residential"
                   ? [
                       "flat",
@@ -343,7 +352,10 @@ function FindProperties() {
                       "industrial",
                     ]
                 ).map((type) => (
-                  <label key={type} className="flex items-center">
+                  <label
+                    key={type}
+                    className="flex items-center cursor-pointer"
+                  >
                     <input
                       type="radio"
                       name="propertyType"
@@ -358,9 +370,9 @@ function FindProperties() {
                               : e.target.value,
                         }));
                       }}
-                      className="accent-blue-500"
+                      className="accent-blue-500 w-4 h-4"
                     />
-                    <span className="text-gray-700 ml-2 capitalize">
+                    <span className="text-gray-700 ml-2 capitalize text-sm sm:text-base">
                       {type}
                     </span>
                   </label>
@@ -374,9 +386,9 @@ function FindProperties() {
               <label className="block font-medium text-gray-700 mb-2">
                 BHK Configuration
               </label>
-              <div className="flex flex-wrap gap-2 mb-4">
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 mb-4">
                 {["1 BHK", "2 BHK", "3 BHK", "4 BHK", "Studio"].map((bhk) => (
-                  <label key={bhk} className="flex items-center">
+                  <label key={bhk} className="flex items-center cursor-pointer">
                     <input
                       type="checkbox"
                       checked={formdata.bhks.includes(bhk)}
@@ -389,9 +401,11 @@ function FindProperties() {
                           return { ...prev, bhks: updated };
                         });
                       }}
-                      className="accent-blue-500"
+                      className="accent-blue-500 w-4 h-4"
                     />
-                    <span className="text-gray-700 ml-2">{bhk}</span>
+                    <span className="text-gray-700 ml-2 text-sm sm:text-base">
+                      {bhk}
+                    </span>
                   </label>
                 ))}
               </div>
@@ -421,10 +435,10 @@ function FindProperties() {
           <label className="block font-medium text-gray-700 mb-2">
             Price Range (₹)
           </label>
-          <div className="flex gap-3 mb-4">
+          <div className="flex flex-col sm:flex-row gap-3 mb-4">
             <input
               type="number"
-              className="w-full bg-white rounded-lg p-2"
+              className="w-full bg-white rounded-lg p-2 text-sm sm:text-base"
               placeholder="Min Price"
               min="1000"
               value={formdata.minPrice || ""}
@@ -434,7 +448,7 @@ function FindProperties() {
             />
             <input
               type="number"
-              className="w-full bg-white rounded-lg p-2"
+              className="w-full bg-white rounded-lg p-2 text-sm sm:text-base"
               placeholder="Max Price"
               min="1000"
               value={formdata.maxPrice || ""}
@@ -447,10 +461,10 @@ function FindProperties() {
           <label className="block font-medium text-gray-700 mb-2">
             Area Range (sq.ft)
           </label>
-          <div className="flex gap-3 mb-4">
+          <div className="flex flex-col sm:flex-row gap-3 mb-4">
             <input
               type="number"
-              className="w-full bg-white rounded-lg p-2"
+              className="w-full bg-white rounded-lg p-2 text-sm sm:text-base"
               placeholder="Min Area"
               min="100"
               value={formdata.minArea || ""}
@@ -460,7 +474,7 @@ function FindProperties() {
             />
             <input
               type="number"
-              className="w-full bg-white rounded-lg p-2"
+              className="w-full bg-white rounded-lg p-2 text-sm sm:text-base"
               placeholder="Max Area"
               min="100"
               value={formdata.maxArea || ""}
@@ -476,7 +490,7 @@ function FindProperties() {
             Listed By
           </label>
           <div className="flex flex-col gap-2 mb-4">
-            <label className="flex items-center">
+            <label className="flex items-center cursor-pointer">
               <input
                 type="checkbox"
                 checked={formdata.listedByRoles?.includes("user")}
@@ -489,12 +503,14 @@ function FindProperties() {
                     return { ...prev, listedByRoles: updated };
                   });
                 }}
-                className="accent-blue-500"
+                className="accent-blue-500 w-4 h-4"
               />
-              <span className="text-gray-700 ml-2">Individual Users</span>
+              <span className="text-gray-700 ml-2 text-sm sm:text-base">
+                Individual Users
+              </span>
             </label>
 
-            <label className="flex items-center">
+            <label className="flex items-center cursor-pointer">
               <input
                 type="checkbox"
                 checked={formdata.listedByRoles?.includes("dealer")}
@@ -507,15 +523,16 @@ function FindProperties() {
                     return { ...prev, listedByRoles: updated };
                   });
                 }}
-                className="accent-blue-500"
+                className="accent-blue-500 w-4 h-4"
               />
-              <span className="text-gray-700 ml-2">Dealers</span>
+              <span className="text-gray-700 ml-2 text-sm sm:text-base">
+                Dealers
+              </span>
             </label>
 
-            
             {formdata.listedByRoles?.includes("dealer") && (
-              <div className="ml-6 flex flex-col gap-1">
-                <label className="flex items-center">
+              <div className="ml-4 sm:ml-6 flex flex-col gap-1">
+                <label className="flex items-center cursor-pointer">
                   <input
                     type="checkbox"
                     checked={formdata.dealerTypes?.includes("individual")}
@@ -528,12 +545,14 @@ function FindProperties() {
                         return { ...prev, dealerTypes: updated };
                       });
                     }}
-                    className="accent-green-500"
+                    className="accent-green-500 w-4 h-4"
                   />
-                  <span className="text-gray-700 ml-2">Individual Dealers</span>
+                  <span className="text-gray-700 ml-2 text-sm sm:text-base">
+                    Individual Dealers
+                  </span>
                 </label>
 
-                <label className="flex items-center">
+                <label className="flex items-center cursor-pointer">
                   <input
                     type="checkbox"
                     checked={formdata.dealerTypes?.includes("agency")}
@@ -546,9 +565,11 @@ function FindProperties() {
                         return { ...prev, dealerTypes: updated };
                       });
                     }}
-                    className="accent-green-500"
+                    className="accent-green-500 w-4 h-4"
                   />
-                  <span className="text-gray-700 ml-2">Agencies</span>
+                  <span className="text-gray-700 ml-2 text-sm sm:text-base">
+                    Agencies
+                  </span>
                 </label>
               </div>
             )}
@@ -560,7 +581,7 @@ function FindProperties() {
                 Features
               </label>
 
-              <div className="grid grid-cols-2 gap-2 max-h-48 overflow-y-auto p-2 bg-white rounded border">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 max-h-48 overflow-y-auto p-2 bg-white rounded border">
                 {(formdata.propertyCategory === "residential"
                   ? [
                       "Swimming Pool",
@@ -603,7 +624,10 @@ function FindProperties() {
                       "Restaurant Nearby",
                     ]
                 ).map((feature) => (
-                  <label key={feature} className="flex items-center">
+                  <label
+                    key={feature}
+                    className="flex items-center cursor-pointer p-1 hover:bg-gray-50 rounded"
+                  >
                     <input
                       type="checkbox"
                       value={feature}
@@ -624,23 +648,23 @@ function FindProperties() {
                           }));
                         }
                       }}
-                      className="accent-blue-500"
+                      className="accent-blue-500 w-4 h-4 flex-shrink-0"
                     />
-                    <span className="text-sm text-gray-700 ml-2">
+                    <span className="text-xs sm:text-sm text-gray-700 ml-2 break-words">
                       {feature}
                     </span>
                   </label>
                 ))}
               </div>
               <p className="text-xs text-gray-500 mt-1">
-                Selected: {formdata.selectedFeatures?.length || 0} features
+                Selected: {formdata.Features?.length || 0} features
               </p>
             </>
           )}
 
           <button
             type="submit"
-            className="w-full bg-green-600 hover:bg-green-700 text-white font-medium py-2 px-4 rounded-lg transition-colors"
+            className="w-full bg-green-600 hover:bg-green-700 text-white font-medium py-2 px-4 rounded-lg transition-colors mt-4"
             disabled={searching}
           >
             {searching ? "Searching..." : "Search Properties"}
@@ -803,7 +827,6 @@ function FindProperties() {
                 if ((i + 1) % 3 === 0 && adIndex < ads.length) {
                   const currentAdIndex = adIndex;
                   items.push(
-                    
                     <div
                       key={`ad-${adIndex}`}
                       className="bg-white rounded-xl shadow-lg overflow-hidden hover:shadow-xl transition-shadow border-2 border-purple-200"
