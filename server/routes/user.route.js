@@ -3,11 +3,16 @@ import verifyToken from "../utils/verifyToken.js";
 import {
   updateUser,
   deleteUser,
-  signout
+  signout,
+  browseDealers,
+  getDealerProfile,
 } from "../controllers/user.controller.js";
+
 const userrouter = express.Router();
 userrouter.post("/update/:id", verifyToken, updateUser);
 userrouter.delete("/delete/:id", verifyToken, deleteUser);
-userrouter.get("/signout",signout)
-userrouter.post("/webclosed",signout)
+userrouter.get("/signout", signout);
+userrouter.post("/browse/dealers", browseDealers);
+userrouter.get("/dealers/:dealerId", getDealerProfile
+);
 export default userrouter;

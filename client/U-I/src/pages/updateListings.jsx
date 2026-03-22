@@ -6,15 +6,14 @@ import { useSelector } from "react-redux";
 
 function UpdateListing() {
   const location = useLocation();
-
   const index = location.state.index;
-
   const { currentuser } = useSelector((state) => state.user);
   const { listings } = useSelector((state) => state.listings);
 
+  const listing = listings[index];
   const {
     title,
-    address,
+    location: propertyLocation,
     description,
     features,
     listedBy,
@@ -23,36 +22,34 @@ function UpdateListing() {
     propertyType,
     listingType,
     status,
-  } = listings[index];
+    bhk,
+    area,
+    images,
+  } = listing;
+  const [selectedFeatures, setSelectedFeatures] = useState([]);
+  useEffect(() => {
+    setSelectedFeatures(listing.features || []);
+  }, [listing._id]);
+
+  const propertyCategory = [
+    "flat",
+    "bungalow",
+    "villa",
+    "studio apartment",
+    "builder floor",
+  ].includes(propertyType)
+    ? "residential"
+    : "commercial";
 
   const fileref = useRef(0);
-  const [formdata, setFormData] = useState({
-    title,
-    description,
-    features,
-    price,
-    specialOffer,
-    status,
-    propertyType,
-    listingType,
-    state: address.state,
-    city: address.city,
-    zipcode: address.zipcode,
-    streetAddress: address.streetAddress,
-    name: listedBy.name,
-    email: listedBy.contact.email,
-    phone: listedBy.contact.phone,
-    newImages: [],
-    imagesToDel: [],
-    newimgURLs: [],
-  });
-  const dispatch = useDispatch();
+  const [formdata, setFormData] = useState({});
 
+  const dispatch = useDispatch();
   const [ferror, setError] = useState();
   const [updateerror, setUpdateError] = useState();
-  const [uploading, setUploading] = useState("idile");
-  const [update, setUpdating] = useState("idile");
-  const [oldImages, setOldImages] = useState(() => [...listings[index].images]);
+  const [uploading, setUploading] = useState("idle");
+  const [update, setUpdating] = useState("idle");
+  const [oldImages, setOldImages] = useState(() => [...images]);
 
   useEffect(() => {
     if (uploading === "success") {
@@ -74,77 +71,189 @@ function UpdateListing() {
 
   async function handleUpdate(e) {
     try {
-      setUpdating("updating");
       e.preventDefault();
-      if (formdata.newimgURLs.length + oldImages.length === 0) {
-        setUpdateError("Atleast 1 image is required");
+      const cleanedFormData = {};
+      Object.keys(formdata).forEach((key) => {
+        const value = formdata[key];
+
+        if (typeof value === "string") {
+          const trimmed = value.trim();
+          if (trimmed !== "") {
+            cleanedFormData[key] = trimmed;
+          }
+        } else if (Array.isArray(value)) {
+          if (value.length > 0) {
+            cleanedFormData[key] = value;
+          }
+        } else if (value !== null && value !== undefined) {
+          cleanedFormData[key] = value;
+        }
+      });
+      const specialOfferChanged =
+        (formdata.specialOffer ?? "").trim() !==
+        (listing.specialOffer ?? "").trim();
+
+      const hasTextChanges = Object.keys(cleanedFormData).length > 0;
+      const hasFeatureChanges =
+        selectedFeatures.length !== listing.features.length ||
+        !selectedFeatures.every((f) => listing.features.includes(f));
+
+      const hasImageChanges =
+        (formdata.newImages && formdata.newImages.length > 0) ||
+        (formdata.newimgURLs && formdata.newimgURLs.length > 0) ||
+        (formdata.imagesToDel && formdata.imagesToDel.length > 0);
+
+      if (
+        !hasTextChanges &&
+        !hasFeatureChanges &&
+        !hasImageChanges &&
+        !specialOfferChanged
+      ) {
+        setUpdateError("No changes detected");
+        return;
+      }
+
+      setUpdating("updating");
+
+      const trimmedData = {};
+      Object.keys(formdata).forEach((key) => {
+        if (typeof formdata[key] === "string" && formdata[key] !== "") {
+          trimmedData[key] = formdata[key].trim();
+        } else if (Array.isArray(formdata[key])) {
+          trimmedData[key] = formdata[key];
+        } else {
+          trimmedData[key] = formdata[key];
+        }
+      });
+
+      const totalImages =
+        (trimmedData.newimgURLs?.length || 0) + oldImages.length;
+      if (totalImages === 0) {
+        setUpdateError("At least 1 image is required");
         setUpdating("idle");
         return;
       }
+
+      if (trimmedData.email && trimmedData.email !== listedBy?.contact?.email) {
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        if (!emailRegex.test(trimmedData.email)) {
+          setUpdateError("Please enter a valid email address");
+          setUpdating("idle");
+          return;
+        }
+
+        const allowedDomains = [
+          "gmail.com",
+          "yahoo.com",
+          "outlook.com",
+          "hotmail.com",
+          "yahoo.in",
+          "rediffmail.com",
+          "icloud.com",
+          "protonmail.com",
+          "aol.com",
+          "zoho.com",
+          "mail.com",
+          "gmail.co.in",
+        ];
+
+        const domain = trimmedData.email.split("@")[1];
+        if (!allowedDomains.includes(domain)) {
+          setUpdateError("Please use Gmail, Yahoo, Outlook, Hotmail, etc.");
+          setUpdating("idle");
+          return;
+        }
+      }
+
+      if (trimmedData.phone) {
+        const phoneRegex = /^[6-9]\d{9}$/;
+        if (!phoneRegex.test(trimmedData.phone.replace(/\D/g, ""))) {
+          setUpdateError("Proper Indian Phone numer is required");
+          setUpdating("idle");
+          return;
+        }
+      }
+
       const {
         newImages,
         imagesToDel,
         newimgURLs,
         price,
         specialOffer,
+        address,
+        area,
         ...rest
-      } = formdata;
+      } = trimmedData;
+      const payloadFeatures = selectedFeatures;
+
+      const textData = {
+        ...rest,
+        features: payloadFeatures,
+        area: area || listing.area,
+        address: address || listing.location?.address || "",
+        price: price || listing.price,
+
+        ...(formdata.hasOwnProperty("specialOffer") && {
+          specialOffer: (formdata.specialOffer ?? "").trim(),
+        }),
+      };
+
       const formData = new FormData();
-      formData.append("text-data", JSON.stringify(rest));
+      formData.append("text-data", JSON.stringify(textData));
+      formData.append("newimgs", JSON.stringify(newimgURLs || []));
+      formData.append("imgstodel", JSON.stringify(imagesToDel || []));
+      formData.append("price", price || listing.price);
+      formData.append("listingid", listing._id);
 
-      formData.append("newimgs", JSON.stringify(newimgURLs));
-
-      formData.append("imgstodel", JSON.stringify(imagesToDel));
-
-      formData.append("price", price);
-
-      formData.append("listingid", JSON.stringify(listings[index]._id));
-
-      if (!formdata.specialOffer) {
-        formData.append("specialoffer", JSON.stringify(" "));
-      } else {
-        formData.append("specialoffer", JSON.stringify(formdata.specialOffer));
-      }
+      
 
       const res = await fetch(`/api/update/listing/${currentuser._id}`, {
         method: "POST",
         body: formData,
       });
+
       const data = await res.json();
       if (data.success === false) {
         setUpdating("idle");
         setUpdateError(data.message);
         return;
       }
+
       setUpdating("success");
       setUpdateError(null);
       dispatch(
         UpdateList(
-          listings.map((list, i) => (i != index ? list : data.updatedlist))
-        )
+          listings.map((list, i) => (i !== index ? list : data.updatedlist)),
+        ),
       );
     } catch (err) {
       setUpdating("idle");
-      setUpdateError(err.message);
+      setUpdateError(err.message || "Something went wrong");
     }
   }
 
   async function handleUpload() {
     try {
-      setUploading("uploading");
+      const totalCurrentImages =
+        oldImages.length + (formdata.newImages?.length || 0);
 
-      if (
-        oldImages.length + formdata.newImages.length > 5 ||
-        formdata.newImages.length == 0
-      ) {
+      if (totalCurrentImages > 5) {
         setUploading("idle");
-        setError("Invalid file quantity");
+        setError("Maximum 5 images allowed");
         return;
       }
 
+      if (formdata.newImages.length === 0) {
+        setUploading("idle");
+        setError("Please select images to upload");
+        return;
+      }
+
+      setUploading("uploading");
+
       const formData = new FormData();
       formdata.newImages.forEach((file) =>
-        formData.append("property-pics", file)
+        formData.append("property-pics", file),
       );
 
       const res = await fetch("/api/mult/uploads", {
@@ -153,13 +262,17 @@ function UpdateListing() {
       });
 
       const data = await res.json();
-
       if (data.success === false) {
         setUploading("idle");
         setError(data.message);
         return;
       }
-      setFormData({ ...formdata, newimgURLs: data.uploadedurls });
+
+      setFormData({
+        ...formdata,
+        newimgURLs: [...(formdata.newimgURLs || []), ...data.uploadedurls],
+        newImages: [], // Clear after successful upload
+      });
       setUploading("success");
       setError(null);
     } catch (err) {
@@ -167,400 +280,543 @@ function UpdateListing() {
       setError(err.message);
     }
   }
+
   function handleNewDelete(index) {
     setFormData((prev) => ({
       ...prev,
-      newImages: prev.newImages.filter((_, i) => i !== index),
+      newImages: (prev.newImages || []).filter((_, i) => i !== index),
     }));
   }
+
   function handleOldDelete(index) {
     const imageToDelete = oldImages[index];
 
     setFormData((prev) => ({
       ...prev,
-      imagesToDel: [...prev.imagesToDel, imageToDelete],
+      imagesToDel: [...(prev.imagesToDel || []), imageToDelete],
     }));
 
     setOldImages((prev) => prev.filter((_, i) => i !== index));
   }
+
+  const residentialFeatures = [
+    "Swimming Pool",
+    "Gym",
+    "Club House",
+    "Children's Play Area",
+    "24/7 Security",
+    "Lift/Elevator",
+    "Car Parking",
+    "Garden/Lawn",
+    "Intercom",
+    "Wi-Fi Ready",
+    "CCTV Surveillance",
+    "Shopping Center Nearby",
+    "School Nearby",
+    "Hospital Nearby",
+    "Public Transport Access",
+    "Balcony/Terrace",
+    "Modular Kitchen",
+    "Air Conditioning",
+    "Geyser",
+  ];
+
+  const commercialFeatures = [
+    "24/7 Security",
+    "Lift/Elevator",
+    "Car Parking",
+    "Wi-Fi Ready",
+    "CCTV Surveillance",
+    "Public Transport Access",
+    "Air Conditioning",
+    "Conference Room",
+    "Pantry",
+    "Reception Area",
+    "Modular Furniture",
+    "Toilets",
+    "Storage Space",
+    "Separate Entrance",
+    "Metro Station Nearby",
+    "Bank Nearby",
+    "Restaurant Nearby",
+  ];
+
+  const featuresList =
+    propertyCategory === "residential"
+      ? residentialFeatures
+      : commercialFeatures;
+
   return (
-    <>
-      <h1 className="text-center text-black font-bold mt-4 text-xl sm:text-2xl">
+    <div className="max-w-6xl mx-auto p-4 pt-24">
+      <h1 className="text-2xl md:text-3xl font-bold text-center text-gray-800 mb-8">
         Update Your Listing
       </h1>
 
       <form
-        className="bg-gray-200 mx-auto flex flex-col md:flex-row p-4 sm:p-6 justify-between gap-6 rounded-xl max-w-5xl mt-4"
+        className="bg-white shadow-lg rounded-xl p-4 md:p-8 grid grid-cols-1 lg:grid-cols-2 gap-8"
         onSubmit={handleUpdate}
       >
-        <div className="w-full md:w-1/2">
-          <div className="flex flex-col gap-4 w-full">
+        <div className="space-y-6">
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Title *
+            </label>
             <input
               type="text"
-              placeholder="Title"
+              placeholder="Enter property title"
               id="title"
-              className="p-2 w-full bg-white text-black rounded-lg"
+              className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"
               defaultValue={title}
               onChange={(e) =>
                 setFormData({ ...formdata, [e.target.id]: e.target.value })
               }
+              required
             />
+          </div>
 
-            <div className="w-full">
-              <label htmlFor="listingType" className="block text-black mb-1">
-                Listing Type :
+          <div className="bg-gray-50 p-4 rounded-lg space-y-4">
+            <h3 className="font-medium text-gray-700">Locked Information</h3>
+
+            <div>
+              <label className="block text-sm text-gray-600 mb-2">
+                Listing Type
               </label>
-              <div className="flex flex-wrap gap-4">
-                <label>
-                  <input
-                    type="radio"
-                    value="rent"
-                    id="listingType"
-                    name="listing-type"
-                    className="mr-2"
-                    checked={formdata.listingType === "rent"}
-                    onChange={(e) =>
-                      setFormData({
-                        ...formdata,
-                        [e.target.id]: e.target.value,
-                      })
-                    }
-                  />
-                  Rent
-                </label>
-                <label>
-                  <input
-                    type="radio"
-                    value="sale"
-                    id="listingType"
-                    name="listing-type"
-                    className="mr-2"
-                    checked={formdata.listingType === "sale"}
-                    onChange={(e) =>
-                      setFormData({
-                        ...formdata,
-                        [e.target.id]: e.target.value,
-                      })
-                    }
-                  />
-                  Sale
-                </label>
+              <div className="flex gap-6">
+                <span className="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg">
+                  {listingType}
+                </span>
               </div>
             </div>
 
-            <div className="w-full">
-              <label className="block text-sm font-medium text-gray-700 mb-2">
+            <div>
+              <label className="block text-sm text-gray-600 mb-2">
+                Property Category
+              </label>
+              <span className="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg capitalize">
+                {propertyCategory}
+              </span>
+            </div>
+
+            <div>
+              <label className="block text-sm text-gray-600 mb-2">
                 Property Type
               </label>
-              <div className="flex flex-wrap gap-4">
-                {["villa", "bungalow", "flat", "office space"].map((type) => (
-                  <label key={type} className="flex items-center space-x-2">
-                    <input
-                      type="radio"
-                      name="propertyType"
-                      id="propertyType"
-                      value={type}
-                      checked={formdata.propertyType === type}
-                      onChange={(e) =>
-                        setFormData({
-                          ...formdata,
-                          propertyType: e.target.value,
-                        })
-                      }
-                      className="text-blue-600 focus:ring-blue-500"
-                    />
-                    <span className="capitalize text-gray-700">{type}</span>
-                  </label>
-                ))}
-              </div>
+              <span className="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg capitalize">
+                {propertyType}
+              </span>
             </div>
 
+            {propertyCategory === "residential" && (
+              <div>
+                <label className="block text-sm text-gray-600 mb-2">
+                  BHK Configuration
+                </label>
+                <span className="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg">
+                  {bhk || "Not specified"}
+                </span>
+              </div>
+            )}
+
+            <div>
+              <label className="block text-sm text-gray-600 mb-2">
+                Locality
+              </label>
+              <span className="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg capitalize">
+                {propertyLocation.locality}
+              </span>
+            </div>
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Description *
+            </label>
             <textarea
               id="description"
-              placeholder="Enter description of property"
-              className="p-2 w-full h-36 bg-white text-black rounded-lg resize-none"
+              placeholder="Describe your property in detail..."
+              className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none h-32 resize-none"
               defaultValue={description}
+              required
               onChange={(e) =>
                 setFormData({ ...formdata, [e.target.id]: e.target.value })
               }
-            ></textarea>
+            />
+          </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div className="flex flex-col gap-2">
-                <label htmlFor="price" className="text-black mb-1">
-                  Price :
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Price (₹) *
                 </label>
                 <input
                   type="number"
                   id="price"
-                  className="p-2 bg-white text-black rounded-lg"
+                  className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"
                   defaultValue={price}
                   onChange={(e) =>
                     setFormData({ ...formdata, [e.target.id]: e.target.value })
                   }
                   min="1000"
+                  step="1000"
+                  required
                 />
-                <label htmlFor="specialOffer" className="text-black mb-1">
-                  Special Offer :
-                </label>
-                <textarea
-                  id="specialOffer"
-                  className="p-2 bg-white text-black h-24 rounded-lg resize-none"
-                  defaultValue={specialOffer}
-                  onChange={(e) =>
-                    setFormData({ ...formdata, [e.target.id]: e.target.value })
-                  }
-                ></textarea>
               </div>
 
               <div>
-                <label htmlFor="features" className="text-black mb-1 block">
-                  Features:
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Area (sq.ft) *
                 </label>
-                <textarea
-                  placeholder="features"
-                  className="p-2 bg-white text-black h-28 w-full rounded-lg resize-none"
-                  id="features"
-                  defaultValue={features}
+                <input
+                  type="number"
+                  id="area"
+                  className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"
+                  defaultValue={area}
                   onChange={(e) =>
                     setFormData({ ...formdata, [e.target.id]: e.target.value })
                   }
-                ></textarea>
+                  min="100"
+                  step="10"
+                  required
+                />
               </div>
             </div>
 
-            <div className="w-full mt-2">
-              <label htmlFor="status" className="block text-black mb-1">
-                Status:
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Special Offer
               </label>
-              {["Available", "Rented", "Sold", "Under Negotiations"].map(
-                (status) => (
-                  <label key={status} className="flex items-center space-x-2">
-                    <input
-                      type="radio"
-                      value={status}
-                      name="status"
-                      className="mr-2"
-                      checked={formdata.status === status}
-                      onChange={(e) =>
-                        setFormData({
-                          ...formdata,
-                          [e.target.name]: e.target.value,
-                        })
-                      }
-                    />
-                    {status}
-                  </label>
-                )
-              )}
+              <textarea
+                id="specialOffer"
+                value={formdata.specialOffer ?? specialOffer ?? ""}
+                className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none h-32 resize-none"
+                onChange={(e) =>
+                  setFormData((p) => ({ ...p, specialOffer: e.target.value }))
+                }
+              />
             </div>
           </div>
         </div>
 
-        <div className="w-full md:w-1/2">
-          <div className="flex flex-col gap-4 w-full">
-            <label className="block text-black mb-2">Address</label>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+        <div className="space-y-6">
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Features
+            </label>
+            <div className="border border-gray-300 rounded-lg p-4 max-h-64 overflow-y-auto">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                {featuresList.map((feature) => (
+                  <label
+                    key={feature}
+                    className="flex items-center space-x-2 p-1 hover:bg-gray-50 rounded"
+                  >
+                    <input
+                      type="checkbox"
+                      checked={selectedFeatures.includes(feature)}
+                      onChange={(e) => {
+                        setSelectedFeatures((prev) =>
+                          e.target.checked
+                            ? [...prev, feature]
+                            : prev.filter((f) => f !== feature),
+                        );
+                      }}
+                      className="h-4 w-4 text-blue-600 rounded focus:ring-blue-500"
+                    />
+                    <span className="text-sm text-gray-700">{feature}</span>
+                  </label>
+                ))}
+              </div>
+            </div>
+            <p className="text-xs text-gray-500 mt-2">
+              Selected: {selectedFeatures.length} features
+            </p>
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Status *
+            </label>
+            <div className="flex flex-wrap gap-3">
+              {["available", "rented", "sold", "under negotiation"].map(
+                (stat) => (
+                  <label key={stat} className="flex items-center space-x-2">
+                    <input
+                      type="radio"
+                      value={stat}
+                      name="status"
+                      checked={(formdata.status ?? status) === stat}
+                      onChange={(e) =>
+                        setFormData({ ...formdata, status: e.target.value })
+                      }
+                      className="h-4 w-4 text-blue-600"
+                    />
+                    <span className="capitalize text-gray-700">{stat}</span>
+                  </label>
+                ),
+              )}
+            </div>
+          </div>
+
+          <div className="space-y-4">
+            <h3 className="font-medium text-gray-700">Contact Details</h3>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Your Name *
+              </label>
               <input
                 type="text"
-                placeholder="State"
-                className="p-2 bg-white text-black rounded-lg"
-                id="state"
-                defaultValue={address.state}
+                placeholder="Enter your name"
+                className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"
+                id="name"
+                defaultValue={listedBy?.name}
                 onChange={(e) =>
                   setFormData({ ...formdata, [e.target.id]: e.target.value })
                 }
-              />
-              <input
-                type="text"
-                placeholder="City"
-                className="p-2 bg-white text-black rounded-lg"
-                id="city"
-                defaultValue={address.city}
-                onChange={(e) =>
-                  setFormData({ ...formdata, [e.target.id]: e.target.value })
-                }
-              />
-              <input
-                type="text"
-                placeholder="Zipcode"
-                className="p-2 bg-white text-black rounded-lg"
-                id="zipcode"
-                defaultValue={address.zipcode}
-                onChange={(e) =>
-                  setFormData({ ...formdata, [e.target.id]: e.target.value })
-                }
-              />
-              <input
-                type="text"
-                placeholder="Street Address"
-                className="p-2 bg-white text-black rounded-lg sm:col-span-2"
-                id="streetAddress"
-                defaultValue={address.streetAddress}
-                onChange={(e) =>
-                  setFormData({ ...formdata, [e.target.id]: e.target.value })
-                }
+                required
               />
             </div>
 
-            {/* Lister Details */}
-            <label className="block text-black mb-2 mt-4">
-              Details of Lister
-            </label>
-            <input
-              type="text"
-              placeholder="name"
-              id="name"
-              className="p-2 w-full bg-white text-black rounded-lg"
-              defaultValue={listedBy.name}
-              onChange={(e) =>
-                setFormData({ ...formdata, [e.target.id]: e.target.value })
-              }
-            />
-            <input
-              type="email"
-              placeholder="email"
-              id="email"
-              className="p-2 w-full bg-white text-black rounded-lg"
-              defaultValue={listedBy.contact.email}
-              onChange={(e) =>
-                setFormData({ ...formdata, [e.target.id]: e.target.value })
-              }
-            />
-            <input
-              type="tel"
-              placeholder="phone"
-              id="phone"
-              pattern="[0-9]{10}"
-                   title="Phone number must be 10 digits "
-              className="p-2 w-full bg-white text-black rounded-lg"
-              defaultValue={listedBy.contact.phone}
-              onChange={(e) =>
-                setFormData({ ...formdata, [e.target.id]: e.target.value })
-              }
-            />
-
-            <label htmlFor="images" className="mt-3 text-black block">
-              Upload your Images:
-              <span className="text-slate-400 ml-2">Only 5 images</span>
-            </label>
-
-            <div className="w-full bg-white rounded-2xl shadow-md p-4">
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                <label
-                  className="text-sm font-medium text-gray-700 hover:underline cursor-pointer"
-                  onClick={() => fileref.current.click()}
-                >
-                  Select an image
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Email *
                 </label>
-                <p className="text-red-500">
-                  Images:{" "}
-                  <span className="ml-2">
-                    {oldImages.length + formdata.newImages.length}
-                  </span>
-                </p>
-                <div className="flex items-center gap-2">
-                  <input
-                    id="images"
-                    type="file"
-                    accept="image/*"
-                    className="hidden"
-                    onChange={(e) =>
-                      setFormData({
-                        ...formdata,
-                        newImages: Array.from(e.target.files),
-                      })
-                    }
-                    multiple
-                    name="property-pics"
-                    ref={fileref}
-                  />
-                  <button
-                    type="button"
-                    className="bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold py-2 px-4 rounded-md"
-                    onClick={handleUpload}
-                  >
-                    Upload
-                  </button>
-                </div>
+                <input
+                  type="email"
+                  id="email"
+                  defaultValue={listedBy?.contact?.email}
+                  onChange={(e) =>
+                    setFormData({ ...formdata, [e.target.id]: e.target.value })
+                  }
+                  required
+                />
               </div>
 
-              {uploading === "uploading" && (
-                <p className="text-yellow-500">Uploading...</p>
-              )}
-              {ferror && <p className="text-red-400">{ferror}</p>}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Phone *
+                </label>
+                <input
+                  type="tel"
+                  id="phone"
+                  placeholder="10-digit number"
+                  className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"
+                  defaultValue={listedBy?.contact?.phone}
+                  onChange={(e) =>
+                    setFormData({ ...formdata, [e.target.id]: e.target.value })
+                  }
+                  pattern="[0-9]{10}"
+                  required
+                />
+              </div>
+            </div>
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Complete Address *
+            </label>
+            <textarea
+              id="address"
+              placeholder="Enter full address including landmark, street, etc."
+              className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none h-24 resize-none"
+              defaultValue={propertyLocation.address}
+              onChange={(e) =>
+                setFormData({ ...formdata, [e.target.id]: e.target.value })
+              }
+              required
+            />
+          </div>
+
+          <div className="space-y-4">
+            <div className="flex justify-between items-center">
+              <label className="block text-sm font-medium text-gray-700">
+                Images ({oldImages.length + (formdata.newimgURLs?.length || 0)}
+                /5)
+              </label>
+              <span className="text-xs text-gray-500">
+                At least 1 image required
+              </span>
+            </div>
+
+            <div className="border border-gray-300 rounded-lg p-4">
+              <div className="flex items-center justify-between mb-4">
+                <button
+                  type="button"
+                  onClick={() => fileref.current.click()}
+                  className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition text-sm font-medium"
+                >
+                  Add Images
+                </button>
+                <button
+                  type="button"
+                  onClick={handleUpload}
+                  disabled={
+                    uploading === "uploading" || !formdata.newImages?.length
+                  }
+                  className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {uploading === "uploading" ? "Uploading..." : "Upload Images"}
+                </button>
+              </div>
+
+              <input
+                type="file"
+                accept="image/*"
+                className="hidden"
+                onChange={(e) => {
+                  const files = Array.from(e.target.files);
+                  const totalAfterNew =
+                    oldImages.length +
+                    (formdata.newimgURLs?.length || 0) +
+                    files.length;
+
+                  if (totalAfterNew > 5) {
+                    setError(
+                      `Maximum 5 images allowed. You have ${oldImages.length + (formdata.newimgURLs?.length || 0)} existing.`,
+                    );
+                    return;
+                  }
+
+                  setFormData({
+                    ...formdata,
+                    newImages: [...(formdata.newImages || []), ...files],
+                  });
+                }}
+                multiple
+                ref={fileref}
+              />
+
+              {ferror && <p className="text-red-500 text-sm mb-2">{ferror}</p>}
               {uploading === "success" && (
-                <p className="text-green-400">✅ Upload successful</p>
+                <p className="text-green-500 text-sm mb-2">
+                  ✅ Upload successful
+                </p>
               )}
 
-              {formdata.newImages && formdata.newImages.length > 0 && (
-                <div className="flex flex-col gap-4 mt-4">
-                  {formdata.newImages.map((image, index) => (
-                    <div
-                      key={index}
-                      className="flex justify-between p-3 rounded-lg border border-gray-200 bg-white shadow-sm"
-                    >
-                      <img
-                        src={URL.createObjectURL(image)}
-                        className="w-12 h-12 object-cover"
-                        alt={`upload-${index}`}
-                      />
-                      <button
-                        type="button"
-                        onClick={() => handleNewDelete(index)}
-                        className="text-red-500 text-xs font-semibold hover:text-red-600"
-                      >
-                        DELETE
-                      </button>
+              <div className="space-y-3">
+                {oldImages.length > 0 && (
+                  <div>
+                    <p className="text-sm font-medium text-gray-700 mb-2">
+                      Existing Images
+                    </p>
+                    <div className="space-y-2">
+                      {oldImages.map((image, index) => (
+                        <div
+                          key={index}
+                          className="flex items-center justify-between p-2 bg-gray-50 rounded"
+                        >
+                          <div className="flex items-center gap-3">
+                            <img
+                              src={image.imageurl}
+                              alt={`existing-${index}`}
+                              className="w-12 h-12 object-cover rounded"
+                            />
+                            <span className="text-sm text-gray-600">
+                              Existing image {index + 1}
+                            </span>
+                          </div>
+                          <button
+                            type="button"
+                            onClick={() => handleOldDelete(index)}
+                            className="text-red-500 hover:text-red-700 text-sm font-medium px-3 py-1 bg-red-50 rounded"
+                          >
+                            Remove
+                          </button>
+                        </div>
+                      ))}
                     </div>
-                  ))}
-                </div>
-              )}
-              {oldImages && oldImages.length > 0 && (
-                <div className="flex flex-col gap-4 mt-4">
-                  {oldImages.map((image, index) => (
-                    <div
-                      key={index}
-                      className="flex justify-between p-3 rounded-lg border border-gray-200 bg-white shadow-sm"
-                    >
-                      <img
-                        src={image.imageurl}
-                        className="w-12 h-12 object-cover"
-                        alt={`old-${index}`}
-                      />
-                      <button
-                        type="button"
-                        onClick={() => handleOldDelete(index)}
-                        className="text-red-500 text-xs font-semibold hover:text-red-600"
-                      >
-                        DELETE
-                      </button>
+                  </div>
+                )}
+
+                {formdata.newImages?.length > 0 && (
+                  <div>
+                    <p className="text-sm font-medium text-gray-700 mb-2">
+                      New Images to Upload
+                    </p>
+                    <div className="space-y-2">
+                      {formdata.newImages?.map((image, index) => (
+                        <div
+                          key={index}
+                          className="flex items-center justify-between p-2 bg-blue-50 rounded"
+                        >
+                          <div className="flex items-center gap-3">
+                            <img
+                              src={URL.createObjectURL(image)}
+                              alt={`new-${index}`}
+                              className="w-12 h-12 object-cover rounded"
+                            />
+                            <span className="text-sm text-gray-600">
+                              {image.name}
+                            </span>
+                          </div>
+                          <button
+                            type="button"
+                            onClick={() => handleNewDelete(index)}
+                            className="text-red-500 hover:text-red-700 text-sm font-medium px-3 py-1 bg-red-50 rounded"
+                          >
+                            Remove
+                          </button>
+                        </div>
+                      ))}
                     </div>
-                  ))}
-                </div>
-              )}
-            </div>
+                  </div>
+                )}
 
-            <div className="flex flex-col items-center gap-3 mt-6">
-              <button
-                type="submit"
-                className="bg-green-800 rounded-lg w-72 p-2 text-white hover:opacity-90 transition-transform duration-150 active:scale-110"
-              >
-                Update
-              </button>
-
-              {update === "updating" && (
-                <p className="text-green-400">Updating</p>
-              )}
-              {update === "success" && (
-                <p className="text-green-500">Updated</p>
-              )}
-              {updateerror && <p className="text-red-500">{updateerror}</p>}
+                {formdata.newimgURLs && formdata.newimgURLs.length > 0 && (
+                  <div>
+                    <p className="text-sm font-medium text-gray-700 mb-2">
+                      Newly Uploaded Images
+                    </p>
+                    <div className="space-y-2">
+                      {formdata.newimgURLs.map((image, index) => (
+                        <div
+                          key={index}
+                          className="flex items-center justify-between p-2 bg-green-50 rounded"
+                        >
+                          <div className="flex items-center gap-3">
+                            <img
+                              src={image.imageurl}
+                              alt={`uploaded-${index}`}
+                              className="w-12 h-12 object-cover rounded"
+                            />
+                            <span className="text-sm text-gray-600">
+                              Uploaded image {index + 1}
+                            </span>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
             </div>
+          </div>
+
+          {/* Submit Button */}
+          <div className="pt-4 border-t">
+            <button
+              type="submit"
+              disabled={update === "updating"}
+              className="w-full bg-green-600 text-white py-3 rounded-lg hover:bg-green-700 transition font-medium disabled:opacity-70 disabled:cursor-not-allowed"
+            >
+              {update === "updating" ? "Updating..." : "Update Listing"}
+            </button>
+
+            {update === "success" && (
+              <p className="text-green-600 text-center mt-2">
+                ✅ Listing updated successfully!
+              </p>
+            )}
+            {updateerror && (
+              <p className="text-red-500 text-center mt-2">{updateerror}</p>
+            )}
           </div>
         </div>
       </form>
-    </>
+    </div>
   );
 }
+
 export default UpdateListing;

@@ -7,6 +7,7 @@ const formSlice = createSlice({
     setVisbility: (state) => {
       state.showForm = !state.showForm;
     },
+    
   },
 });
 

@@ -16,6 +16,7 @@ function UserListings() {
   function handleview(index) {
     navigate("/listing", { state: listings[index] });
   }
+
   async function handleDelete(index) {
     try {
       setdel(index);
@@ -41,6 +42,7 @@ function UserListings() {
       setdel(null);
     }
   }
+
   function handleEdit(index) {
     navigate("/update-listing", { state: { index } });
   }
@@ -49,108 +51,136 @@ function UserListings() {
     <>
       {listings.length > 0 ? (
         <>
-          <h1 className="text-xl sm:text-2xl text-black font-bold text-center mt-4">
-            Your Listings Are
-          </h1>
-          <div className="flex flex-col gap-4 mt-3 items-center px-4">
+          <div className="pt-6 text-center">
+            <h1 className="text-2xl sm:text-3xl font-bold text-gray-800">
+              Your Listings
+            </h1>
+            <p className="text-gray-500 mt-1 text-sm sm:text-base">
+              Manage and update your posted properties
+            </p>
+          </div>
+
+          <div className="flex flex-col gap-6 mt-8 items-center px-4 pb-10">
             {listings.map((userlist, index) => (
               <div
                 key={index}
-                className="flex flex-col sm:flex-row gap-4 p-4 rounded-lg bg-white w-full max-w-3xl shadow-md items-center"
+                className="w-full max-w-4xl bg-white rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300 overflow-hidden"
               >
-                <div className="w-full sm:w-auto">
-                  <img
-                    src={userlist.images[0].imageurl}
-                    alt="House"
-                    className="w-full sm:w-36 h-32 object-cover rounded-md"
-                  />
-                </div>
-
-                <div className="flex-1 flex flex-col gap-2 text-center sm:text-left">
-                  <p className="text-lg sm:text-2xl font-semibold text-black">
-                    {userlist.title}
-                  </p>
-
-                  <div className="flex flex-col text-gray-500 text-sm sm:text-base">
-                    <p>{userlist.address.streetAddress}</p>
-                    <p>
-                      {userlist.address.city}, {userlist.address.state}
-                    </p>
+                <div className="flex flex-col sm:flex-row">
+                  <div className="sm:w-60 w-full h-48 sm:h-auto">
+                    <img
+                      src={userlist.images[0]?.imageurl}
+                      alt="Property"
+                      className="w-full h-full object-cover"
+                    />
                   </div>
 
-                 
-                  <div className="flex flex-col sm:flex-row sm:space-x-4">
-                    <p className="text-sm sm:text-base mt-2">
-                      <span className="text-black font-medium">
-                        Listing Type:{" "}
-                      </span>
-                      <span className="text-red-500 font-semibold">
-                        {userlist.listingType}
-                      </span>
-                    </p>
+                  <div className="flex-1 p-6 flex flex-col justify-between">
+                    <div className="flex justify-between items-start">
+                      <h2 className="text-xl sm:text-2xl font-semibold text-gray-800">
+                        {userlist.title}
+                      </h2>
 
-                    <p className="text-sm sm:text-base mt-2">
-                      <span className="text-black font-medium">
-                        Property Type:{" "}
-                      </span>
-                      <span className="text-red-500 font-semibold">
-                        {userlist.propertyType}
-                      </span>
-                    </p>
-
-                    <p className="text-sm sm:text-base mt-2">
-                      <span className="text-black font-medium">Status: </span>
                       <span
-                        className={
+                        className={`px-3 py-1 text-xs rounded-full font-medium ${
                           userlist.status === "available"
-                            ? "text-green-500 font-semibold"
-                            : "text-red-500 font-semibold"
-                        }
+                            ? "bg-green-100 text-green-700"
+                            : "bg-red-100 text-red-600"
+                        }`}
                       >
                         {userlist.status}
                       </span>
-                    </p>
-                  </div>
-                </div>
+                    </div>
 
-                <div className="flex sm:flex-col gap-2 justify-center sm:justify-between text-center sm:text-right">
-                  <button
-                    className="text-sm text-red-600 hover:underline"
-                    onClick={() => handleDelete(index)}
-                  >
-                    {del === index ? "Deleting..." : "Delete"}
-                  </button>
-                  <button
-                    className="text-sm text-green-600 hover:underline"
-                    onClick={() => handleEdit(index)}
-                  >
-                    Edit
-                  </button>
-                  <button
-                    className="text-sm text-black hover:underline"
-                    onClick={() => handleview(index)}
-                  >
-                    View Listing
-                  </button>
+                    {/* Location */}
+                    <div className="mt-2 text-gray-500 text-sm">
+                      <p className="font-medium capitalize">
+                        {userlist.location?.locality}
+                      </p>
+                      <p className="truncate">{userlist.location?.address}</p>
+                    </div>
+
+                    {/* Info Badges */}
+                    <div className="flex flex-wrap gap-2 mt-4 text-sm">
+                      <span className="bg-gray-100 px-3 py-1 rounded-full text-gray-700">
+                        {userlist.propertyType}
+                      </span>
+
+                      {userlist.bhk && (
+                        <span className="bg-blue-50 px-3 py-1 rounded-full text-blue-700">
+                          {userlist.bhk}
+                        </span>
+                      )}
+
+                      <span className="bg-green-50 px-3 py-1 rounded-full text-green-700">
+                        {userlist.area} sq.ft
+                      </span>
+
+                      <span className="bg-yellow-50 px-3 py-1 rounded-full text-yellow-700 capitalize">
+                        For {userlist.listingType}
+                      </span>
+                    </div>
+
+                    {/* Price */}
+                    <div className="mt-4 text-xl font-bold text-red-600">
+                      ₹{userlist.price?.toLocaleString()}
+                      {userlist.listingType === "rent" && (
+                        <span className="text-sm text-gray-500 ml-1">
+                          /month
+                        </span>
+                      )}
+                    </div>
+
+                    <div className="flex gap-3 mt-6 flex-wrap">
+                      <button
+                        className="px-4 py-2 text-sm rounded-lg bg-red-50 text-red-600 hover:bg-red-100 transition disabled:opacity-50"
+                        onClick={() => handleDelete(index)}
+                        disabled={del === index}
+                      >
+                        {del === index ? "Deleting..." : "Delete"}
+                      </button>
+
+                      <button
+                        className="px-4 py-2 text-sm rounded-lg bg-green-50 text-green-600 hover:bg-green-100 transition"
+                        onClick={() => handleEdit(index)}
+                      >
+                        Edit
+                      </button>
+
+                      <button
+                        className="px-4 py-2 text-sm rounded-lg bg-blue-600 text-white hover:bg-blue-700 transition"
+                        onClick={() => handleview(index)}
+                      >
+                        View Listing
+                      </button>
+                    </div>
+                  </div>
                 </div>
               </div>
             ))}
           </div>
         </>
       ) : (
-        <h1 className="text-center mt-6 px-4">
-          <span className="font-bold text-lg sm:text-2xl block">
-            You have not created any listings yet.
-          </span>
+        <div className="flex flex-col items-center justify-center pt-32 pb-20 px-4 text-center">
+          <h1 className="text-2xl sm:text-3xl font-bold text-gray-800 mb-3">
+            No Listings Yet
+          </h1>
+
+          <p className="text-gray-500 mb-6 max-w-md">
+            Start by creating your first property listing and reach potential
+            buyers or tenants.
+          </p>
+
           <NavLink
-            className="text-green-500 mt-2 text-base sm:text-lg cursor-pointer hover:underline inline-block"
+            className="px-6 py-3 bg-green-600 text-white rounded-xl hover:bg-green-700 transition shadow-md"
             to="/create-listing"
           >
-            Create Listing
+            Create Your First Listing
           </NavLink>
-        </h1>
+        </div>
       )}
     </>
   );
 }
+
 export default UserListings;

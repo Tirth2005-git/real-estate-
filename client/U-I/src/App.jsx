@@ -1,6 +1,6 @@
+import "./index.css";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import Home from "./pages/Home.jsx";
-import { useEffect } from "react";
 import Profile from "./pages/Profile.jsx";
 import Signup from "./pages/Signup.jsx";
 import Signin from "./pages/Signin.jsx";
@@ -15,7 +15,11 @@ import PvtRoute2 from "./components/PrivateRoute2.jsx";
 import ListingView from "./pages/viewListing.jsx";
 import UpdateListing from "./pages/updateListings.jsx";
 import FindProperties from "./pages/findProperties.jsx";
-import "./index.css";
+import ViewAd from "./pages/viewad.jsx";
+import BuilderAds from "./pages/builderAd.jsx";
+import FindDealers from "./pages/findDealers.jsx";
+import CreateAdvertisement from "./pages/createAd.jsx";
+import DealerProfile from "./pages/DealerProfile.jsx";
 function App() {
   return (
     <>
@@ -38,7 +42,16 @@ function App() {
                   element={<FindProperties />}
                 ></Route>
                 <Route path="/user-listings" element={<UserListings />}></Route>
+                <Route
+                  path="/create-ad"
+                  element={<CreateAdvertisement />}
+                ></Route>
+                <Route path="/builder-ads" element={<BuilderAds />}></Route>
+                <Route path="/ad" element={<ViewAd />}></Route>
+                <Route path="/browse-dealers" element={<FindDealers />}></Route>
+                <Route path="/dealer-profile" element={<DealerProfile />} />
               </Route>
+
               <Route element={<PvtRoute2 />}>
                 <Route path="/listing" element={<ListingView />}></Route>
                 <Route

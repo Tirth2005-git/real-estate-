@@ -1,63 +1,172 @@
+import Advertisement from "../models/advertisement.model.js";
 import { ErrorHandler } from "../utils/error.js";
 import Listing from "../models/listing.model.js";
 import { delimages } from "./fileuplds.controller.js";
+import { sendEmail } from "../utils/sendEmail.js";
+import User from "../models/users.model.js";
 export async function listController(req, res, next) {
   try {
-    if (req.user.userid === req.params.id) {
-      const {
-        title,
-        listingType,
-        propertyType,
-        description,
-        images,
-        specialOffer,
-        features,
-        status,
-        state,
-        city,
-        zipcode,
-        streetAddress,
-        name,
-        email,
-        phone,
-        price,
-        userref,
-      } = req.body.formdata;
-
-      const newlisting = new Listing({
-        title: title.toLowerCase(),
-        listingType: listingType.toLowerCase(),
-        propertyType: propertyType.toLowerCase(),
-        description: description.toLowerCase(),
-        images,
-        specialOffer: specialOffer ? specialOffer.toLowerCase() : undefined,
-        features: features.toLowerCase(),
-        status: status.toLowerCase(),
-        address: {
-          state: state.toLowerCase(),
-          city: city.toLowerCase(),
-          zipcode: zipcode.toLowerCase(),
-          streetAddress: streetAddress.toLowerCase(),
-        },
-        listedBy: {
-          name: name.toLowerCase(),
-          contact: {
-            email,
-            phone: phone,
-          },
-        },
-        price: parseInt(price),
-        userref,
-      });
-
-      await newlisting.save();
-
-      res.status(201).json({ success: true, newlisting });
-    } else {
+    if (req.user.userid !== req.params.id) {
       return next(ErrorHandler(403, "Can only create your own listings"));
     }
+
+    const {
+      title,
+      listingType,
+      propertyType,
+      description,
+      bhk,
+      area,
+      images,
+      location,
+      status,
+      features,
+      price,
+      specialOffer,
+      listedBy,
+      userref,
+    } = req.body;
+
+    if (
+      !title ||
+      !listingType ||
+      !propertyType ||
+      !description ||
+      !price ||
+      !area ||
+      !location
+    ) {
+      return next(ErrorHandler(400, "Missing required fields"));
+    }
+
+    const newlisting = new Listing({
+      title: title.trim(),
+      listingType: listingType.toLowerCase(),
+      propertyType: propertyType.toLowerCase(),
+      description: description.trim(),
+
+      bhk: bhk || null,
+      area: Number(area),
+
+      images: images || [],
+
+      location: {
+        locality: location.locality.trim().toLowerCase(),
+        address: location.address.trim(),
+      },
+
+      status: status ? status.toLowerCase() : "available",
+      features: features || [],
+
+      price: Number(price),
+      specialOffer: specialOffer ? specialOffer.trim() : "",
+
+      listedBy: {
+        userId: listedBy.userId,
+        role: listedBy.role,
+
+        ...(listedBy.dealerType && { dealerType: listedBy.dealerType }),
+
+        ...(listedBy.companyName && {
+          companyName: listedBy.companyName.trim(),
+        }),
+        name: listedBy.name.trim(),
+        contact: {
+          phone: listedBy.contact.phone.trim(),
+          email: listedBy.contact.email.trim(),
+        },
+      },
+
+      userref: userref,
+    });
+
+    await newlisting.save();
+    const matchedUsers = await User.find({
+      role: { $ne: "builder" },
+
+      "notificationPreferences.localities": newlisting.location.locality,
+
+      $and: [
+        {
+          $or: [
+            { "notificationPreferences.propertyTypes": { $size: 0 } },
+            {
+              "notificationPreferences.propertyTypes": newlisting.propertyType,
+            },
+          ],
+        },
+        {
+          $or: [
+            { "notificationPreferences.listingTypes": { $size: 0 } },
+            { "notificationPreferences.listingTypes": newlisting.listingType },
+          ],
+        },
+      ],
+    });
+    for (const user of matchedUsers) {
+      const email = user.personalContactValue || user.companyContactValue;
+
+      if (!email) continue;
+
+   await sendEmail(
+  email,
+  "New Property Matching Your Preference",
+  `
+    <h3>New Property Listed</h3>
+
+    <p style="font-size:18px;font-weight:bold;">
+      ${newlisting.title}
+    </p>
+
+    ${
+      newlisting.images?.[0]?.imageurl
+        ? `<img src="${newlisting.images[0].imageurl}" 
+             style="width:100%;max-width:500px;border-radius:8px;margin:10px 0;" />`
+        : ""
+    }
+
+    <p>
+      📍 ${newlisting.location.locality}, 
+      ${newlisting.location.address}
+    </p>
+
+    <p>
+      🏠 ${newlisting.propertyType}
+      ${newlisting.bhk ? ` • ${newlisting.bhk}` : ""}
+      • ${newlisting.area} sq.ft
+      • For ${newlisting.listingType}
+    </p>
+
+    <p style="font-size:16px;font-weight:bold;">
+      💰 ₹${newlisting.price.toLocaleString()}
+      ${newlisting.listingType === "rent" ? " / month" : ""}
+    </p>
+
+    <hr/>
+
+    <p style="font-size:12px;color:gray;">
+      You are receiving this because it matches your notification preferences.
+    </p>
+  `
+);
+    }
+
+    res.status(201).json({
+      success: true,
+      message: "Listing created successfully",
+      newlisting,
+    });
   } catch (err) {
-    
+    if (err.code === 11000) {
+      return next(
+        ErrorHandler(409, "Listing with similar data already exists"),
+      );
+    }
+
+    if (err.name === "ValidationError") {
+      const errors = Object.values(err.errors).map((e) => e.message);
+      return next(ErrorHandler(400, errors.join(", ")));
+    }
 
     next(ErrorHandler(500, err.message));
   }
@@ -85,7 +194,7 @@ export async function deleteList(req, res, next) {
 export async function updateList(req, res, next) {
   try {
     if (req.params.id !== req.user.userid) {
-      return next(ErrorHandler(403, "you can only update yours listing!!"));
+      return next(ErrorHandler(403, "You can only update your own listings!"));
     }
 
     let newimgarr = [];
@@ -93,93 +202,193 @@ export async function updateList(req, res, next) {
     let imagestodel = JSON.parse(req.body["imgstodel"]);
     let newimgs = JSON.parse(req.body["newimgs"]);
     let price = parseInt(req.body["price"]);
-    const listingid = JSON.parse(req.body["listingid"]);
-    const specialOffer = JSON.parse(req.body["specialoffer"]).trim();
+    const listingid = req.body["listingid"];
+
     const listing = await Listing.findById(listingid);
+    if (!listing) {
+      return next(ErrorHandler(404, "Listing not found"));
+    }
 
     let updatedtextdata = {};
     Object.keys(text_data).forEach((key) => {
-      if (text_data[key] && text_data[key].toString().trim()) {
-        updatedtextdata[key] = text_data[key];
+      const value = text_data[key];
+
+      // SPECIAL OFFER: allow empty string
+      if (key === "specialOffer") {
+        if (typeof value === "string") {
+          updatedtextdata.specialOffer = value.trim();
+        }
+        return;
+      }
+
+      // Arrays (features, etc.)
+      if (Array.isArray(value)) {
+        updatedtextdata[key] = value;
+        return;
+      }
+
+      if (
+        value !== null &&
+        value !== undefined &&
+        value.toString().trim() !== ""
+      ) {
+        updatedtextdata[key] = value;
       }
     });
 
     if (imagestodel.length > 0) {
       const idsToDelete = imagestodel.map((img) => img.public_id);
-
       let images = listing.images;
       images = images.filter((img) => !idsToDelete.includes(img.public_id));
       await delimages(...imagestodel);
       newimgarr.push(...images);
+    } else {
+      newimgarr.push(...listing.images);
     }
+
     if (newimgs.length > 0) {
       newimgarr.push(...newimgs);
     }
-    const updatedlist = await Listing.findByIdAndUpdate(
-      listingid,
-      {
-        $set: {
-          title: updatedtextdata.title?.toLowerCase() || listing.title,
-          listingType:
-            updatedtextdata.listingType?.toLowerCase() || listing.listingType,
-          propertyType:
-            updatedtextdata.propertyType?.toLowerCase() || listing.propertyType,
-          description:
-            updatedtextdata.description?.toLowerCase() || listing.description,
-          images: newimgarr.length > 0 ? newimgarr : listing.images,
-          specialOffer: specialOffer.trim() ? specialOffer : "",
-          features: updatedtextdata.features?.toLowerCase() || listing.features,
-          status: updatedtextdata.status?.toLowerCase() || listing.status,
-          address: {
-            state:
-              updatedtextdata.state?.toLowerCase() || listing.address.state,
-            city: updatedtextdata.city?.toLowerCase() || listing.address.city,
-            zipcode:
-              updatedtextdata.zipcode?.toLowerCase() || listing.address.zipcode,
-            streetAddress:
-              updatedtextdata.streetAddress?.toLowerCase() ||
-              listing.address.streetAddress,
-          },
-          listedBy: {
-            name: updatedtextdata.name?.toLowerCase() || listing.listedBy.name,
-            contact: {
-              email: updatedtextdata.email || listing.listedBy.contact.email,
-              phone: updatedtextdata.phone || listing.listedBy.contact.phone,
-            },
-          },
-          price: (price > 1000 && price) || listing.price,
+
+    if (newimgarr.length === 0) {
+      return next(ErrorHandler(400, "At least one image is required"));
+    }
+
+    const updateData = {
+      title: updatedtextdata.title?.trim() || listing.title,
+      description: updatedtextdata.description?.trim() || listing.description,
+      area: updatedtextdata.area ? Number(updatedtextdata.area) : listing.area,
+      images: newimgarr,
+      features: updatedtextdata.features,
+      status: updatedtextdata.status?.toLowerCase() || listing.status,
+
+      ...(updatedtextdata.hasOwnProperty("specialOffer") && {
+        specialOffer: updatedtextdata.specialOffer,
+      }),
+
+      location: {
+        locality: listing.location.locality,
+        address: updatedtextdata.address?.trim() || listing.location?.address,
+      },
+
+      listedBy: {
+        userId: listing.listedBy.userId,
+        role: listing.listedBy.role,
+        dealerType: listing.listedBy.dealerType,
+        companyName: listing.listedBy.companyName,
+        name: updatedtextdata.name?.trim() || listing.listedBy.name,
+        contact: {
+          email:
+            updatedtextdata.email?.trim() || listing.listedBy.contact.email,
+          phone:
+            updatedtextdata.phone?.trim() || listing.listedBy.contact.phone,
         },
       },
-      { new: true }
+
+      price: (price > 1000 && price) || listing.price,
+    };
+
+    const updatedlist = await Listing.findByIdAndUpdate(
+      listingid,
+      { $set: updateData },
+      { new: true },
     );
 
-    res.status(201).json({ success: true, updatedlist });
+    res.status(200).json({
+      success: true,
+      message: "Listing updated successfully",
+      updatedlist,
+    });
   } catch (err) {
-    
-
+    console.error("Update listing error:", err);
     next(ErrorHandler(500, err.message));
   }
 }
 
 export async function browseList(req, res, next) {
   try {
-    let { maxPrice, minPrice, ...filters } = req.body;
+    const {
+      locality,
+      propertyType,
+      propertyCategory,
+      listingTypes,
+      bhks,
+      listedByRoles,
+      dealerTypes,
+      minPrice,
+      maxPrice,
+      minArea,
+      maxArea,
+      Features,
+    } = req.body;
 
-    if (minPrice || maxPrice) {
-      filters = { ...filters, price: {} };
-      if (minPrice) {
-        filters.price = { ...filters.price, $gte: parseInt(minPrice) };
-      }
+    const listingFilters = { status: "available" };
 
-      if (maxPrice) {
-        filters.price = { ...filters.price, $lte: parseFloat(maxPrice) };
-      }
+    if (locality) {
+      listingFilters["location.locality"] = locality.toLowerCase();
     }
 
-    const searchResults = await Listing.find(filters);
-    res.status(201).json({ success: true, searchResults });
+    if (propertyType) {
+      listingFilters.propertyType = propertyType.toLowerCase();
+    }
+
+    if (listingTypes?.length) {
+      listingFilters.listingType = { $in: listingTypes };
+    }
+
+    if (bhks?.length) {
+      listingFilters.bhk = { $in: bhks };
+    }
+
+    if (minPrice || maxPrice) {
+      listingFilters.price = {};
+      if (minPrice) listingFilters.price.$gte = Number(minPrice);
+      if (maxPrice) listingFilters.price.$lte = Number(maxPrice);
+    }
+
+    if (minArea || maxArea) {
+      listingFilters.area = {};
+      if (minArea) listingFilters.area.$gte = Number(minArea);
+      if (maxArea) listingFilters.area.$lte = Number(maxArea);
+    }
+
+    if (Features?.length) {
+      listingFilters.features = { $all: Features };
+    }
+
+    if (listedByRoles?.length) {
+      listingFilters["listedBy.role"] = { $in: listedByRoles };
+    }
+
+    if (dealerTypes?.length) {
+      listingFilters["listedBy.dealerType"] = { $in: dealerTypes };
+    }
+
+    const adFilters = {};
+
+    if (locality) {
+      adFilters.location = locality.toLowerCase();
+    }
+
+    if (propertyCategory) {
+      adFilters.projectType = propertyCategory.toLowerCase();
+    }
+
+    const listings = await Listing.find(listingFilters)
+      .sort({ createdAt: -1 })
+      .limit(50);
+
+    const ads = await Advertisement.find(adFilters)
+      .sort({ createdAt: -1 })
+      .limit(10);
+
+    res.status(200).json({
+      success: true,
+      listings,
+      ads,
+    });
   } catch (err) {
-  
-    next(ErrorHandler(500, err.message));
+    console.error("Browse error:", err);
+    next(ErrorHandler(500, "Search failed"));
   }
 }

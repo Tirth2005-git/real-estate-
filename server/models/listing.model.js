@@ -1,85 +1,219 @@
 import mongoose from "mongoose";
-const listmodel = new mongoose.Schema({
-  title: {
-    type: String,
-    required: true,
-    trim: true,
-  },
-  listingType: {
-    type: String,
-    required: true,
-    trim: true,
-    enum: ["rent", "sale"],
-  },
-  description: {
-    type: String,
-    required: true,
-    trim: true,
-  },
-  propertyType: {
-    type: String,
-    required: true,
-    trim: true,
-  },
-  images: {
-    type: [
-      {
-        imageurl: { type: String, required: true },
-        public_id: { type: String, required: true },
-      },
-    ],
-  },
-  address: new mongoose.Schema(
-    {
-      city: { type: String, required: true, trim: true },
-      state: { type: String, required: true, trim: true },
-      streetAddress: { type: String, required: true, trim: true },
-      zipcode: { type: String, required: true, trim: true },
-    },
-    { _id: false }
-  ),
-  status: {
-    type: String,
-    required: true,
-    trim: true,
-  },
-  features: {
-    type: String,
-    trim: true,
-  },
-  price: {
-    type: Number,
-    required: true,
- 
-  },
-  specialOffer: {
-    type: String,
-    trim: true,
-  },
-  listedBy: {
-    name: {
+const listmodel = new mongoose.Schema(
+  {
+    title: {
       type: String,
       required: true,
       trim: true,
     },
-    contact: {
-      phone: {
+    listingType: {
+      type: String,
+      required: true,
+      trim: true,
+      enum: ["rent", "sale"],
+    },
+    description: {
+      type: String,
+      required: true,
+      trim: true,
+    },
+    propertyType: {
+      type: String,
+      required: true,
+      trim: true,
+    },
+    bhk: {
+      type: String,
+      enum: ["1 BHK", "2 BHK", "3 BHK", "4 BHK", "Studio"],
+    },
+    area: {
+      type: Number,
+      required: true,
+    },
+    images: {
+      type: [
+        {
+          imageurl: { type: String, required: true },
+          public_id: { type: String, required: true },
+        },
+      ],
+    },
+    location: {
+      locality: {
         type: String,
         required: true,
-        trim:true
+        enum: [
+          "colaba",
+          "nariman point",
+          "marine lines",
+          "churchgate",
+          "fort",
+          "cuffe parade",
+          "malabar hill",
+          "walkeshwar",
+          "breach candy",
+          "tardeo",
+          "haji ali",
+          "worli",
+          "lower parel",
+          "prabhadevi",
+          "dadar",
+          "mahim",
+          "matunga",
+          "sion",
+
+          "bandra",
+          "khar",
+          "santacruz",
+          "vile parle",
+          "andheri",
+          "jogeshwari",
+          "goregaon",
+          "malad",
+          "kandivali",
+          "borivali",
+          "dahisar",
+
+          "kurla",
+          "vidyavihar",
+          "ghatkopar",
+          "vikroli",
+          "bhandup",
+          "mulund",
+          "thane",
+          "kalyan",
+          "dombivli",
+          "ambernath",
+          "badlapur",
+
+          "mankhurd",
+          "govandi",
+          "chembur",
+          "tilak nagar",
+          "koperkhairane",
+          "navi mumbai",
+          "nerul",
+          "vashi",
+          "sanpada",
+          "seawoods",
+          "belapur",
+          "kharghar",
+          "panvel",
+
+          "byculla",
+          "mazgaon",
+          "parel",
+          "lalbaug",
+          "chinchpokli",
+          "sewri",
+          "wadala",
+          "sion",
+          "king circle",
+          "mumbai central",
+          "grant road",
+          "charni road",
+          "matunga west",
+          "dadar west",
+          "prabhadevi west",
+          "dadar east",
+          "parel east",
+          "mahalakshmi",
+          "mahim west",
+          "bandra west",
+          "bandra east",
+          "khar west",
+          "khar east",
+          "santacruz east",
+          "santacruz west",
+          "vile parle east",
+          "vile parle west",
+          "andheri east",
+          "andheri west",
+          "jogeshwari east",
+          "jogeshwari west",
+          "goregaon east",
+          "goregaon west",
+          "malad east",
+          "malad west",
+          "kandivali east",
+          "kandivali west",
+          "borivali east",
+          "borivali west",
+          "dahisar east",
+          "dahisar west",
+          "mira road",
+          "bhayandar",
+          "naigaon",
+          "vasai",
+          "virar",
+        ],
       },
-      email: {
+      address: {
         type: String,
         required: true,
         trim: true,
       },
     },
+    status: {
+      type: String,
+      required: true,
+      trim: true,
+    },
+    features: {
+      type: [String],
+      default: [],
+    },
+    price: {
+      type: Number,
+      required: true,
+    },
+    specialOffer: {
+      type: String,
+      trim: true,
+    },
+    listedBy: {
+      userId: {
+        type: String,
+        required: true,
+      },
+      role: {
+        type: String,
+        required: true,
+        enum: ["user", "dealer"],
+      },
+      dealerType: {
+        type: String,
+        enum: ["individual", "agency"],
+      },
+      companyName: {
+        type: String,
+        trim: true,
+      },
+      name: {
+        type: String,
+        required: true,
+        trim: true,
+      },
+      contact: {
+        phone: {
+          type: String,
+          required: true,
+          trim: true,
+        },
+        email: {
+          type: String,
+          required: true,
+          trim: true,
+        },
+      },
+    },
+    userref: {
+      type: String,
+      required: true,
+      trim: true,
+    },
   },
-  userref: {
-    type: String,
-    required: true,
-    trim:true
-  },
-});
+  { timestamps: true },
+);
 const Listing = mongoose.model("Listings", listmodel);
 export default Listing;

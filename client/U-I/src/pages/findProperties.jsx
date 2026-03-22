@@ -3,342 +3,948 @@ import { setVisbility } from "../redux/formslice.jsx";
 import { setproperties } from "../redux/propertiesSlice.jsx";
 import { useState, useEffect } from "react";
 import { useNavigate, Link } from "react-router-dom";
+import { setAds } from "../redux/adsslice.jsx";
+import Select from "react-select";
+
 function FindProperties() {
-  const [formdata, setformdata] = useState(0);
+  const { ads } = useSelector((state) => state.ads);
+
+  const [formdata, setformdata] = useState({
+    listingTypes: [],
+    propertyCategory: "",
+    propertyType: "",
+    bhks: [],
+    locality: "",
+    minPrice: "",
+    maxPrice: "",
+    minArea: "",
+    maxArea: "",
+    listedByRoles: [],
+    dealerTypes: [],
+    Features: [],
+  });
+
   const [searching, setSearching] = useState(false);
   const [searcherror, setSeacrhError] = useState(false);
   const { showForm } = useSelector((state) => state.formToggle);
   const { properties } = useSelector((state) => state.properties);
   const navigate = useNavigate();
   const dispatch = useDispatch();
+
+  const mumbaiLocalities = [
+    "colaba",
+    "nariman point",
+    "marine lines",
+    "churchgate",
+    "fort",
+    "cuffe parade",
+    "malabar hill",
+    "walkeshwar",
+    "breach candy",
+    "tardeo",
+    "haji ali",
+    "worli",
+    "lower parel",
+    "prabhadevi",
+    "dadar",
+    "mahim",
+    "matunga",
+    "sion",
+
+    "bandra",
+    "khar",
+    "santacruz",
+    "vile parle",
+    "andheri",
+    "jogeshwari",
+    "goregaon",
+    "malad",
+    "kandivali",
+    "borivali",
+    "dahisar",
+
+    "kurla",
+    "vidyavihar",
+    "ghatkopar",
+    "vikroli",
+    "bhandup",
+    "mulund",
+    "thane",
+    "kalyan",
+    "dombivli",
+    "ambernath",
+    "badlapur",
+
+    "mankhurd",
+    "govandi",
+    "chembur",
+    "tilak nagar",
+    "koperkhairane",
+    "navi mumbai",
+    "nerul",
+    "vashi",
+    "sanpada",
+    "seawoods",
+    "belapur",
+    "kharghar",
+    "panvel",
+
+    "byculla",
+    "mazgaon",
+    "parel",
+    "lalbaug",
+    "chinchpokli",
+    "sewri",
+    "wadala",
+    "sion",
+    "king circle",
+    "mumbai central",
+    "grant road",
+    "charni road",
+    "matunga west",
+    "dadar west",
+    "prabhadevi west",
+    "dadar east",
+    "parel east",
+    "mahalakshmi",
+    "mahim west",
+    "bandra west",
+    "bandra east",
+    "khar west",
+    "khar east",
+    "santacruz east",
+    "santacruz west",
+    "vile parle east",
+    "vile parle west",
+    "andheri east",
+    "andheri west",
+    "jogeshwari east",
+    "jogeshwari west",
+    "goregaon east",
+    "goregaon west",
+    "malad east",
+    "malad west",
+    "kandivali east",
+    "kandivali west",
+    "borivali east",
+    "borivali west",
+    "dahisar east",
+    "dahisar west",
+    "mira road",
+    "bhayandar",
+    "naigaon",
+    "vasai",
+    "virar",
+  ];
+  const localityOptions = mumbaiLocalities.map((l) => ({
+    value: l.toLowerCase(),
+    label: l,
+  }));
+
   function handleview(index) {
     navigate("/listing", { state: properties[index] });
   }
+  function handleadview(index) {
+    navigate("/ad", { state: ads[index] });
+  }
+
   useEffect(() => {
     dispatch(setVisbility());
-  }, [properties]);
+  }, [properties, dispatch]);
+
   async function handleSubmit(e) {
     try {
       e.preventDefault();
-      if (!formdata) {
-        setSearching(false);
-        setSeacrhError("search params cannot be empty");
+
+      const { locality, propertyType } = formdata;
+
+      if (!locality?.trim()) {
+        setSeacrhError("Please select a locality");
         return;
       }
+
+      if (!propertyType?.trim()) {
+        setSeacrhError("Please select a property type");
+        return;
+      }
+
+      if (
+        formdata.minPrice &&
+        formdata.maxPrice &&
+        Number(formdata.minPrice) > Number(formdata.maxPrice)
+      ) {
+        setSeacrhError("Minimum price cannot be greater than maximum price");
+        return;
+      }
+
+      if (
+        formdata.minArea &&
+        formdata.maxArea &&
+        Number(formdata.minArea) > Number(formdata.maxArea)
+      ) {
+        setSeacrhError("Minimum area cannot be greater than maximum area");
+        return;
+      }
+
       setSearching(true);
+      setSeacrhError(false);
+
+      const rawParams = {
+        locality: formdata.locality,
+        propertyCategory: formdata.propertyCategory,
+        propertyType: formdata.propertyType,
+        listingTypes: formdata.listingTypes,
+        bhks: formdata.bhks,
+        listedByRoles: formdata.listedByRoles,
+        dealerTypes: formdata.dealerTypes,
+        minPrice: formdata.minPrice,
+        maxPrice: formdata.maxPrice,
+        minArea: formdata.minArea,
+        maxArea: formdata.maxArea,
+        Features: formdata.Features,
+      };
+
       const searchParams = {};
-      Object.keys(formdata).map((key) => {
-        if (formdata[key] && formdata[key].toString().trim()) {
-          searchParams[key] = formdata[key].trim();
+      Object.entries(rawParams).forEach(([key, value]) => {
+        if (value === undefined || value === null || value === "") return;
+
+        if (Array.isArray(value) && value.length) {
+          searchParams[key] = value;
+        } else if (
+          key === "minPrice" ||
+          key === "maxPrice" ||
+          key === "minArea" ||
+          key === "maxArea"
+        ) {
+          searchParams[key] = Number(value);
+        } else if (typeof value === "string") {
+          searchParams[key] = value.trim().toLowerCase();
         }
       });
 
-      if (Object.keys(searchParams).length == 0) {
-        setSearching(false);
-        setSeacrhError("search params cannot be empty");
-        return;
-      }
-
       const res = await fetch("/api/browse/listing", {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify(searchParams),
       });
+
       if (!res.ok) {
         const data = await res.json();
+        setSeacrhError(data.message || "Search failed");
         setSearching(false);
-        setSeacrhError(data.message);
         return;
       }
 
       const data = await res.json();
 
-      if (data.searchResults.length == 0) {
+      if (
+        (!data.listings || data.listings.length === 0) &&
+        (!data.ads || data.ads.length === 0)
+      ) {
+        setSeacrhError("No properties or ads found for this area");
         setSearching(false);
-        setSeacrhError("No Results found");
         return;
       }
-      dispatch(setproperties(data.searchResults));
+
+      dispatch(setproperties(data.listings || []));
+      dispatch(setAds(data.ads || []));
+
       setSearching(false);
       setSeacrhError(false);
-      setformdata(0);
     } catch (err) {
       setSearching(false);
-      setSeacrhError(err.message);
+      setSeacrhError(err.message || "Search failed");
     }
   }
+
   return (
     <>
       <form
-        className={`w-full max-w-2xl bg-gray-200 rounded-xl p-5 z-30 flex flex-col sm:flex-row gap-4 fixed left-1/2 -translate-x-1/2 transition-all duration-500 ${
-          showForm ? "top-10" : "-top-full"
-        }`}
+        className={`w-[95%] sm:w-[92%] md:w-[90%] lg:w-full max-w-6xl 
+  bg-gray-200 rounded-xl p-4 sm:p-5 z-30 
+  flex flex-col lg:flex-row gap-4 sm:gap-6 
+  fixed left-1/2 -translate-x-1/2 
+  transition-all duration-500 
+  max-h-[90vh] overflow-y-auto
+  ${showForm ? "top-3 sm:top-6 md:top-10" : "-top-full"}`}
         onSubmit={handleSubmit}
       >
         <div className="flex-1">
-          <label className="block font-medium text-xs text-gray-700 sm:text-sm mb-2 mt-2">
+          <label className="block font-medium text-gray-700 mb-2">
             Listing Type
           </label>
-          <div className="flex flex-col sm:flex-row gap-2">
+          <div className="flex flex-wrap gap-3 mb-4">
             {["rent", "sale"].map((type) => (
-              <label key={type} className="flex items-center">
+              <label key={type} className="flex items-center cursor-pointer">
                 <input
-                  type="radio"
-                  id="listingType"
-                  name="listingType"
-                  value={type}
-                  checked={formdata?.listingType === type}
+                  type="checkbox"
+                  checked={formdata.listingTypes.includes(type)}
                   onChange={(e) => {
-                    if (formdata?.listingType !== e.target.value) {
-                      setformdata({
-                        ...formdata,
-                        listingType: e.target.value,
-                      });
-                    }
+                    setformdata((prev) => {
+                      const updated = prev.listingTypes.includes(type)
+                        ? prev.listingTypes.filter((t) => t !== type)
+                        : [...prev.listingTypes, type];
+
+                      return { ...prev, listingTypes: updated };
+                    });
                   }}
-                  onClick={(e) => {
-                    if (formdata?.listingType === e.target.value) {
-                      setformdata({
-                        ...formdata,
-                        listingType: "",
-                      });
-                    }
-                  }}
-                  className="accent-blue-500"
+                  className="accent-blue-500 w-4 h-4"
                 />
-                <span className="text-xs sm:text-base text-gray-700 ml-2">
+                <span className="text-gray-700 ml-2 capitalize text-sm sm:text-base">
                   {type}
                 </span>
               </label>
             ))}
           </div>
 
-          <label className="block font-medium text-xs text-gray-700 sm:text-sm mb-2 mt-4">
-            Property Type
+          <label className="block font-medium text-gray-700 mb-2">
+            Property Category
           </label>
-          <div className="flex flex-col sm:flex-row flex-wrap gap-2">
-            {["villa", "bungalow", "flat", "office space"].map((type) => (
-              <label key={type} className="flex items-center">
+          <div className="flex flex-wrap gap-3 mb-4">
+            {["residential", "commercial"].map((category) => (
+              <label
+                key={category}
+                className="flex items-center cursor-pointer"
+              >
                 <input
                   type="radio"
-                  id="propertyType"
-                  name="propertyType"
-                  value={type}
-                  className="accent-blue-500"
-                  checked={formdata?.propertyType === type}
+                  name="propertyCategory"
+                  value={category}
+                  checked={formdata.propertyCategory === category}
                   onChange={(e) => {
-                    if (formdata?.propertyType !== e.target.value) {
-                      setformdata({
-                        ...formdata,
-                        propertyType: e.target.value,
-                      });
-                    }
+                    setformdata((prev) => ({
+                      ...prev,
+                      propertyCategory:
+                        prev.propertyCategory === e.target.value
+                          ? ""
+                          : e.target.value,
+                      propertyType: "",
+                    }));
                   }}
-                  onClick={(e) => {
-                    if (formdata?.propertyType === e.target.value) {
-                      setformdata({
-                        ...formdata,
-                        propertyType: "",
-                      });
-                    }
-                  }}
+                  className="accent-blue-500 w-4 h-4"
                 />
-                <span className="text-xs sm:text-base text-gray-700 ml-2">
-                  {type}
+                <span className="text-gray-700 ml-2 capitalize text-sm sm:text-base">
+                  {category}
                 </span>
               </label>
             ))}
           </div>
 
-          <label className="block font-medium text-xs text-gray-700 sm:text-sm mb-2 mt-4">
-            Price Range
+          {formdata.propertyCategory && (
+            <>
+              <label className="block font-medium text-gray-700 mb-2">
+                Property Type
+              </label>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 mb-4">
+                {(formdata.propertyCategory === "residential"
+                  ? [
+                      "flat",
+                      "bungalow",
+                      "villa",
+                      "studio apartment",
+                      "builder floor",
+                    ]
+                  : [
+                      "office space",
+                      "shop",
+                      "showroom",
+                      "warehouse",
+                      "industrial",
+                    ]
+                ).map((type) => (
+                  <label
+                    key={type}
+                    className="flex items-center cursor-pointer"
+                  >
+                    <input
+                      type="radio"
+                      name="propertyType"
+                      value={type}
+                      checked={formdata.propertyType === type}
+                      onChange={(e) => {
+                        setformdata((prev) => ({
+                          ...prev,
+                          propertyType:
+                            prev.propertyType === e.target.value
+                              ? ""
+                              : e.target.value,
+                        }));
+                      }}
+                      className="accent-blue-500 w-4 h-4"
+                    />
+                    <span className="text-gray-700 ml-2 capitalize text-sm sm:text-base">
+                      {type}
+                    </span>
+                  </label>
+                ))}
+              </div>
+            </>
+          )}
+
+          {formdata.propertyCategory === "residential" && (
+            <>
+              <label className="block font-medium text-gray-700 mb-2">
+                BHK Configuration
+              </label>
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 mb-4">
+                {["1 BHK", "2 BHK", "3 BHK", "4 BHK", "Studio"].map((bhk) => (
+                  <label key={bhk} className="flex items-center cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={formdata.bhks.includes(bhk)}
+                      onChange={() => {
+                        setformdata((prev) => {
+                          const updated = prev.bhks.includes(bhk)
+                            ? prev.bhks.filter((b) => b !== bhk)
+                            : [...prev.bhks, bhk];
+
+                          return { ...prev, bhks: updated };
+                        });
+                      }}
+                      className="accent-blue-500 w-4 h-4"
+                    />
+                    <span className="text-gray-700 ml-2 text-sm sm:text-base">
+                      {bhk}
+                    </span>
+                  </label>
+                ))}
+              </div>
+            </>
+          )}
+        </div>
+
+        <div className="flex-1">
+          <label className="block font-medium text-gray-700 mb-2">
+            Mumbai Locality
           </label>
-          <div className="w-full flex flex-col sm:flex-row gap-3">
+          <Select
+            options={localityOptions}
+            placeholder="Search & select locality..."
+            value={
+              formdata.locality
+                ? { value: formdata.locality, label: formdata.locality }
+                : null
+            }
+            onChange={(opt) =>
+              setformdata((prev) => ({ ...prev, locality: opt?.value || "" }))
+            }
+            className="mb-4 text-black"
+            classNamePrefix="react-select"
+          />
+
+          <label className="block font-medium text-gray-700 mb-2">
+            Price Range (₹)
+          </label>
+          <div className="flex flex-col sm:flex-row gap-3 mb-4">
             <input
               type="number"
-              className="w-full sm:w-32 bg-white rounded-lg text-sm p-1"
-              id="minPrice"
-              min="1000"
-              value={formdata?.["minPrice"] || ""}
+              className="w-full bg-white rounded-lg p-2 text-sm sm:text-base"
               placeholder="Min Price"
+              min="1000"
+              value={formdata.minPrice || ""}
               onChange={(e) =>
-                setformdata({ ...formdata, [e.target.id]: e.target.value })
+                setformdata((prev) => ({ ...prev, minPrice: e.target.value }))
               }
             />
             <input
               type="number"
-              className="w-full sm:w-32 bg-white rounded-lg text-sm p-1"
-              id="maxPrice"
+              className="w-full bg-white rounded-lg p-2 text-sm sm:text-base"
               placeholder="Max Price"
               min="1000"
-              value={formdata?.["maxPrice"] || ""}
+              value={formdata.maxPrice || ""}
               onChange={(e) =>
-                setformdata({ ...formdata, [e.target.id]: e.target.value })
+                setformdata((prev) => ({ ...prev, maxPrice: e.target.value }))
+              }
+            />
+          </div>
+
+          <label className="block font-medium text-gray-700 mb-2">
+            Area Range (sq.ft)
+          </label>
+          <div className="flex flex-col sm:flex-row gap-3 mb-4">
+            <input
+              type="number"
+              className="w-full bg-white rounded-lg p-2 text-sm sm:text-base"
+              placeholder="Min Area"
+              min="100"
+              value={formdata.minArea || ""}
+              onChange={(e) =>
+                setformdata((prev) => ({ ...prev, minArea: e.target.value }))
+              }
+            />
+            <input
+              type="number"
+              className="w-full bg-white rounded-lg p-2 text-sm sm:text-base"
+              placeholder="Max Area"
+              min="100"
+              value={formdata.maxArea || ""}
+              onChange={(e) =>
+                setformdata((prev) => ({ ...prev, maxArea: e.target.value }))
               }
             />
           </div>
         </div>
 
-        <div className="flex flex-col gap-3 flex-1">
-          <label className="block font-medium text-xs text-gray-700 sm:text-sm mb-2 mt-4">
-            Location
+        <div className="flex-1">
+          <label className="block font-medium text-gray-700 mb-2">
+            Listed By
           </label>
-          <input
-            type="text"
-            placeholder="State"
-            className="bg-white text-black p-1 text-sm rounded-lg w-full"
-            id="address.state"
-            value={formdata?.["address.state"] || ""}
-            onChange={(e) =>
-              setformdata({
-                ...formdata,
-                [e.target.id]: e.target.value.trim().toLowerCase(),
-              })
-            }
-          />
-          <input
-            type="text"
-            placeholder="City"
-            className="bg-white text-black p-1 text-sm rounded-lg w-full"
-            id="address.city"
-            value={formdata?.["address.city"] || ""}
-            onChange={(e) =>
-              setformdata({
-                ...formdata,
-                [e.target.id]: e.target.value.trim().toLowerCase(),
-              })
-            }
-          />
-          <input
-            type="text"
-            placeholder="Zipcode"
-            className="bg-white text-black p-1 text-sm rounded-lg w-full"
-            id="address.zipcode"
-            value={formdata?.["address.zipcode"] || ""}
-            onChange={(e) =>
-              setformdata({
-                ...formdata,
-                [e.target.id]: e.target.value.trim().toLowerCase(),
-              })
-            }
-          />
+          <div className="flex flex-col gap-2 mb-4">
+            <label className="flex items-center cursor-pointer">
+              <input
+                type="checkbox"
+                checked={formdata.listedByRoles?.includes("user")}
+                onChange={() => {
+                  setformdata((prev) => {
+                    const updated = prev.listedByRoles.includes("user")
+                      ? prev.listedByRoles.filter((r) => r !== "user")
+                      : [...prev.listedByRoles, "user"];
+
+                    return { ...prev, listedByRoles: updated };
+                  });
+                }}
+                className="accent-blue-500 w-4 h-4"
+              />
+              <span className="text-gray-700 ml-2 text-sm sm:text-base">
+                Individual Users
+              </span>
+            </label>
+
+            <label className="flex items-center cursor-pointer">
+              <input
+                type="checkbox"
+                checked={formdata.listedByRoles?.includes("dealer")}
+                onChange={() => {
+                  setformdata((prev) => {
+                    const updated = prev.listedByRoles.includes("dealer")
+                      ? prev.listedByRoles.filter((r) => r !== "dealer")
+                      : [...prev.listedByRoles, "dealer"];
+
+                    return { ...prev, listedByRoles: updated };
+                  });
+                }}
+                className="accent-blue-500 w-4 h-4"
+              />
+              <span className="text-gray-700 ml-2 text-sm sm:text-base">
+                Dealers
+              </span>
+            </label>
+
+            {formdata.listedByRoles?.includes("dealer") && (
+              <div className="ml-4 sm:ml-6 flex flex-col gap-1">
+                <label className="flex items-center cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={formdata.dealerTypes?.includes("individual")}
+                    onChange={() => {
+                      setformdata((prev) => {
+                        const updated = prev.dealerTypes.includes("individual")
+                          ? prev.dealerTypes.filter((t) => t !== "individual")
+                          : [...prev.dealerTypes, "individual"];
+
+                        return { ...prev, dealerTypes: updated };
+                      });
+                    }}
+                    className="accent-green-500 w-4 h-4"
+                  />
+                  <span className="text-gray-700 ml-2 text-sm sm:text-base">
+                    Individual Dealers
+                  </span>
+                </label>
+
+                <label className="flex items-center cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={formdata.dealerTypes?.includes("agency")}
+                    onChange={() => {
+                      setformdata((prev) => {
+                        const updated = prev.dealerTypes.includes("agency")
+                          ? prev.dealerTypes.filter((t) => t !== "agency")
+                          : [...prev.dealerTypes, "agency"];
+
+                        return { ...prev, dealerTypes: updated };
+                      });
+                    }}
+                    className="accent-green-500 w-4 h-4"
+                  />
+                  <span className="text-gray-700 ml-2 text-sm sm:text-base">
+                    Agencies
+                  </span>
+                </label>
+              </div>
+            )}
+          </div>
+
+          {formdata.propertyCategory && (
+            <>
+              <label className="block font-medium text-gray-700 mb-2">
+                Features
+              </label>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 max-h-48 overflow-y-auto p-2 bg-white rounded border">
+                {(formdata.propertyCategory === "residential"
+                  ? [
+                      "Swimming Pool",
+                      "Gym",
+                      "Club House",
+                      "Children's Play Area",
+                      "24/7 Security",
+                      "Lift/Elevator",
+                      "Car Parking",
+                      "Garden/Lawn",
+                      "Intercom",
+                      "Wi-Fi Ready",
+                      "CCTV Surveillance",
+                      "Shopping Center Nearby",
+                      "School Nearby",
+                      "Hospital Nearby",
+                      "Public Transport Access",
+                      "Balcony/Terrace",
+                      "Modular Kitchen",
+                      "Air Conditioning",
+                      "Geyser",
+                    ]
+                  : [
+                      "24/7 Security",
+                      "Lift/Elevator",
+                      "Car Parking",
+                      "Wi-Fi Ready",
+                      "CCTV Surveillance",
+                      "Public Transport Access",
+                      "Air Conditioning",
+                      "Conference Room",
+                      "Pantry",
+                      "Reception Area",
+                      "Modular Furniture",
+                      "Toilets",
+                      "Storage Space",
+                      "Separate Entrance",
+                      "Metro Station Nearby",
+                      "Bank Nearby",
+                      "Restaurant Nearby",
+                    ]
+                ).map((feature) => (
+                  <label
+                    key={feature}
+                    className="flex items-center cursor-pointer p-1 hover:bg-gray-50 rounded"
+                  >
+                    <input
+                      type="checkbox"
+                      value={feature}
+                      checked={formdata.Features?.includes(feature) || false}
+                      onChange={(e) => {
+                        const currentSelected = formdata.Features || [];
+                        if (e.target.checked) {
+                          setformdata((prev) => ({
+                            ...prev,
+                            Features: [...currentSelected, feature],
+                          }));
+                        } else {
+                          setformdata((prev) => ({
+                            ...prev,
+                            Features: currentSelected.filter(
+                              (f) => f !== feature,
+                            ),
+                          }));
+                        }
+                      }}
+                      className="accent-blue-500 w-4 h-4 flex-shrink-0"
+                    />
+                    <span className="text-xs sm:text-sm text-gray-700 ml-2 break-words">
+                      {feature}
+                    </span>
+                  </label>
+                ))}
+              </div>
+              <p className="text-xs text-gray-500 mt-1">
+                Selected: {formdata.Features?.length || 0} features
+              </p>
+            </>
+          )}
+
           <button
             type="submit"
-            className="text-white bg-green-600 hover:bg-green-500 rounded w-full p-1 block"
+            className="w-full bg-green-600 hover:bg-green-700 text-white font-medium py-2 px-4 rounded-lg transition-colors mt-4"
+            disabled={searching}
           >
-            {searching ? "Searching" : "Search"}
+            {searching ? "Searching..." : "Search Properties"}
           </button>
-          {searcherror ? (
-            <p className="text-red-400 text-sm flex justify-center">
+
+          {searcherror && (
+            <p className="text-red-500 text-sm mt-2 text-center">
               {searcherror}
             </p>
-          ) : null}
+          )}
         </div>
       </form>
+
       {properties.length > 0 ? (
-        <>
-          <h1 className="text-xl sm:text-xl text-black font-bold text-center mt-4">
-            Your Results Are
+        <div className="pt-24 px-4">
+          <h1 className="text-2xl font-bold text-center mb-6">
+            Found {properties.length} Properties
           </h1>
-          <div className="flex flex-col gap-4 mt-3 items-center px-4">
-            {properties.map((userlist, index) => (
-              <div
-                className="bg-white rounded-lg w-full max-w-3xl shadow-md"
-                key={index}
-              >
-                <div
-                  className="flex flex-col sm:flex-row gap-4 p-4 justify-center items-center"
-                  onClick={() => handleview(index)}
-                >
-                  <div className="w-full sm:w-auto">
-                    <img
-                      src={userlist.images[0].imageurl}
-                      alt="House"
-                      className="w-full sm:w-36 h-32 object-cover rounded-md"
-                    />
-                  </div>
 
-                  <div className="flex-1 flex flex-col gap-2 text-center sm:text-left">
-                    <p className="text-lg sm:text-xl font-semibold text-black">
-                      {userlist.title}
-                    </p>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 max-w-7xl mx-auto">
+            {(() => {
+              const items = [];
+              let adIndex = 0;
 
-                    <div className="flex flex-col text-gray-500 text-sm sm:text-base">
-                      <p>{userlist.address?.streetAddress}</p>
-                      <p>
-                        {userlist.address?.city}, {userlist.address?.state}
-                      </p>
+              for (let i = 0; i < properties.length; i++) {
+                items.push(
+                  <div
+                    key={`property-${i}`}
+                    className="bg-white rounded-xl shadow-lg overflow-hidden hover:shadow-xl transition-shadow cursor-pointer"
+                    onClick={() => handleview(i)}
+                  >
+                    <div className="h-48 overflow-hidden">
+                      <img
+                        src={properties[i].images[0]?.imageurl}
+                        alt={properties[i].title}
+                        className="w-full h-full object-cover hover:scale-105 transition-transform duration-300"
+                      />
                     </div>
 
-                    <div className="flex flex-col sm:flex-row sm:space-x-4">
-                      <p className="text-sm sm:text-base mt-2">
-                        <span className="text-black font-medium">
-                          Listing Type:{" "}
-                        </span>
-                        <span className="text-red-500 font-semibold">
-                          {userlist.listingType}
-                        </span>
-                      </p>
-
-                      <p className="text-sm sm:text-base mt-2">
-                        <span className="text-black font-medium">
-                          Property Type:{" "}
-                        </span>
-                        <span className="text-red-500 font-semibold">
-                          {userlist.propertyType}
-                        </span>
-                      </p>
-
-                      <p className="text-sm sm:text-base mt-2">
-                        <span className="text-black font-medium">Status: </span>
+                    <div className="p-4">
+                      <div className="flex justify-between items-start mb-2">
                         <span
-                          className={
-                            userlist.status === "available"
-                              ? "text-green-500 font-semibold"
-                              : "text-red-500 font-semibold"
-                          }
+                          className={`px-3 py-1 rounded-full text-xs font-medium ${
+                            properties[i].listedBy.role === "dealer"
+                              ? properties[i].listedBy.dealerType === "agency"
+                                ? "bg-purple-100 text-purple-800"
+                                : "bg-blue-100 text-blue-800"
+                              : "bg-gray-100 text-gray-800"
+                          }`}
                         >
-                          {userlist.status}
+                          {properties[i].listedBy.role === "dealer"
+                            ? `🏢 ${
+                                properties[i].listedBy.dealerType === "agency"
+                                  ? "Agency"
+                                  : "Individual"
+                              } Dealer`
+                            : "👤 Individual User"}
+                          {properties[i].listedBy.companyName &&
+                            ` • ${properties[i].listedBy.companyName}`}
                         </span>
-                      </p>
-                    </div>
-                  </div>
-                </div>
 
-                <div className="flex justify-between items-center px-4 py-2 border-t text-sm text-gray-600">
-                  <a
-                    href={`mailto:${userlist.listedBy.contact?.email}`}
-                    className="flex items-center gap-1  "
+                        <span
+                          className={`px-2 py-1 rounded text-xs font-medium ${
+                            properties[i].status === "available"
+                              ? "bg-green-100 text-green-800"
+                              : "bg-red-100 text-red-800"
+                          }`}
+                        >
+                          {properties[i].status}
+                        </span>
+                      </div>
+
+                      <h3 className="text-lg font-bold text-gray-800 mb-1">
+                        {properties[i].title}
+                      </h3>
+
+                      <p className="text-gray-600 text-sm mb-2 flex items-center">
+                        📍 {properties[i].location?.locality}, Mumbai
+                      </p>
+
+                      <div className="flex flex-wrap gap-2 mb-3">
+                        <span className="bg-gray-100 text-gray-700 px-2 py-1 rounded text-xs">
+                          {properties[i].propertyType}
+                        </span>
+                        {properties[i].bhk && (
+                          <span className="bg-blue-50 text-blue-700 px-2 py-1 rounded text-xs">
+                            {properties[i].bhk}
+                          </span>
+                        )}
+                        <span className="bg-green-50 text-green-700 px-2 py-1 rounded text-xs">
+                          {properties[i].area} sq.ft
+                        </span>
+                        <span className="bg-yellow-50 text-yellow-700 px-2 py-1 rounded text-xs">
+                          For {properties[i].listingType}
+                        </span>
+                      </div>
+
+                      <div className="mb-3">
+                        <p className="text-2xl font-bold text-red-600">
+                          ₹{properties[i].price?.toLocaleString()}
+                          {properties[i].listingType === "rent" && (
+                            <span className="text-sm text-gray-500">
+                              {" "}
+                              /month
+                            </span>
+                          )}
+                        </p>
+                      </div>
+
+                      {properties[i].features &&
+                        properties[i].features.length > 0 && (
+                          <div className="mb-3">
+                            <p className="text-sm text-gray-500 mb-1">
+                              Features:
+                            </p>
+                            <div className="flex flex-wrap gap-1">
+                              {properties[i].features
+                                .slice(0, 3)
+                                .map((feature, idx) => (
+                                  <span
+                                    key={idx}
+                                    className="bg-gray-100 text-gray-700 px-2 py-1 rounded text-xs"
+                                  >
+                                    {feature}
+                                  </span>
+                                ))}
+                              {properties[i].features.length > 3 && (
+                                <span className="text-gray-500 text-xs">
+                                  +{properties[i].features.length - 3} more
+                                </span>
+                              )}
+                            </div>
+                          </div>
+                        )}
+
+                      <div className="pt-3 border-t border-gray-200">
+                        <div className="flex justify-between text-sm">
+                          <a
+                            href={`mailto:${properties[i].listedBy.contact?.email}`}
+                            className="text-blue-600 hover:text-blue-800 flex items-center gap-1"
+                            onClick={(e) => e.stopPropagation()}
+                          >
+                            📧 Email
+                          </a>
+                          <a
+                            href={`https://wa.me/91${properties[i].listedBy.contact?.phone}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-green-600 hover:text-green-800 flex items-center gap-1"
+                            onClick={(e) => e.stopPropagation()}
+                          >
+                            📞 WhatsApp
+                          </a>
+                        </div>
+                      </div>
+                    </div>
+                  </div>,
+                );
+
+                if ((i + 1) % 3 === 0 && adIndex < ads.length) {
+                  const currentAdIndex = adIndex;
+                  items.push(
+                    <div
+                      key={`ad-${adIndex}`}
+                      className="bg-white rounded-xl shadow-lg overflow-hidden hover:shadow-xl transition-shadow border-2 border-purple-200"
+                      onClick={() => handleadview(currentAdIndex)}
+                    >
+                      <div className="h-48 overflow-hidden">
+                        <img
+                          src={ads[adIndex].images[0].imageurl}
+                          alt={ads[adIndex].projectName}
+                          className="w-full h-full object-cover"
+                        />
+                      </div>
+
+                      <div className="p-4">
+                        <span className="inline-block bg-purple-100 text-purple-800 text-xs px-2 py-1 rounded mb-2">
+                          🏗 Sponsored Project
+                        </span>
+
+                        <h3 className="text-lg font-bold text-gray-800 mb-1">
+                          {ads[adIndex].projectName}
+                        </h3>
+
+                        <p className="text-sm text-gray-600 mb-2">
+                          📍 {ads[adIndex].location}, Mumbai
+                        </p>
+
+                        <p className="text-sm text-gray-500 mb-3">
+                          {ads[adIndex].projectType} •{" "}
+                          {ads[adIndex].unitTypes.join(", ")}
+                        </p>
+
+                        <p className="text-green-700 font-semibold">
+                          ₹{ads[adIndex].priceRange.min.toLocaleString()} – ₹
+                          {ads[adIndex].priceRange.max.toLocaleString()}
+                        </p>
+
+                        <div className="pt-3 border-t text-sm text-blue-600">
+                          📞 {ads[adIndex].projectContacts[0]?.phone}
+                        </div>
+                      </div>
+                    </div>,
+                  );
+                  adIndex++;
+                }
+              }
+
+              while (adIndex < ads.length) {
+                const currentAdIndex = adIndex;
+                items.push(
+                  <div
+                    key={`ad-${adIndex}`}
+                    className="bg-white rounded-xl shadow-lg overflow-hidden hover:shadow-xl transition-shadow border-2 border-purple-200"
+                    onClick={() => handleadview(currentAdIndex)}
                   >
-                    📧{" "}
-                    <span className="underline hover:pointer ">
-                      {userlist.listedBy.contact?.email}
-                    </span>
-                  </a>
-                  <a
-                    href={`https://wa.me/91${userlist.listedBy.contact?.phone}`}
-                    className="flex items-center gap-1 "
-                  >
-                    📞{" "}
-                    <span className="underline hover:pointer ">
-                      {userlist.listedBy.contact?.phone}
-                    </span>
-                  </a>
-                </div>
-              </div>
-            ))}
+                    <div className="h-48 overflow-hidden">
+                      <img
+                        src={ads[adIndex].images[0].imageurl}
+                        alt={ads[adIndex].projectName}
+                        className="w-full h-full object-cover"
+                      />
+                    </div>
+
+                    <div className="p-4">
+                      <span className="inline-block bg-purple-100 text-purple-800 text-xs px-2 py-1 rounded mb-2">
+                        🏗 Sponsored Project
+                      </span>
+
+                      <h3 className="text-lg font-bold text-gray-800 mb-1">
+                        {ads[adIndex].projectName}
+                      </h3>
+
+                      <p className="text-sm text-gray-600 mb-2">
+                        📍 {ads[adIndex].location}, Mumbai
+                      </p>
+
+                      <p className="text-sm text-gray-500 mb-3">
+                        {ads[adIndex].projectType} •{" "}
+                        {ads[adIndex].unitTypes.join(", ")}
+                      </p>
+
+                      <p className="text-green-700 font-semibold">
+                        ₹{ads[adIndex].priceRange.min.toLocaleString()} – ₹
+                        {ads[adIndex].priceRange.max.toLocaleString()}
+                      </p>
+
+                      <div className="pt-3 border-t text-sm text-blue-600">
+                        📞 {ads[adIndex].projectContacts[0]?.phone}
+                      </div>
+                    </div>
+                  </div>,
+                );
+                adIndex++;
+              }
+
+              return items;
+            })()}
           </div>
-        </>
+        </div>
       ) : (
-        <h1 className="text-center mt-6 px-4">
-          <span className="font-bold text-lg sm:text-2xl block">
-            Search to find Properties
-          </span>
-        </h1>
+        <div className="pt-32 text-center px-4">
+          <h1 className="text-2xl font-bold mb-4">Search Mumbai Properties</h1>
+          <p className="text-gray-600 mb-6">
+            Use the search form above to find properties in Mumbai
+          </p>
+          <div className="inline-flex flex-col gap-2 text-left bg-gray-100 p-4 rounded-lg max-w-md mx-auto">
+            <p className="font-medium">Search by:</p>
+            <ul className="text-sm text-gray-600 list-disc list-inside">
+              <li>Mumbai locality (Bandra, Andheri, etc.)</li>
+              <li>Property type (Flat, Office, Shop, etc.)</li>
+              <li>Price range</li>
+              <li>Dealer type (Individual or Agency)</li>
+              <li>BHK configuration</li>
+            </ul>
+          </div>
+        </div>
       )}
     </>
   );
 }
+
 export default FindProperties;
