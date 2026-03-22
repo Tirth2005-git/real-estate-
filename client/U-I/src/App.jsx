@@ -15,7 +15,7 @@ import PvtRoute2 from "./components/PrivateRoute2.jsx";
 import ListingView from "./pages/viewListing.jsx";
 import UpdateListing from "./pages/updateListings.jsx";
 import FindProperties from "./pages/findProperties.jsx";
-import ViewAd from "./pages/viewad.jsx";
+import ViewAd from "./pages/viewAd.jsx";
 import BuilderAds from "./pages/builderAd.jsx";
 import FindDealers from "./pages/findDealers.jsx";
 import CreateAdvertisement from "./pages/createAd.jsx";
