@@ -64,9 +64,7 @@ export async function listController(req, res, next) {
       listedBy: {
         userId: listedBy.userId,
         role: listedBy.role,
-
         ...(listedBy.dealerType && { dealerType: listedBy.dealerType }),
-
         ...(listedBy.companyName && {
           companyName: listedBy.companyName.trim(),
         }),
@@ -81,11 +79,10 @@ export async function listController(req, res, next) {
     });
 
     await newlisting.save();
+
     const matchedUsers = await User.find({
       role: { $ne: "builder" },
-
       "notificationPreferences.localities": newlisting.location.locality,
-
       $and: [
         {
           $or: [
@@ -98,63 +95,71 @@ export async function listController(req, res, next) {
         {
           $or: [
             { "notificationPreferences.listingTypes": { $size: 0 } },
-            { "notificationPreferences.listingTypes": newlisting.listingType },
+            {
+              "notificationPreferences.listingTypes": newlisting.listingType,
+            },
           ],
         },
       ],
     });
-    for (const user of matchedUsers) {
-      const email = user.personalContactValue || user.companyContactValue;
 
-      if (!email) continue;
-
-   await sendEmail(
-  email,
-  "New Property Matching Your Preference",
-  `
-    <h3>New Property Listed</h3>
-
-    <p style="font-size:18px;font-weight:bold;">
-      ${newlisting.title}
-    </p>
-
-    ${
-      newlisting.images?.[0]?.imageurl
-        ? `<img src="${newlisting.images[0].imageurl}" 
-             style="width:100%;max-width:500px;border-radius:8px;margin:10px 0;" />`
-        : ""
-    }
-
-    <p>
-      📍 ${newlisting.location.locality}, 
-      ${newlisting.location.address}
-    </p>
-
-    <p>
-      🏠 ${newlisting.propertyType}
-      ${newlisting.bhk ? ` • ${newlisting.bhk}` : ""}
-      • ${newlisting.area} sq.ft
-      • For ${newlisting.listingType}
-    </p>
-
-    <p style="font-size:16px;font-weight:bold;">
-      💰 ₹${newlisting.price.toLocaleString()}
-      ${newlisting.listingType === "rent" ? " / month" : ""}
-    </p>
-
-    <hr/>
-
-    <p style="font-size:12px;color:gray;">
-      You are receiving this because it matches your notification preferences.
-    </p>
-  `
-);
-    }
-
+    // ✅ SEND RESPONSE FIRST (IMPORTANT)
     res.status(201).json({
       success: true,
       message: "Listing created successfully",
       newlisting,
+    });
+
+    // ✅ SEND EMAILS IN BACKGROUND (NON-BLOCKING)
+    matchedUsers.forEach(async (user) => {
+      const email = user.personalContactValue || user.companyContactValue;
+      if (!email) return;
+
+      try {
+        await sendEmail(
+          email,
+          "New Property Matching Your Preference",
+          `
+            <h3>New Property Listed</h3>
+
+            <p style="font-size:18px;font-weight:bold;">
+              ${newlisting.title}
+            </p>
+
+            ${
+              newlisting.images?.[0]?.imageurl
+                ? `<img src="${newlisting.images[0].imageurl}" 
+                     style="width:100%;max-width:500px;border-radius:8px;margin:10px 0;" />`
+                : ""
+            }
+
+            <p>
+              📍 ${newlisting.location.locality}, 
+              ${newlisting.location.address}
+            </p>
+
+            <p>
+              🏠 ${newlisting.propertyType}
+              ${newlisting.bhk ? ` • ${newlisting.bhk}` : ""}
+              • ${newlisting.area} sq.ft
+              • For ${newlisting.listingType}
+            </p>
+
+            <p style="font-size:16px;font-weight:bold;">
+              💰 ₹${newlisting.price.toLocaleString()}
+              ${newlisting.listingType === "rent" ? " / month" : ""}
+            </p>
+
+            <hr/>
+
+            <p style="font-size:12px;color:gray;">
+              You are receiving this because it matches your notification preferences.
+            </p>
+          `,
+        );
+      } catch (err) {
+        console.log("Email failed:", err.message);
+      }
     });
   } catch (err) {
     if (err.code === 11000) {
