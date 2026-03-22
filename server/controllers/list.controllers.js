@@ -103,23 +103,24 @@ export async function listController(req, res, next) {
       ],
     });
 
-    // ✅ SEND RESPONSE FIRST (IMPORTANT)
     res.status(201).json({
       success: true,
       message: "Listing created successfully",
       newlisting,
     });
 
-    // ✅ SEND EMAILS IN BACKGROUND (NON-BLOCKING)
-    matchedUsers.forEach(async (user) => {
-      const email = user.personalContactValue || user.companyContactValue;
-      if (!email) return;
-
+    (async () => {
       try {
-        await sendEmail(
-          email,
-          "New Property Matching Your Preference",
-          `
+        await Promise.all(
+          matchedUsers.map(async (user) => {
+            const email = user.personalContactValue || user.companyContactValue;
+
+            if (!email) return;
+
+            return sendEmail(
+              email,
+              "New Property Matching Your Preference",
+              `
             <h3>New Property Listed</h3>
 
             <p style="font-size:18px;font-weight:bold;">
@@ -149,18 +150,14 @@ export async function listController(req, res, next) {
               💰 ₹${newlisting.price.toLocaleString()}
               ${newlisting.listingType === "rent" ? " / month" : ""}
             </p>
-
-            <hr/>
-
-            <p style="font-size:12px;color:gray;">
-              You are receiving this because it matches your notification preferences.
-            </p>
           `,
+            );
+          }),
         );
       } catch (err) {
-        console.log("Email failed:", err.message);
+        console.log("Email batch error:", err.message);
       }
-    });
+    })();
   } catch (err) {
     if (err.code === 11000) {
       return next(
