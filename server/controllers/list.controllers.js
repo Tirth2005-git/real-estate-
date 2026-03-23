@@ -80,84 +80,14 @@ export async function listController(req, res, next) {
 
     await newlisting.save();
 
-    const matchedUsers = await User.find({
-      role: { $ne: "builder" },
-      "notificationPreferences.localities": newlisting.location.locality,
-      $and: [
-        {
-          $or: [
-            { "notificationPreferences.propertyTypes": { $size: 0 } },
-            {
-              "notificationPreferences.propertyTypes": newlisting.propertyType,
-            },
-          ],
-        },
-        {
-          $or: [
-            { "notificationPreferences.listingTypes": { $size: 0 } },
-            {
-              "notificationPreferences.listingTypes": newlisting.listingType,
-            },
-          ],
-        },
-      ],
-    });
-
     res.status(201).json({
       success: true,
       message: "Listing created successfully",
       newlisting,
     });
 
-    (async () => {
-      try {
-        await Promise.all(
-          matchedUsers.map(async (user) => {
-            const email = user.personalContactValue || user.companyContactValue;
+    sendNotificationsAsync(newlisting).catch(() => {});
 
-            if (!email) return;
-
-            return sendEmail(
-              email,
-              "New Property Matching Your Preference",
-              `
-            <h3>New Property Listed</h3>
-
-            <p style="font-size:18px;font-weight:bold;">
-              ${newlisting.title}
-            </p>
-
-            ${
-              newlisting.images?.[0]?.imageurl
-                ? `<img src="${newlisting.images[0].imageurl}" 
-                     style="width:100%;max-width:500px;border-radius:8px;margin:10px 0;" />`
-                : ""
-            }
-
-            <p>
-              📍 ${newlisting.location.locality}, 
-              ${newlisting.location.address}
-            </p>
-
-            <p>
-              🏠 ${newlisting.propertyType}
-              ${newlisting.bhk ? ` • ${newlisting.bhk}` : ""}
-              • ${newlisting.area} sq.ft
-              • For ${newlisting.listingType}
-            </p>
-
-            <p style="font-size:16px;font-weight:bold;">
-              💰 ₹${newlisting.price.toLocaleString()}
-              ${newlisting.listingType === "rent" ? " / month" : ""}
-            </p>
-          `,
-            );
-          }),
-        );
-      } catch (err) {
-        console.log("Email batch error:", err.message);
-      }
-    })();
   } catch (err) {
     if (err.code === 11000) {
       return next(
@@ -171,6 +101,53 @@ export async function listController(req, res, next) {
     }
 
     next(ErrorHandler(500, err.message));
+  }
+}
+
+async function sendNotificationsAsync(listing) {
+  try {
+    const matchedUsers = await User.find({
+      role: { $ne: "builder" },
+      "notificationPreferences.localities": listing.location.locality,
+      $and: [
+        {
+          $or: [
+            { "notificationPreferences.propertyTypes": { $size: 0 } },
+            {
+              "notificationPreferences.propertyTypes": listing.propertyType,
+            },
+          ],
+        },
+        {
+          $or: [
+            { "notificationPreferences.listingTypes": { $size: 0 } },
+            {
+              "notificationPreferences.listingTypes": listing.listingType,
+            },
+          ],
+        },
+      ],
+    });
+
+    for (const user of matchedUsers) {
+      const email = user.personalContactValue || user.companyContactValue;
+      if (email) {
+        await sendEmail(
+          email,
+          "New Property Matching Your Preference",
+          `
+          <h3>New Property Listed</h3>
+          <p style="font-size:18px;font-weight:bold;">${listing.title}</p>
+          ${listing.images?.[0]?.imageurl ? `<img src="${listing.images[0].imageurl}" style="width:100%;max-width:500px;border-radius:8px;margin:10px 0;" />` : ""}
+          <p>📍 ${listing.location.locality}, ${listing.location.address}</p>
+          <p>🏠 ${listing.propertyType} ${listing.bhk ? ` • ${listing.bhk}` : ""} • ${listing.area} sq.ft • For ${listing.listingType}</p>
+          <p style="font-size:16px;font-weight:bold;">💰 ₹${listing.price.toLocaleString()} ${listing.listingType === "rent" ? "/ month" : ""}</p>
+          `
+        ).catch(() => {});
+      }
+    }
+  } catch (err) {
+    // Silent fail
   }
 }
 export async function deleteList(req, res, next) {
